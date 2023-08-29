@@ -166,4 +166,3 @@ def get_payload_hash(payload):
         m.update(bytes.fromhex(hex_value))
 
     return m.hexdigest()
-

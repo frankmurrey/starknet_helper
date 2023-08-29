@@ -37,8 +37,9 @@ class JediSwap(StarkBase):
         self.amount_out_decimals = None
         self.amount_in_decimals = None
 
-    async def get_amount_out_from_balance(self,
-                                          wallet_token_balance_wei):
+    async def get_amount_out_from_balance(self):
+        wallet_token_balance_wei = await self.get_token_balance(token_address=self.coin_x.contract_address,
+                                                                account=self.account)
 
         if wallet_token_balance_wei == 0:
             logger.error(f"Wallet {self.coin_x.symbol.upper()} balance = 0")
@@ -94,10 +95,7 @@ class JediSwap(StarkBase):
             return None
 
     async def build_txn_payload_calls(self):
-        wallet_token_balance_wei = await self.get_token_balance(token_address=self.coin_x.contract_address,
-                                                                account=self.account)
-
-        amount_out_wei = await self.get_amount_out_from_balance(wallet_token_balance_wei=wallet_token_balance_wei)
+        amount_out_wei = await self.get_amount_out_from_balance()
 
         if amount_out_wei is None:
             return None

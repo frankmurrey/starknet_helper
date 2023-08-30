@@ -93,8 +93,9 @@ class ModuleExecutor:
         if self.app_config.shuffle_wallets:
             random.shuffle(wallets)
 
-        if self.app_config.test_mode:
+        if self.config.test_mode:
             wallets = wallets[:3]
+            logger.warning(f"Test mode enabled. Working with only {len(wallets)} wallets\n")
 
         wallets_amount = len(wallets)
         for index, wallet_data in enumerate(wallets):

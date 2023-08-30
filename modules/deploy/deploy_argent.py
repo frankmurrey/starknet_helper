@@ -1,14 +1,9 @@
-import time
-import random
-
-from contracts.tokens.main import Tokens
-
 from modules.base import StarkBase
 
 from src.schemas.configs.deploy import DeployArgentConfigSchema
 
 from starknet_py.net.account.account import Account
-from starknet_py.net.models.transaction import (DeployAccount)
+from starknet_py.net.models.transaction import DeployAccount
 
 from utlis.key_manager.key_manager import get_key_pair_from_pk
 
@@ -62,7 +57,7 @@ class DeployArgent(StarkBase):
         overall_fee = estimated_gas.overall_fee
 
         if overall_fee > wallet_eth_balance_wei:
-            logger.error(f"Noe enough native for fee, wallet ETH balance = {wallet_eth_balance_decimals} "
+            logger.error(f"Not enough native for fee, wallet ETH balance = {wallet_eth_balance_decimals} "
                          f"(need {overall_fee / 10 ** 18})")
             return None
 
@@ -78,34 +73,39 @@ class DeployArgent(StarkBase):
         else:
             gas_limit = int(overall_fee * 1.4)
 
-        deploy_result = await self.account.deploy_account(
-            address=self.account.address,
-            class_hash=class_hash,
-            salt=key_pair.public_key,
-            key_pair=key_pair,
-            client=self.client,
-            chain=self.chain_id,
-            constructor_calldata=call_data,
-            max_fee=gas_limit
-        )
+        try:
+            deploy_result = await self.account.deploy_account(
+                address=self.account.address,
+                class_hash=class_hash,
+                salt=key_pair.public_key,
+                key_pair=key_pair,
+                client=self.client,
+                chain=self.chain_id,
+                constructor_calldata=call_data,
+                max_fee=gas_limit
+            )
 
-        txn_hash = deploy_result.hash
+            txn_hash = deploy_result.hash
 
-        if self.config.wait_for_receipt is True:
-            logger.debug(f"Txn sent. Waiting for receipt (Timeout in {self.config.txn_wait_timeout_sec}s)."
-                         f" Txn Hash: {hex(txn_hash)}")
+            if self.config.wait_for_receipt is True:
+                logger.debug(f"Txn sent. Waiting for receipt (Timeout in {self.config.txn_wait_timeout_sec}s)."
+                             f" Txn Hash: {hex(txn_hash)}")
 
-            txn_receipt = await self.wait_for_tx_receipt(tx_hash=txn_hash,
-                                                         time_out_sec=self.config.txn_wait_timeout_sec)
-            if txn_receipt is False:
-                return False
+                txn_receipt = await self.wait_for_tx_receipt(tx_hash=txn_hash,
+                                                             time_out_sec=self.config.txn_wait_timeout_sec)
+                if txn_receipt is False:
+                    return False
 
-            logger.success(f"Txn success, status: {txn_receipt.status} "
-                           f"(Actual fee: {txn_receipt.actual_fee / 10 ** 18}. "
-                           f"Txn Hash: {hex(txn_hash)})")
+                logger.success(f"Txn success, status: {txn_receipt.status} "
+                               f"(Actual fee: {txn_receipt.actual_fee / 10 ** 18}. "
+                               f"Txn Hash: {hex(txn_hash)})")
 
-            return True
+                return True
 
-        else:
-            logger.success(f"Txn sent. Txn Hash: {hex(txn_hash)}")
-            return True
+            else:
+                logger.success(f"Txn sent. Txn Hash: {hex(txn_hash)}")
+                return True
+
+        except Exception as e:
+            logger.error(f"Error while sending deploy txn: {e}")
+            return False

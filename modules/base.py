@@ -173,8 +173,8 @@ class StarkBase:
                                   time_out_sec: int):
         try:
             return await self.client.wait_for_tx(tx_hash=tx_hash,
-                                                 check_interval=2,
-                                                 retries=time_out_sec // 2)
+                                                 check_interval=5,
+                                                 retries=(time_out_sec // 2) + 1)
         except Exception as ex:
             logger.error(f"Error while waiting for txn receipt: {ex}")
             return False
@@ -321,7 +321,7 @@ class StarkBase:
 
             logger.success(f"Txn success, status: {txn_receipt.status} "
                            f"(Actual fee: {txn_receipt.actual_fee / 10 ** 18}. "
-                           f"Txn Hash: {hex(txn_hash)}")
+                           f"Txn Hash: {hex(txn_hash)})")
 
             return True
 

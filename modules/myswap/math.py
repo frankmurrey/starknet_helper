@@ -11,10 +11,17 @@ def get_amount_in_from_reserves(amount_out: int,
     return amount_in
 
 
+def calculate_price_impact(reserve_in,
+                           amount_in):
+    return amount_in / (reserve_in + amount_in)
+
+
 if __name__ == '__main__':
-    amt_out = 996000000
+    amt_out = int(1e13)
     res_x = 329114913443
     resy = 327959969505
     out = get_amount_in_from_reserves(amount_out=amt_out,
                                       reserve_x=res_x,
                                       reserve_y=resy)
+    print(calculate_price_impact(reserve_in=res_x,
+                                 amount_in=amt_out))

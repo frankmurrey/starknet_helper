@@ -16,6 +16,7 @@ from src.storage import Storage
 from src.proxy_manager import ProxyManager
 
 from modules.jediswap.swap import JediSwap
+from modules.deploy.deploy_argent import DeployArgent
 
 from utlis.key_manager.key_manager import get_argent_addr_from_private_key
 from utlis.key_manager.key_manager import get_braavos_addr_from_private_key
@@ -173,6 +174,14 @@ class ModuleExecutor:
 
         elif self.module_name == enums.ModuleName.MY_SWAP:
             pass
+
+        elif self.module_name == enums.ModuleName.DEPLOY_ARGENT:
+            module = DeployArgent(
+                account=account,
+                config=self.config,
+                private_key=wallet_data.private_key
+            )
+            execution_status = await module.send_deploy_txn()
 
         else:
             raise ValueError(f"Invalid module name: {self.module_name}")

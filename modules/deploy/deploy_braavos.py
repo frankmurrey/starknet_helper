@@ -1,6 +1,6 @@
 from modules.base import StarkBase
 
-from src.schemas.configs.deploy import DeployArgentConfigSchema
+from src.schemas.configs.deploy import DeployBraavostConfigSchema
 
 from starknet_py.net.account.account import Account
 from starknet_py.net.models.transaction import DeployAccount
@@ -10,8 +10,8 @@ from utlis.key_manager.key_manager import get_key_pair_from_pk
 from loguru import logger
 
 
-class DeployArgent(StarkBase):
-    config: DeployArgentConfigSchema
+class DeployBraavos(StarkBase):
+    config: DeployBraavostConfigSchema
     account: Account
 
     def __init__(self,
@@ -36,9 +36,9 @@ class DeployArgent(StarkBase):
             *account_initialize_call_data
         ]
 
-        logger.warning(f"Action: Deploy Argent account")
+        logger.warning(f"Action: Deploy Braavos account")
 
-        account = self.get_account_argent(private_key=self.pk)
+        account = self.get_account_braavos(private_key=self.pk)
         nonce = await self.get_nonce(account=account)
 
         deploy_txn = DeployAccount(

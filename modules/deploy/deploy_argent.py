@@ -102,7 +102,7 @@ class DeployArgent(StarkBase):
 
             logger.success(f"Txn success, status: {txn_receipt.status} "
                            f"(Actual fee: {txn_receipt.actual_fee / 10 ** 18}. "
-                           f"Txn Hash: {hex(txn_hash)}")
+                           f"Txn Hash: {hex(txn_hash)})")
 
             return True
 

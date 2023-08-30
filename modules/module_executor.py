@@ -89,11 +89,16 @@ class ModuleExecutor:
             logger.error("Please, set RPC URL in tools window or app_config.json file")
             return
 
+        wallets = self.wallets.copy()
         if self.app_config.shuffle_wallets:
-            random.shuffle(self.wallets)
+            random.shuffle(wallets)
 
-        wallets_amount = len(self.wallets)
-        for index, wallet_data in enumerate(self.wallets):
+        if self.config.test_mode:
+            wallets = wallets[:3]
+            logger.warning(f"Test mode enabled. Working with only {len(wallets)} wallets\n")
+
+        wallets_amount = len(wallets)
+        for index, wallet_data in enumerate(wallets):
             wallet_address = self.get_addr_from_private_key(wallet_data.private_key)
 
             logger.info(f"[{index + 1}] - {hex(wallet_address)}")

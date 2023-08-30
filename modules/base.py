@@ -158,6 +158,17 @@ class StarkBase:
         except ClientError:
             return 0
 
+    async def execute_call_transaction(self,
+                                        account: Account,
+                                        calls: list,
+                                        max_fee: int):
+        try:
+            return await account.execute(calls=calls, max_fee=max_fee)
+
+        except Exception as ex:
+            logger.error(f"Error while executing transaction: {ex}")
+            return None
+
     async def get_estimated_transaction_fee(self,
                                             account: Account,
                                             transaction):
@@ -306,7 +317,11 @@ class StarkBase:
             logger.debug(f"Test mode enabled. Skipping transaction")
             return False
 
-        response = await account.execute(calls=calls, max_fee=gas_limit)
+        response = await self.execute_call_transaction(account=account,
+                                                       calls=calls,
+                                                       max_fee=gas_limit)
+        if response is None:
+            return False
 
         txn_hash = response.transaction_hash
 

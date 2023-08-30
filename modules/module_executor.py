@@ -1,8 +1,9 @@
 import time
 import random
 from datetime import timedelta, datetime
-from typing import List, Union, Callable
+from typing import List, Union, Callable, Optional
 
+import aiohttp.typedefs
 from loguru import logger
 from starknet_py.net.account.account import Account
 from starknet_py.net.full_node_client import FullNodeClient
@@ -14,6 +15,7 @@ from src.schemas.configs.app_config import AppConfigSchema
 from src.schemas.wallet_data import WalletData
 from src.storage import Storage
 from src.proxy_manager import ProxyManager
+from src.custom_client_session import CustomSession
 
 from modules.jediswap.swap import JediSwap
 from modules.deploy.deploy_argent import DeployArgent
@@ -163,7 +165,12 @@ class ModuleExecutor:
 
         wallet_address = self.get_addr_from_private_key(wallet_data.private_key)
         key_pair = get_key_pair_from_pk(wallet_data.private_key)
-        client = FullNodeClient(node_url=base_url)
+
+        proxy_unit: Optional[aiohttp.typedefs.StrOrURL] = proxies.get('http://') if proxies else None
+        connector = aiohttp.TCPConnector(limit=10)
+        custom_session = CustomSession(proxy=proxy_unit, connector=connector)
+        client = FullNodeClient(node_url=base_url, session=custom_session)
+
         account = Account(
             address=wallet_address,
             client=client,
@@ -199,5 +206,7 @@ class ModuleExecutor:
 
         else:
             raise ValueError(f"Invalid module name: {self.module_name}")
+
+        await connector.close()
 
         return execution_status

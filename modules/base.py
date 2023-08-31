@@ -175,7 +175,7 @@ class StarkBase:
         try:
             estimate = await account.client.estimate_fee(transaction)
             return estimate.overall_fee
-        except ClientError as error:
+        except ClientError:
             return None
 
     async def wait_for_tx_receipt(self,

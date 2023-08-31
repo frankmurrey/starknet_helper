@@ -23,6 +23,26 @@ class MySwapDir:
     ROUTER_ABI_FILE = os.path.join(_MAIN_DIR, "router.abi")
 
 
+class StarknetIdDir:
+    _MAIN_DIR = os.path.join(CONTRACTS_DIR, "starknet_id")
+    ROUTER_ABI_FILE = os.path.join(_MAIN_DIR, "router.abi")
+
+
+class K10SwapDir:
+    _MAIN_DIR = os.path.join(CONTRACTS_DIR, "k10swap")
+    ROUTER_ABI_FILE = os.path.join(_MAIN_DIR, "router.abi")
+
+
+class SithSwapDir:
+    _MAIN_DIR = os.path.join(CONTRACTS_DIR, "sithswap")
+    ROUTER_ABI_FILE = os.path.join(_MAIN_DIR, "router.abi")
+
+
+class DmailDir:
+    _MAIN_DIR = os.path.join(CONTRACTS_DIR, "dmail")
+    ROUTER_ABI_FILE = os.path.join(_MAIN_DIR, "router.abi")
+
+
 class TempFiles:
     def __init__(self):
         self.TOKENS_JSON_FILE = os.path.join(CONTRACTS_DIR, "tokens.json")

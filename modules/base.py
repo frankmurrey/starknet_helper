@@ -159,9 +159,9 @@ class StarkBase:
             return 0
 
     async def execute_call_transaction(self,
-                                        account: Account,
-                                        calls: list,
-                                        max_fee: int):
+                                       account: Account,
+                                       calls: list,
+                                       max_fee: int):
         try:
             return await account.execute(calls=calls, max_fee=max_fee)
 
@@ -175,8 +175,7 @@ class StarkBase:
         try:
             estimate = await account.client.estimate_fee(transaction)
             return estimate.overall_fee
-        except ClientError as error:
-            print(error.code, error.message)
+        except ClientError:
             return None
 
     async def wait_for_tx_receipt(self,

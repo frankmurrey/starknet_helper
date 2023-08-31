@@ -2,19 +2,19 @@ import time
 import random
 
 from contracts.tokens.main import Tokens
-from contracts.jediswap.main import JediSwapContracts
+from contracts.sithswap.main import SithSwapContracts
 
 from modules.base import StarkBase
 
-from src.schemas.configs.jediswap import JediSwapConfigSchema
+from src.schemas.configs.sithswap import SithSwapConfigSchema
 
 from starknet_py.net.account.account import Account
 
 from loguru import logger
 
 
-class JediSwap(StarkBase):
-    config: JediSwapConfigSchema
+class SithSwap(StarkBase):
+    config: SithSwapConfigSchema
     account: Account
 
     def __init__(self,
@@ -26,9 +26,9 @@ class JediSwap(StarkBase):
         self.account = account
 
         self.tokens = Tokens()
-        self.jedi_contracts = JediSwapContracts()
-        self.router_contract = self.get_contract(address=self.jedi_contracts.router_address,
-                                                 abi=self.jedi_contracts.router_abi,
+        self.sith_swap_contracts = SithSwapContracts()
+        self.router_contract = self.get_contract(address=self.sith_swap_contracts.router_address,
+                                                 abi=self.sith_swap_contracts.router_abi,
                                                  provider=account)
 
         self.coin_x = self.tokens.get_by_name(self.config.coin_to_swap)
@@ -73,25 +73,22 @@ class JediSwap(StarkBase):
         self.amount_out_decimals = amount_out_wei / 10 ** token_decimals
         return amount_out_wei
 
-    async def get_amount_in(self,
-                            amount_in_wei):
-        path = [int(self.coin_x.contract_address, 16),
-                int(self.coin_y.contract_address, 16)]
-
+    async def get_amount_in_and_pool_id(self,
+                                        amount_in_wei):
         try:
-            amounts_out = await self.router_contract.functions["get_amounts_out"].call(
+            amounts_out_data = await self.router_contract.functions["getAmountOut"].call(
                 amount_in_wei,
-                path
+                self.i16(self.coin_x.contract_address),
+                self.i16(self.coin_y.contract_address)
             )
 
             decimals = await self.get_token_decimals(contract_address=self.coin_y.contract_address,
                                                      abi=self.coin_x.abi,
                                                      provider=self.account)
-            self.amount_in_decimals = (amounts_out.amounts[1] / 10 ** decimals) * (1 - (self.config.slippage / 100))
-            return amounts_out
-
+            self.amount_in_decimals = (amounts_out_data.amount / 10 ** decimals) * (1 - (self.config.slippage / 100))
+            return amounts_out_data
         except Exception as e:
-            logger.error(f'Error while getting amount in: {e}')
+            logger.error(f"Error while getting amount in and pool id: {e}")
             return None
 
     async def build_txn_payload_calls(self):
@@ -100,12 +97,13 @@ class JediSwap(StarkBase):
         if amount_out_wei is None:
             return None
 
-        amounts_in_wei = await self.get_amount_in(amount_out_wei)
-        if amounts_in_wei is None:
+        amounts_in_data = await self.get_amount_in_and_pool_id(amount_out_wei)
+        if amounts_in_data is None:
             return None
 
-        amount_in = amounts_in_wei.amounts[1]
+        amount_in = amounts_in_data.amount
         amount_in_wei_with_slippage = int(amount_in * (1 - (self.config.slippage / 100)))
+        is_stable = amounts_in_data.stable
 
         approve_call = self.build_token_approve_call(token_addr=self.coin_x.contract_address,
                                                      spender=hex(self.router_contract.address),
@@ -113,14 +111,15 @@ class JediSwap(StarkBase):
 
         swap_deadline = int(time.time() + 1000)
         swap_call = self.build_call(to_addr=self.router_contract.address,
-                                    func_name='swap_exact_tokens_for_tokens',
+                                    func_name='swapExactTokensForTokens',
                                     call_data=[amount_out_wei,
                                                0,
                                                amount_in_wei_with_slippage,
                                                0,
-                                               2,
+                                               1,
                                                self.i16(self.coin_x.contract_address),
                                                self.i16(self.coin_y.contract_address),
+                                               is_stable,
                                                self.account.address,
                                                swap_deadline])
         calls = [approve_call, swap_call]
@@ -131,9 +130,9 @@ class JediSwap(StarkBase):
         if txn_payload_calls is None:
             return False
 
-        txn_info_message = (f"Swap (JediSwap) | {round(self.amount_out_decimals, 4)} ({self.coin_x.symbol.upper()}) -> "
+        txn_info_message = (f"Swap (SithSwap) | {round(self.amount_out_decimals, 4)} ({self.coin_x.symbol.upper()}) -> "
                             f"{round(self.amount_in_decimals, 4)} ({self.coin_y.symbol.upper()}). "
-                            f"Slippage: {self.config.slippage}%.") \
+                            f"Slippage: {self.config.slippage}%.")
 
         txn_status = await self.simulate_and_send_transfer_type_transaction(account=self.account,
                                                                             calls=txn_payload_calls,

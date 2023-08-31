@@ -2,19 +2,19 @@ import time
 import random
 
 from contracts.tokens.main import Tokens
-from contracts.jediswap.main import JediSwapContracts
+from contracts.k10swap.main import K10SwapContracts
 
 from modules.base import StarkBase
 
-from src.schemas.configs.jediswap import JediSwapConfigSchema
+from src.schemas.configs.k10swap import K10SwapConfigSchema
 
 from starknet_py.net.account.account import Account
 
 from loguru import logger
 
 
-class JediSwap(StarkBase):
-    config: JediSwapConfigSchema
+class K10Swap(StarkBase):
+    config: K10SwapConfigSchema
     account: Account
 
     def __init__(self,
@@ -26,9 +26,9 @@ class JediSwap(StarkBase):
         self.account = account
 
         self.tokens = Tokens()
-        self.jedi_contracts = JediSwapContracts()
-        self.router_contract = self.get_contract(address=self.jedi_contracts.router_address,
-                                                 abi=self.jedi_contracts.router_abi,
+        self.k10_swap_contracts = K10SwapContracts()
+        self.router_contract = self.get_contract(address=self.k10_swap_contracts.router_address,
+                                                 abi=self.k10_swap_contracts.router_abi,
                                                  provider=account)
 
         self.coin_x = self.tokens.get_by_name(self.config.coin_to_swap)
@@ -79,7 +79,7 @@ class JediSwap(StarkBase):
                 int(self.coin_y.contract_address, 16)]
 
         try:
-            amounts_out = await self.router_contract.functions["get_amounts_out"].call(
+            amounts_out = await self.router_contract.functions["getAmountsOut"].call(
                 amount_in_wei,
                 path
             )
@@ -113,7 +113,7 @@ class JediSwap(StarkBase):
 
         swap_deadline = int(time.time() + 1000)
         swap_call = self.build_call(to_addr=self.router_contract.address,
-                                    func_name='swap_exact_tokens_for_tokens',
+                                    func_name='swapExactTokensForTokens',
                                     call_data=[amount_out_wei,
                                                0,
                                                amount_in_wei_with_slippage,
@@ -131,7 +131,7 @@ class JediSwap(StarkBase):
         if txn_payload_calls is None:
             return False
 
-        txn_info_message = (f"Swap (JediSwap) | {round(self.amount_out_decimals, 4)} ({self.coin_x.symbol.upper()}) -> "
+        txn_info_message = (f"Swap (10KSwap) | {round(self.amount_out_decimals, 4)} ({self.coin_x.symbol.upper()}) -> "
                             f"{round(self.amount_in_decimals, 4)} ({self.coin_y.symbol.upper()}). "
                             f"Slippage: {self.config.slippage}%.") \
 

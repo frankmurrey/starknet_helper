@@ -60,7 +60,7 @@ class JediSwap(StarkBase):
 
         elif wallet_token_balance_decimals < self.config.max_amount_out:
             amount_out_wei = self.get_random_amount_out_of_token(min_amount=self.config.min_amount_out,
-                                                                 max_amount=self.config.max_amount_out,
+                                                                 max_amount=wallet_token_balance_decimals,
                                                                  decimals=token_decimals)
 
         else:

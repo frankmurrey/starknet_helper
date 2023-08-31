@@ -9,7 +9,6 @@ from starknet_py.net.account.account import Account
 from starknet_py.net.full_node_client import FullNodeClient
 from starknet_py.net.models import StarknetChainId
 
-from modules.myswap.swap import MySwap
 from src.schemas.configs.base import CommonSettingsBase
 from src.schemas.configs.app_config import AppConfigSchema
 from src.schemas.wallet_data import WalletData
@@ -18,6 +17,7 @@ from src.proxy_manager import ProxyManager
 from src.custom_client_session import CustomSession
 
 from modules.jediswap.swap import JediSwap
+from modules.myswap.swap import MySwap
 from modules.deploy.deploy_argent import DeployArgent
 from modules.deploy.deploy_braavos import DeployBraavos
 
@@ -25,6 +25,7 @@ from utlis.key_manager.key_manager import get_argent_addr_from_private_key
 from utlis.key_manager.key_manager import get_braavos_addr_from_private_key
 from utlis.key_manager.key_manager import get_key_pair_from_pk
 from utlis.xlsx import write_balance_data_to_xlsx
+from utlis.repr.module import print_module_config
 
 from src import enums
 import config as cfg
@@ -85,7 +86,7 @@ class ModuleExecutor:
         return blurred_private_key
 
     async def start(self):
-        # TODO: Print config
+        print_module_config(module_config=self.config)
 
         if not self.app_config.rpc_url:
             logger.error("Please, set RPC URL in tools window or app_config.json file")

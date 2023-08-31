@@ -2,8 +2,13 @@ from typing import Union
 
 from pydantic import BaseModel
 
+from src import enums
+
 
 class CommonSettingsBase(BaseModel):
+    module_type: enums.ModuleType
+    module_name: str
+
     gas_price: Union[int, str] = 0
     gas_limit: Union[int, str] = 0
     forced_gas_limit: Union[bool, str] = False

@@ -1,10 +1,13 @@
 from typing import Union
 
 from src.schemas.configs.base import CommonSettingsBase
+from src import enums
 
 
 class JediSwapConfigSchema(CommonSettingsBase):
-    module_name: str = 'jediswap_swap'
+    module_name: str = "jediswap"
+    module_type: enums.ModuleType = enums.ModuleType.SWAP
+
     coin_to_swap: Union[str, None] = ""
     coin_to_receive: Union[str, None] = ""
     min_amount_out: Union[int, float, str] = 0

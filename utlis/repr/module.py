@@ -3,6 +3,7 @@ from enum import Enum
 from colorama import Fore, Back, Style
 
 from src.schemas.configs.base import CommonSettingsBase
+from src.schemas.configs.deploy import DeployArgentConfigSchema
 from utlis.repr.misc import Symbol
 from utlis.repr.misc import COLOR_LENGTH
 from utlis.repr.misc import MODULE_NAME_MAX_LENGTH
@@ -138,7 +139,7 @@ def print_module_config(module_config: CommonSettingsBase):
     repr_strings.insert(0, Style.BRIGHT)
     repr_strings.append(Style.BRIGHT)
 
-    print("\n".join(repr_strings))
+    print(*repr_strings, sep="\n")
 
 
 if __name__ == '__main__':
@@ -154,5 +155,3 @@ if __name__ == '__main__':
         wait_for_receipt=True,
         txn_wait_timeout_sec=120,
     )
-
-    print_module_config(cfg_j)

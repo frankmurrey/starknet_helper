@@ -20,6 +20,7 @@ from modules.jediswap.swap import JediSwap
 from modules.myswap.swap import MySwap
 from modules.deploy.deploy_argent import DeployArgent
 from modules.deploy.deploy_braavos import DeployBraavos
+from modules.avnu.swap import AvnuSwap
 
 from utlis.key_manager.key_manager import get_argent_addr_from_private_key
 from utlis.key_manager.key_manager import get_braavos_addr_from_private_key
@@ -39,6 +40,7 @@ class ModuleExecutor:
     def __init__(self, config: CommonSettingsBase):
         self.config = config
         self.module_name = config.module_name
+        self.module_type = config.module_type
         self.storage = Storage()
 
         self.app_config = AppConfigSchema()  # TODO: Get from storage
@@ -87,6 +89,7 @@ class ModuleExecutor:
 
     async def start(self):
         print_module_config(module_config=self.config)
+        time.sleep(cfg.DEFAULT_DELAY_SEC)
 
         if not self.app_config.rpc_url:
             logger.error("Please, set RPC URL in tools window or app_config.json file")
@@ -98,7 +101,7 @@ class ModuleExecutor:
 
         if self.config.test_mode:
             wallets = wallets[:3]
-            logger.warning(f"Test mode enabled. Working with only {len(wallets)} wallets\n")
+            logger.warning(f"Test mode enabled. Working only with {len(wallets)} wallets\n")
 
         wallets_amount = len(wallets)
         for index, wallet_data in enumerate(wallets):
@@ -189,21 +192,30 @@ class ModuleExecutor:
         elif self.module_name == enums.ModuleName.MY_SWAP:
             pass
 
-        elif self.module_name == enums.ModuleName.DEPLOY_ARGENT:
-            module = DeployArgent(
-                account=account,
-                config=self.config,
-                private_key=wallet_data.private_key
-            )
-            execution_status = await module.send_deploy_txn()
+        elif self.module_name == enums.ModuleName.DEPLOY:
+            if self.module_type == enums.PrivateKeyType.argent:
+                module = DeployArgent(
+                    account=account,
+                    config=self.config,
+                    private_key=wallet_data.private_key
+                )
+                execution_status = await module.send_deploy_txn()
 
-        elif self.module_name == enums.ModuleName.DEPLOY_BRAAVOS:
-            module = DeployBraavos(
-                account=account,
-                config=self.config,
-                private_key=wallet_data.private_key
-            )
-            execution_status = await module.send_deploy_txn()
+            elif self.module_type == enums.PrivateKeyType.braavos:
+                module = DeployBraavos(
+                    account=account,
+                    config=self.config,
+                    private_key=wallet_data.private_key
+                )
+                execution_status = await module.send_deploy_txn()
+
+        elif self.module_name == enums.ModuleName.AVNU:
+            if self.module_type == enums.ModuleType.SWAP:
+                module = AvnuSwap(
+                    account=account,
+                    config=self.config
+                )
+                execution_status = await module.send_swap_txn()
 
         else:
             raise ValueError(f"Invalid module name: {self.module_name}")

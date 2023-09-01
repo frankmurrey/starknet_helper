@@ -8,7 +8,7 @@ def on_startup():
     # Templates().create_not_found_temp_files()
 
     if not mingw_installed():
-        logger.critical("MinGW in not installed.")
+        logger.critical("MinGW in not installed.")  # TODO: More info
         exit(1)
 
 

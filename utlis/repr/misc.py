@@ -1,6 +1,11 @@
 from colorama import Fore, Back, Style
 
 
+MODULE_NAME_MAX_LENGTH = 24
+
+COLOR_LENGTH = 5
+
+
 class Symbol:
     left_top = "╔"
     right_top = "╗"
@@ -17,15 +22,3 @@ class Symbol:
     right_middle = "╣"
     top_middle = "╦"
     bottom_middle = "╩"
-
-
-class ColorLength:
-    BLACK = len(Fore.BLACK)
-    RED = len(Fore.RED)
-    GREEN = len(Fore.GREEN)
-    YELLOW = len(Fore.YELLOW)
-    BLUE = len(Fore.BLUE)
-    MAGENTA = len(Fore.MAGENTA)
-    CYAN = len(Fore.CYAN)
-    WHITE = len(Fore.WHITE)
-    RESET = len(Fore.RESET)

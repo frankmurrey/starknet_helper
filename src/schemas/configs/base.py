@@ -7,7 +7,7 @@ from src import enums
 
 class CommonSettingsBase(BaseModel):
     module_type: enums.ModuleType
-    module_name: str
+    module_name: enums.ModuleName
 
     gas_price: Union[int, str] = 0
     gas_limit: Union[int, str] = 0
@@ -28,3 +28,15 @@ class SwapSettingsBase(CommonSettingsBase):
     send_percent_balance: Union[bool, str] = False
     slippage: Union[int, float, str] = 0
 
+
+class SupplySettingsBase(CommonSettingsBase):
+    coin_to_supply: Union[str, None] = ""
+    min_amount_out: Union[int, float, str] = 0
+    max_amount_out: Union[int, float, str] = 0
+    use_all_balance: Union[bool, str] = False
+    send_percent_balance: Union[bool, str] = False
+    enable_collateral: Union[bool, str] = False
+
+
+class WithdrawSettingsBase(CommonSettingsBase):
+    coin_to_withdraw: Union[str, None] = ""

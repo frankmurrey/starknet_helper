@@ -1,11 +1,13 @@
-from typing import Union
-
 from src.schemas.configs.base import CommonSettingsBase
+
+from src import enums
 
 
 class DeployArgentConfigSchema(CommonSettingsBase):
-    module_name: str = 'deploy_argent'
+    module_name: enums.ModuleName = enums.ModuleName.DEPLOY
+    module_type: enums.PrivateKeyType = enums.PrivateKeyType.argent
 
 
 class DeployBraavostConfigSchema(CommonSettingsBase):
-    module_name: str = 'deploy_braavos'
+    module_name: enums.ModuleName = enums.ModuleName.DEPLOY
+    module_type: enums.PrivateKeyType = enums.PrivateKeyType.braavos

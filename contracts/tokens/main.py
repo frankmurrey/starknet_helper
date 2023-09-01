@@ -53,7 +53,3 @@ class Tokens:
 
     def get_my_swap_available_tokens(self):
         return [token for token in self.all_tokens if token.is_my_swap_available]
-
-
-if __name__ == '__main__':
-    print(Tokens().get_by_name(name_query='eth'))

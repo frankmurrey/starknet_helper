@@ -6,7 +6,7 @@ def mingw_installed() -> bool:
     try:
 
         exec_result = (
-            subprocess.check_output(["gascc", "--version"])
+            subprocess.check_output(["gcc", "--version"])
             .decode("utf-8")
             .lower()
         )

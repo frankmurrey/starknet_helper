@@ -1,28 +1,22 @@
-import asyncio
 import random
-import json
-
 from typing import Union
 
 from utlis.key_manager.key_manager import (get_key_pair_from_pk,
                                            get_argent_addr_from_private_key,
                                            get_braavos_addr_from_private_key)
+from src.schemas.configs.base import SwapSettingsBase
+from src.gecko_pricer import GeckoPricer
+from contracts.tokens.main import Tokens
 
 from starknet_py.net.account.account import Account
 from starknet_py.net.full_node_client import FullNodeClient
 from starknet_py.net.models import StarknetChainId
-from starknet_py.net.models.transaction import (DeployAccount,
-                                                Invoke)
+from starknet_py.net.models.transaction import DeployAccount
 from starknet_py.net.account.account_deployment_result import AccountDeploymentResult
-from starknet_py.net.client_models import (
-    EstimatedFee
-)
 from starknet_py.contract import Contract
 from starknet_py.net.client_errors import ClientError
 from starknet_py.net.client_models import Call
 from starknet_py.hash.selector import get_selector_from_name
-
-
 from loguru import logger
 
 
@@ -34,10 +28,12 @@ class StarkBase:
                  ):
         self.client = client
         self.chain_id = StarknetChainId.MAINNET
+        self.gecko_pricer = GeckoPricer(client=client)
+        self.tokens = Tokens()
 
     def i16(self,
             hex_d: str):
-        return  int(hex_d, 16)
+        return int(hex_d, 16)
 
     def get_random_amount_out_of_token(self,
                                        min_amount,
@@ -85,6 +81,18 @@ class StarkBase:
                                            provider=provider)
         decimals = await token_contract.functions['decimals'].call()
         return decimals.decimals
+
+    async def get_tokens_decimals_by_call(self,
+                                          token_address: int,
+                                          account: Account) -> Union[int, None]:
+        try:
+            call = self.build_call(to_addr=token_address,
+                                   func_name='decimals',
+                                   call_data=[])
+            response = await account.client.call_contract(call)
+            return response[0]
+        except ClientError:
+            return None
 
     async def check_token_allowance_for_spender(self,
                                                 token_address,
@@ -149,7 +157,23 @@ class StarkBase:
     async def get_token_balance(self,
                                 account: Account,
                                 token_address: int):
-        return await account.get_balance(token_address=token_address)
+        try:
+            return await account.get_balance(token_address=token_address)
+        except ClientError:
+            return 0
+
+    async def get_token_balance_for_address(self,
+                                            account: Account,
+                                            token_address: int,
+                                            address: int):
+        try:
+            call = self.build_call(to_addr=token_address,
+                                   func_name='balanceOf',
+                                   call_data=[address])
+            response = await account.client.call_contract(call)
+            return response[0]
+        except ClientError:
+            return 0
 
     async def get_nonce(self,
                         account: Account):
@@ -278,6 +302,61 @@ class StarkBase:
         )
 
         return deploy_result
+
+    async def send_swap_type_txn(
+            self,
+            account: Account,
+            config: SwapSettingsBase,
+            txn_payload_data: dict):
+
+        module_name = config.module_name.title()
+
+        out_decimals = round(txn_payload_data['amount_x_decimals'], 4)
+        in_decimals = round(txn_payload_data['amount_y_decimals'], 4)
+
+        coin_x_symbol = config.coin_to_swap.upper()
+        coin_y_symbol = config.coin_to_receive.upper()
+
+        slippage: Union[float, int] = config.slippage
+
+        txn_info_message = (f"Swap ({module_name}) | "
+                            f"{out_decimals} ({coin_x_symbol}) -> "
+                            f"{in_decimals} ({coin_y_symbol}). "
+                            f"Slippage: {slippage}%.")
+
+        coin_x_cg_id = self.tokens.get_cg_id_by_name(coin_x_symbol)
+        coin_y_cg_id = self.tokens.get_cg_id_by_name(coin_y_symbol)
+        if coin_x_cg_id is None or coin_y_cg_id is None:
+            logger.error(f"Error while getting CoinGecko IDs for {coin_x_symbol.upper()} and {coin_y_symbol.upper()}")
+            return False
+
+        if config.compare_with_cg_price is True:
+            max_price_difference_percent: Union[float, int] = config.max_price_difference_percent
+            swap_price_validation_data = await self.gecko_pricer.is_target_price_valid(
+                x_token_id=coin_x_cg_id.lower(),
+                y_token_id=coin_y_cg_id.lower(),
+                x_amount=txn_payload_data['amount_x_decimals'],
+                y_amount=txn_payload_data['amount_y_decimals'],
+                max_price_difference_percent=max_price_difference_percent
+            )
+
+            is_price_valid, price_data = swap_price_validation_data
+            if is_price_valid is False:
+                logger.error(f"Swap rate is not valid ({module_name}). "
+                             f"Gecko rate: {price_data['gecko_price']}, "
+                             f"Swap rate: {price_data['target_price']}")
+                return False
+
+            logger.info(f"Swap rate is valid ({module_name}). "
+                        f"Gecko rate: {price_data['gecko_price']}, "
+                        f"Swap rate: {price_data['target_price']}.")
+
+        txn_status = await self.simulate_and_send_transfer_type_transaction(account=account,
+                                                                            calls=txn_payload_data['calls'],
+                                                                            txn_info_message=txn_info_message,
+                                                                            config=config)
+
+        return txn_status
 
     async def simulate_and_send_transfer_type_transaction(self,
                                                           account: Account,

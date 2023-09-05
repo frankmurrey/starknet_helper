@@ -33,4 +33,3 @@ class CustomSession(ClientSession):
             **kwargs,
             proxy=self.proxy
         )
-

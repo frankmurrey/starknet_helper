@@ -16,6 +16,8 @@ PROXY_FILE = os.path.join(MAIN_DIR, "proxy.txt")
 class JediSwapDir:
     _MAIN_DIR = os.path.join(CONTRACTS_DIR, "jediswap")
     ROUTER_ABI_FILE = os.path.join(_MAIN_DIR, "router.abi")
+    FACTORY_ABI_FILE = os.path.join(_MAIN_DIR, "factory.abi")
+    POOL_ABI_FILE = os.path.join(_MAIN_DIR, "pool.abi")
 
 
 class MySwapDir:
@@ -36,7 +38,7 @@ class K10SwapDir:
 class SithSwapDir:
     _MAIN_DIR = os.path.join(CONTRACTS_DIR, "sithswap")
     ROUTER_ABI_FILE = os.path.join(_MAIN_DIR, "router.abi")
-
+    POOL_ABI_FILE = os.path.join(_MAIN_DIR, "pool.abi")
 
 class DmailDir:
     _MAIN_DIR = os.path.join(CONTRACTS_DIR, "dmail")

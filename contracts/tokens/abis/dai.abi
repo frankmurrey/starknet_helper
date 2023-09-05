@@ -1,0 +1,349 @@
+[
+  {
+    "name": "Uint256",
+    "size": 2,
+    "type": "struct",
+    "members": [
+      {
+        "name": "low",
+        "type": "felt",
+        "offset": 0
+      },
+      {
+        "name": "high",
+        "type": "felt",
+        "offset": 1
+      }
+    ]
+  },
+  {
+    "data": [
+      {
+        "name": "user",
+        "type": "felt"
+      }
+    ],
+    "keys": [],
+    "name": "Rely",
+    "type": "event"
+  },
+  {
+    "data": [
+      {
+        "name": "user",
+        "type": "felt"
+      }
+    ],
+    "keys": [],
+    "name": "Deny",
+    "type": "event"
+  },
+  {
+    "data": [
+      {
+        "name": "sender",
+        "type": "felt"
+      },
+      {
+        "name": "recipient",
+        "type": "felt"
+      },
+      {
+        "name": "value",
+        "type": "Uint256"
+      }
+    ],
+    "keys": [],
+    "name": "Transfer",
+    "type": "event"
+  },
+  {
+    "data": [
+      {
+        "name": "owner",
+        "type": "felt"
+      },
+      {
+        "name": "spender",
+        "type": "felt"
+      },
+      {
+        "name": "value",
+        "type": "Uint256"
+      }
+    ],
+    "keys": [],
+    "name": "Approval",
+    "type": "event"
+  },
+  {
+    "name": "decimals",
+    "type": "function",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "res",
+        "type": "felt"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "name": "name",
+    "type": "function",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "res",
+        "type": "felt"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "name": "symbol",
+    "type": "function",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "res",
+        "type": "felt"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "name": "totalSupply",
+    "type": "function",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "res",
+        "type": "Uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "name": "balanceOf",
+    "type": "function",
+    "inputs": [
+      {
+        "name": "user",
+        "type": "felt"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "res",
+        "type": "Uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "name": "allowance",
+    "type": "function",
+    "inputs": [
+      {
+        "name": "owner",
+        "type": "felt"
+      },
+      {
+        "name": "spender",
+        "type": "felt"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "res",
+        "type": "Uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "name": "wards",
+    "type": "function",
+    "inputs": [
+      {
+        "name": "user",
+        "type": "felt"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "res",
+        "type": "felt"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "name": "constructor",
+    "type": "constructor",
+    "inputs": [
+      {
+        "name": "ward",
+        "type": "felt"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "name": "mint",
+    "type": "function",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "felt"
+      },
+      {
+        "name": "amount",
+        "type": "Uint256"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "name": "burn",
+    "type": "function",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "felt"
+      },
+      {
+        "name": "amount",
+        "type": "Uint256"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "name": "rely",
+    "type": "function",
+    "inputs": [
+      {
+        "name": "user",
+        "type": "felt"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "name": "deny",
+    "type": "function",
+    "inputs": [
+      {
+        "name": "user",
+        "type": "felt"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "name": "transfer",
+    "type": "function",
+    "inputs": [
+      {
+        "name": "recipient",
+        "type": "felt"
+      },
+      {
+        "name": "amount",
+        "type": "Uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "res",
+        "type": "felt"
+      }
+    ]
+  },
+  {
+    "name": "transferFrom",
+    "type": "function",
+    "inputs": [
+      {
+        "name": "sender",
+        "type": "felt"
+      },
+      {
+        "name": "recipient",
+        "type": "felt"
+      },
+      {
+        "name": "amount",
+        "type": "Uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "res",
+        "type": "felt"
+      }
+    ]
+  },
+  {
+    "name": "approve",
+    "type": "function",
+    "inputs": [
+      {
+        "name": "spender",
+        "type": "felt"
+      },
+      {
+        "name": "amount",
+        "type": "Uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "res",
+        "type": "felt"
+      }
+    ]
+  },
+  {
+    "name": "increaseAllowance",
+    "type": "function",
+    "inputs": [
+      {
+        "name": "spender",
+        "type": "felt"
+      },
+      {
+        "name": "amount",
+        "type": "Uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "res",
+        "type": "felt"
+      }
+    ]
+  },
+  {
+    "name": "decreaseAllowance",
+    "type": "function",
+    "inputs": [
+      {
+        "name": "spender",
+        "type": "felt"
+      },
+      {
+        "name": "amount",
+        "type": "Uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "res",
+        "type": "felt"
+      }
+    ]
+  }
+]

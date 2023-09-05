@@ -1,4 +1,5 @@
 import random
+from typing import Union
 
 from modules.base import StarkBase
 from src.schemas.configs.avnu import AvnuSwapConfigSchema
@@ -31,9 +32,6 @@ class AvnuSwap(StarkBase):
 
         self.coin_x = self.tokens.get_by_name(self.config.coin_to_swap)
         self.coin_y = self.tokens.get_by_name(self.config.coin_to_receive)
-
-        self.amount_out_decimals = None
-        self.amount_in_decimals = None
 
     async def get_quotes(
             self,
@@ -98,7 +96,7 @@ class AvnuSwap(StarkBase):
 
         return amount_out_wei
 
-    async def build_txn_payload_calls(self):
+    async def build_txn_payload_data(self) -> Union[dict, None]:
         amount_out_wei = await self.get_amount_out_from_balance()
 
         quotes = await self.get_quotes(amount_out_wei=amount_out_wei)
@@ -113,11 +111,12 @@ class AvnuSwap(StarkBase):
         token_x_decimals = await self.get_token_decimals(contract_address=self.coin_x.contract_address,
                                                          abi=self.coin_x.abi,
                                                          provider=self.account)
-        self.amount_out_decimals = amount_out_wei / 10 ** token_x_decimals
+        amount_x_decimals = amount_out_wei / 10 ** token_x_decimals
+
         token_y_decimals = await self.get_token_decimals(contract_address=self.coin_y.contract_address,
                                                          abi=self.coin_y.abi,
                                                          provider=self.account)
-        self.amount_in_decimals = amount_in_wei_with_slippage / 10 ** token_y_decimals
+        amount_y_decimals = amount_in_wei / 10 ** token_y_decimals
 
         approve_call = self.build_token_approve_call(token_addr=self.coin_x.contract_address,
                                                      spender=hex(self.router_contract.address),
@@ -145,20 +144,21 @@ class AvnuSwap(StarkBase):
 
         calls = [approve_call, swap_call]
 
-        return calls
+        return {
+            'calls': calls,
+            'amount_x_decimals': amount_x_decimals,
+            'amount_y_decimals': amount_y_decimals,
+        }
 
     async def send_swap_txn(self):
-        txn_payload_calls = await self.build_txn_payload_calls()
-        if txn_payload_calls is None:
+        txn_payload_data = await self.build_txn_payload_data()
+        if txn_payload_data is None:
             return False
 
-        txn_info_message = (f"Swap (Avnu) | {round(self.amount_out_decimals, 4)} ({self.coin_x.symbol.upper()}) -> "
-                            f"{round(self.amount_in_decimals, 4)} ({self.coin_y.symbol.upper()}). "
-                            f"Slippage: {self.config.slippage}%.")
-
-        txn_status = await self.simulate_and_send_transfer_type_transaction(account=self.account,
-                                                                            calls=txn_payload_calls,
-                                                                            txn_info_message=txn_info_message,
-                                                                            config=self.config)
+        txn_status = await self.send_swap_type_txn(
+            account=self.account,
+            config=self.config,
+            txn_payload_data=txn_payload_data
+        )
 
         return txn_status

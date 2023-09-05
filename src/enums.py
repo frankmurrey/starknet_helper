@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class ModuleType(Enum):
+class ModuleType(str, Enum):
     SWAP = "swap"
     MINT = 'mint'
     SUPPLY = 'supply'

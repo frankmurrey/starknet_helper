@@ -1,3 +1,5 @@
+import config
+
 from enum import Enum
 
 from colorama import Fore, Back, Style
@@ -5,6 +7,7 @@ from colorama import Fore, Back, Style
 from src.schemas.configs.base import CommonSettingsBase
 from src.schemas.configs.deploy import DeployArgentConfigSchema
 from utlis.repr.misc import Symbol
+from utlis.repr.misc import AsciiPrints
 from utlis.repr.misc import COLOR_LENGTH
 from utlis.repr.misc import MODULE_NAME_MAX_LENGTH
 
@@ -17,7 +20,6 @@ class Colors:
 
     CONFIG_KEY_COLOR = Fore.LIGHTMAGENTA_EX
     CONFIG_VALUE_COLOR = Fore.LIGHTCYAN_EX
-
 
 
 def get_border_top(width: int) -> str:
@@ -139,7 +141,10 @@ def print_module_config(module_config: CommonSettingsBase):
     repr_strings.insert(0, Style.BRIGHT)
     repr_strings.append(Style.BRIGHT)
 
+    print(f"{Fore.LIGHTMAGENTA_EX}{AsciiPrints.pre_config_1}{Fore.RESET}")
     print(*repr_strings, sep="\n")
+    print(f"{Fore.LIGHTMAGENTA_EX}Made by Frank Murrey - https://github.com/frankmurrey{Fore.RESET}")
+    print(f"{Fore.LIGHTMAGENTA_EX}Starting in {config.DEFAULT_DELAY_SEC} sec...{Fore.RESET}")
 
 
 if __name__ == '__main__':
@@ -155,3 +160,5 @@ if __name__ == '__main__':
         wait_for_receipt=True,
         txn_wait_timeout_sec=120,
     )
+
+    print_module_config(cfg_j)

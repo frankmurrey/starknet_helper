@@ -16,12 +16,31 @@ def calculate_price_impact(reserve_in,
     return amount_in / (reserve_in + amount_in)
 
 
+def calc_output_burn_liquidity(reserve_x,
+                               reserve_y,
+                               lp_supply,
+                               to_burn) -> tuple:
+    x_return = to_burn * reserve_x / lp_supply
+    y_return = to_burn * reserve_y / lp_supply
+
+    return x_return, y_return
+
+
 if __name__ == '__main__':
-    amt_out = int(1e13)
-    res_x = 329114913443
-    resy = 327959969505
+    amt_out = 100000
+    res_x = 614114447961
+    resy = 581493852783
     out = get_amount_in_from_reserves(amount_out=amt_out,
                                       reserve_x=res_x,
                                       reserve_y=resy)
-    print(calculate_price_impact(reserve_in=res_x,
-                                 amount_in=amt_out))
+    print(out)
+
+    lp_res_x = 615837552064
+    lp_res_y = 579770161207
+    to_burn = 88858
+    lp_supply = 360596804969
+
+    x, y = calc_output_burn_liquidity(reserve_x=lp_res_x,
+                                      reserve_y=lp_res_y,
+                                      lp_supply=lp_supply,
+                                      to_burn=to_burn)

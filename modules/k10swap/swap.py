@@ -1,5 +1,6 @@
 import time
 import random
+from typing import Union
 
 from contracts.tokens.main import Tokens
 from contracts.k10swap.main import K10SwapContracts
@@ -34,9 +35,6 @@ class K10Swap(StarkBase):
         self.coin_x = self.tokens.get_by_name(self.config.coin_to_swap)
         self.coin_y = self.tokens.get_by_name(self.config.coin_to_receive)
 
-        self.amount_out_decimals = None
-        self.amount_in_decimals = None
-
     async def get_amount_out_from_balance(self):
         wallet_token_balance_wei = await self.get_token_balance(token_address=self.coin_x.contract_address,
                                                                 account=self.account)
@@ -70,7 +68,6 @@ class K10Swap(StarkBase):
                 decimals=token_decimals
             )
 
-        self.amount_out_decimals = amount_out_wei / 10 ** token_decimals
         return amount_out_wei
 
     async def get_amount_in(self,
@@ -84,37 +81,41 @@ class K10Swap(StarkBase):
                 path
             )
 
-            decimals = await self.get_token_decimals(contract_address=self.coin_y.contract_address,
-                                                     abi=self.coin_x.abi,
-                                                     provider=self.account)
-            self.amount_in_decimals = (amounts_out.amounts[1] / 10 ** decimals) * (1 - (self.config.slippage / 100))
             return amounts_out
 
         except Exception as e:
             logger.error(f'Error while getting amount in: {e}')
             return None
 
-    async def build_txn_payload_calls(self):
-        amount_out_wei = await self.get_amount_out_from_balance()
+    async def build_txn_payload_data(self) -> Union[dict, None]:
+        amount_x_wei = await self.get_amount_out_from_balance()
+        coin_x_decimals = await self.get_token_decimals(contract_address=self.coin_x.contract_address,
+                                                        abi=self.coin_x.abi,
+                                                        provider=self.account)
+        amount_x_decimals = amount_x_wei / 10 ** coin_x_decimals
 
-        if amount_out_wei is None:
+        if amount_x_wei is None:
             return None
 
-        amounts_in_wei = await self.get_amount_in(amount_out_wei)
+        amounts_in_wei = await self.get_amount_in(amount_x_wei)
         if amounts_in_wei is None:
             return None
 
-        amount_in = amounts_in_wei.amounts[1]
-        amount_in_wei_with_slippage = int(amount_in * (1 - (self.config.slippage / 100)))
+        amount_y_wei = amounts_in_wei.amounts[1]
+        amount_in_wei_with_slippage = int(amount_y_wei * (1 - (self.config.slippage / 100)))
+        coin_y_decimals = await self.get_token_decimals(contract_address=self.coin_y.contract_address,
+                                                        abi=self.coin_y.abi,
+                                                        provider=self.account)
+        amount_y_decimals = amount_y_wei / 10 ** coin_y_decimals
 
         approve_call = self.build_token_approve_call(token_addr=self.coin_x.contract_address,
                                                      spender=hex(self.router_contract.address),
-                                                     amount_wei=int(amount_out_wei))
+                                                     amount_wei=int(amount_x_wei))
 
         swap_deadline = int(time.time() + 1000)
         swap_call = self.build_call(to_addr=self.router_contract.address,
                                     func_name='swapExactTokensForTokens',
-                                    call_data=[amount_out_wei,
+                                    call_data=[amount_x_wei,
                                                0,
                                                amount_in_wei_with_slippage,
                                                0,
@@ -124,20 +125,22 @@ class K10Swap(StarkBase):
                                                self.account.address,
                                                swap_deadline])
         calls = [approve_call, swap_call]
-        return calls
+
+        return {
+            'calls': calls,
+            'amount_x_decimals': amount_x_decimals,
+            'amount_y_decimals': amount_y_decimals,
+        }
 
     async def send_swap_txn(self):
-        txn_payload_calls = await self.build_txn_payload_calls()
-        if txn_payload_calls is None:
+        txn_payload_data = await self.build_txn_payload_data()
+        if txn_payload_data is None:
             return False
 
-        txn_info_message = (f"Swap (10KSwap) | {round(self.amount_out_decimals, 4)} ({self.coin_x.symbol.upper()}) -> "
-                            f"{round(self.amount_in_decimals, 4)} ({self.coin_y.symbol.upper()}). "
-                            f"Slippage: {self.config.slippage}%.") \
-
-        txn_status = await self.simulate_and_send_transfer_type_transaction(account=self.account,
-                                                                            calls=txn_payload_calls,
-                                                                            txn_info_message=txn_info_message,
-                                                                            config=self.config)
+        txn_status = await self.send_swap_type_txn(
+            account=self.account,
+            config=self.config,
+            txn_payload_data=txn_payload_data
+        )
 
         return txn_status

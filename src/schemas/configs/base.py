@@ -26,6 +26,8 @@ class SwapSettingsBase(CommonSettingsBase):
     max_amount_out: Union[int, float, str] = 0
     use_all_balance: Union[bool, str] = False
     send_percent_balance: Union[bool, str] = False
+    max_price_difference_percent: Union[int, float, str] = 2
+    compare_with_cg_price: Union[bool, str] = True
     slippage: Union[int, float, str] = 0
 
 
@@ -40,3 +42,19 @@ class SupplySettingsBase(CommonSettingsBase):
 
 class WithdrawSettingsBase(CommonSettingsBase):
     coin_to_withdraw: Union[str, None] = ""
+
+
+class AddLiquiditySettingsBase(CommonSettingsBase):
+    coin_x: Union[str, None] = ""
+    coin_y: Union[str, None] = ""
+    min_amount_out_x: Union[int, float, str] = 0
+    max_amount_out_x: Union[int, float, str] = 0
+    use_all_balance_x: Union[bool, str] = False
+    send_percent_balance_x: Union[bool, str] = False
+    slippage: Union[int, float, str] = 0
+
+
+class RemoveLiquiditySettingsBase(CommonSettingsBase):
+    coin_x: Union[str, None] = ""
+    coin_y: Union[str, None] = ""
+    slippage: Union[int, float, str] = 0

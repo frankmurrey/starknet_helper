@@ -16,7 +16,7 @@ from starknet_py.net.account.account import Account
 class SithSwapAddLiquidity(SithBase):
     def __init__(self,
                  account,
-                 config: SithSwapAddLiquidityConfigSchema):
+                 config):
         super().__init__(account=account)
 
         self.config: SithSwapAddLiquidityConfigSchema = config
@@ -174,7 +174,7 @@ class SithSwapAddLiquidity(SithBase):
 class SithSwapRemoveLiquidity(SithBase):
     def __init__(self,
                  account,
-                 config: SithSwapRemoveLiquidityConfigSchema):
+                 config):
         super().__init__(account=account)
 
         self.config: SithSwapRemoveLiquidityConfigSchema = config

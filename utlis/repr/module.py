@@ -144,7 +144,7 @@ def print_module_config(module_config: CommonSettingsBase):
     print(f"{Fore.LIGHTMAGENTA_EX}{AsciiPrints.pre_config_1}{Fore.RESET}")
     print(*repr_strings, sep="\n")
     print(f"{Fore.LIGHTMAGENTA_EX}Made by Frank Murrey - https://github.com/frankmurrey{Fore.RESET}")
-    print(f"{Fore.LIGHTMAGENTA_EX}Starting in {config.DEFAULT_DELAY_SEC} sec...{Fore.RESET}")
+    print(f"{Fore.LIGHTMAGENTA_EX}Starting in {config.DEFAULT_DELAY_SEC} sec...{Fore.RESET}\n")
 
 
 if __name__ == '__main__':

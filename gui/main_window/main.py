@@ -4,6 +4,9 @@ import webbrowser
 from utlis.file_manager import FileManager
 from src.storage import Storage
 from src import paths
+from gui.main_window.frames import SidebarFrame
+from gui.wallet_window.main import WalletsFrame
+from gui.wallet_window.frames import WalletTableTop
 
 from tkinter import messagebox, filedialog
 from PIL import Image
@@ -19,93 +22,51 @@ class MainWindow(customtkinter.CTk):
         super().__init__()
         self.title("StarkNet Helper by @frankmurrey")
 
-        self.geometry(f"{700}x{900}+100+100")
+        self.geometry(f"{1280}x{720}+100+100")
 
-        self.sidebar_frame = customtkinter.CTkFrame(
-            self,
-            width=150,
-            corner_radius=0
-        )
-        self.sidebar_frame.grid(row=0,
-                                column=0,
-                                rowspan=4,
-                                sticky="nsew"
-                                )
-        self.sidebar_frame.grid_rowconfigure(
-            7,
-            weight=1
-        )
-        logo_image = customtkinter.CTkImage(
-            light_image=Image.open(paths.LIGHT_MODE_LOGO_IMG),
-            dark_image=Image.open(paths.DARK_MODE_LOGO_IMG),
-            size=(150, 85)
-        )
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(1, weight=1)
+        self.sidebar_frame = SidebarFrame(self)
+        self.sidebar_frame.grid(row=0, column=0, sticky="nsew")
 
-        self.logo_label = customtkinter.CTkLabel(
-            self.sidebar_frame,
-            image=logo_image,
-            text=""
-        )
-        self.logo_label.grid(
-            row=0,
-            column=0,
-            padx=20,
-            pady=(20, 10)
-        )
+        self.right_frame = customtkinter.CTkFrame(self)
+        self.right_frame.grid(row=0, column=1, sticky="nsew", padx=20, pady=20)
 
-        self.tabview = customtkinter.CTkTabview(
-            self,
-            width=400,
-            height=840,
-            bg_color="transparent"
-        )
+        self.right_frame.grid_columnconfigure(0, weight=1)
+        self.right_frame.grid_rowconfigure((0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10), weight=1)
 
-        self.appearance_mode_label = customtkinter.CTkLabel(
-            self.sidebar_frame,
-            text="Appearance Mode:",
-            anchor="w")
-        self.appearance_mode_label.grid(
-            row=9,
-            column=0,
-            padx=20,
-            pady=(0, 75)
-        )
-        self.appearance_mode_optionemenu = customtkinter.CTkOptionMenu(
-            self.sidebar_frame,
-            values=["Light", "Dark", "System"],
-            command=self.change_appearance_mode_event
-        )
-        self.appearance_mode_optionemenu.grid(
-            row=9,
-            column=0,
-            padx=20,
-            pady=(0, 20)
-        )
+        table_grid = {
+            "row": 0,
+            "column": 0,
+            "padx": 20,
+            "pady": (0, 0),
+            "sticky": "ew"
+        }
+        self.table_frame = WalletTableTop(master=self.right_frame,
+                                          grid=table_grid)
 
-        link_font = customtkinter.CTkFont(
-            size=12,
-            underline=True
-        )
-        self.github_button = customtkinter.CTkButton(
-            self.sidebar_frame,
-            text="Github origin",
-            font=link_font,
-            width=140,
-            anchor="c",
-            text_color="grey",
-            fg_color='transparent',
-            hover=False,
-            command=self.open_github
-        )
-        self.github_button.grid(
-            row=9,
-            column=0,
-            padx=20,
-            pady=(40, 0)
-        )
+        self.wallet_frame = WalletsFrame(
+            self.right_frame)
 
-    def change_appearance_mode_event(self, new_appearance_mode: str):
-        customtkinter.set_appearance_mode(new_appearance_mode)
+        self.upload_button = customtkinter.CTkButton(
+            self.right_frame,
+            text="Upload",
+            font=customtkinter.CTkFont(size=12, weight="bold"),
+            width=70,
+            height=30
+        )
+        self.upload_button.grid(row=8, column=0, padx=20, pady=10, sticky="wn")
 
-    def open_github(self):
-        webbrowser.open("https://github.com/frankmurrey/aptos_drop_helper")
+        self.remove_button = customtkinter.CTkButton(
+            self.right_frame,
+            text="Remove",
+            font=customtkinter.CTkFont(size=12, weight="bold"),
+            fg_color="#cc0000",
+            hover_color="#5e1914",
+            width=70,
+            height=30
+        )
+        self.remove_button.grid(row=8, column=0, padx=100, pady=10, sticky="wn")
+
+
+

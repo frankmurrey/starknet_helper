@@ -162,4 +162,5 @@ tests/test.py
 *.json
 *.yaml
 *.yml
+*.xlsx
 tests/

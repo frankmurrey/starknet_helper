@@ -10,6 +10,7 @@ class ModuleType(str, Enum):
     LIQUIDITY_ADD = "liquidity_add"
     LIQUIDITY_REMOVE = "liquidity_remove"
     SEND_MAIL = 'send_mail'
+    TEST = 'test'
 
 
 class ModuleName(str, Enum):
@@ -22,8 +23,9 @@ class ModuleName(str, Enum):
     SITHSWAP = 'sithswap'
     AVNU = 'avnu'
     ZKLEND = 'zklend'
+    TEST = 'test'
 
 
-class PrivateKeyType(Enum):
+class PrivateKeyType(str, Enum):
     argent = "argent"
     braavos = "braavos"

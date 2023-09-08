@@ -8,9 +8,7 @@ from src import enums
 class CommonSettingsBase(BaseModel):
     module_type: enums.ModuleType
     module_name: enums.ModuleName
-
-    gas_price: Union[int, str] = 0
-    gas_limit: Union[int, str] = 0
+    max_fee: Union[int, float, str] = 0
     forced_gas_limit: Union[bool, str] = False
     wait_for_receipt: Union[bool, str] = False
     txn_wait_timeout_sec: Union[int, str] = 60

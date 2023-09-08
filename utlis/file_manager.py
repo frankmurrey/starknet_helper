@@ -1,15 +1,13 @@
 import os
 import json
 from typing import Union, List
-
-from loguru import logger
+from datetime import datetime
 
 from src import paths
-from src.schemas.proxy_data import ProxyData
-from src.schemas.wallet_data import WalletData
-
-import config
 from src.wallet_manager import WalletManager
+
+import csv
+from loguru import logger
 
 
 class FileManager:
@@ -97,3 +95,35 @@ class FileManager:
         except Exception as e:
             logger.error(f"Error while writing file \"{file_path}\": {e}")
             logger.exception(e)
+
+    @staticmethod
+    def create_new_logs_dir(dir_name_suffix=None):
+        if os.path.exists(paths.LOGS_DIR) is False:
+            os.mkdir(paths.LOGS_DIR)
+            logger.info(f"Creating logs dir in \"{paths.LOGS_DIR}\"")
+
+        date_time = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+        if dir_name_suffix:
+            dir_name = f"log_{dir_name_suffix}_{date_time}"
+        else:
+            dir_name = f"log_{date_time}"
+
+        new_logs_dir = f"{paths.LOGS_DIR}\\{dir_name}"
+        os.mkdir(new_logs_dir)
+
+        if not os.path.exists(new_logs_dir):
+            return
+        return new_logs_dir
+
+    @staticmethod
+    def write_data_to_csv(path,
+                          file_name,
+                          data: list):
+        if not os.path.exists(path):
+            logger.error(f"Path \"{path}\" does not exist")
+            return
+
+        file_path = f"{path}\\{file_name}"
+        with open(file_path, "a", newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(data)

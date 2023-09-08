@@ -1,3 +1,4 @@
+from src.storage import ActionStorage
 import pandas as pd
 from loguru import logger
 
@@ -25,3 +26,36 @@ def write_balance_data_to_xlsx(path,
         logger.warning(f"Balance data saved to {path}")
     except Exception as e:
         logger.error(f"Error while saving balance data to {path}: {e}")
+
+
+def write_wallet_action_to_xlsx():
+    action_storage = ActionStorage()
+    action = action_storage.get_current_action()
+
+    if not action:
+        return
+    try:
+        data = {
+            "Wallet Address": [],
+            "Proxy": [],
+            "Date Time": [],
+            "Action Type": [],
+            "Is Success": [],
+            "Transaction Hash": [],
+            "Status": []
+        }
+
+        data["Wallet Address"].append(action.wallet_address)
+        data["Proxy"].append(action.proxy)
+        data["Date Time"].append(action.date_time)
+        data["Action Type"].append(action.action_type)
+        data["Is Success"].append(action.is_success)
+        data["Transaction Hash"].append(action.transaction_hash)
+        data["Status"].append(action.status)
+
+        df = pd.DataFrame(data)
+        df.to_excel(f"{action_storage.get_current_logs_dir()}\\!all_logs.xlsx", index=False)
+
+    except Exception as e:
+        logger.error(f"Error while logging all actions to xlsx: {e}")
+        return

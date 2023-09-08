@@ -42,6 +42,7 @@ class WalletsFrame(customtkinter.CTkScrollableFrame):
             proxy=proxy,
             type="Argent"
         )
+        all_wallet_items = []
         for i in range(4):
             wallet_item_grid = {
                 "row": start_row + 1 + i,
@@ -55,3 +56,15 @@ class WalletsFrame(customtkinter.CTkScrollableFrame):
                                           grid=wallet_item_grid,
                                           wallet_data=wallet_item,
                                           name=f"Wallet {i + 1}")
+            all_wallet_items.append(self.wallet_item)
+
+        table_grid = {
+            "row": 0,
+            "column": 0,
+            "padx": 20,
+            "pady": (0, 0),
+            "sticky": "ew"
+        }
+        self.table_frame = WalletTableTop(master=master,
+                                          grid=table_grid,
+                                          wallet_items=all_wallet_items)

@@ -121,8 +121,11 @@ class WalletItem(customtkinter.CTkFrame):
 class WalletTableTop(customtkinter.CTkFrame):
     def __init__(self,
                  master,
-                 grid):
+                 grid,
+                 wallet_items: list):
         super().__init__(master)
+
+        self.wallet_items = wallet_items
 
         self.frame = customtkinter.CTkFrame(master)
         self.frame.grid(**grid)
@@ -135,7 +138,8 @@ class WalletTableTop(customtkinter.CTkFrame):
             checkbox_width=20,
             checkbox_height=20,
             onvalue=True,
-            offvalue=False
+            offvalue=False,
+            command=self.select_all_checkbox_event
         )
 
         pad_x = 50
@@ -210,6 +214,18 @@ class WalletTableTop(customtkinter.CTkFrame):
             pady=pad_y,
             sticky="w"
         )
+
+    def select_all_checkbox_event(self):
+        checkbox_value = self.chose_all_checkbox.get()
+        if checkbox_value:
+            for wallet in self.wallet_items:
+                wallet.chose_checkbox.select()
+
+        else:
+            for wallet in self.wallet_items:
+                wallet.chose_checkbox.deselect()
+
+
 
 
 

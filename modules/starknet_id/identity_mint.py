@@ -18,7 +18,7 @@ class IdentityMint(StarkBase):
 
     def __init__(self,
                  account,
-                 config: IdentityMintConfigSchema):
+                 config):
         super().__init__(client=account.client)
 
         self.account = account

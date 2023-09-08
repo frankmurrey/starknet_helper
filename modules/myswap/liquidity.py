@@ -13,7 +13,7 @@ from loguru import logger
 class MySwapAddLiquidity(MySwapBase):
     def __init__(self,
                  account,
-                 config: MySwapAddLiquidityConfigSchema):
+                 config):
         super().__init__(account=account)
 
         self.config = config
@@ -174,7 +174,7 @@ class MySwapAddLiquidity(MySwapBase):
 class MySwapRemoveLiquidity(MySwapBase):
     def __init__(self,
                  account,
-                 config: MySwapRemoveLiquidityConfigSchema):
+                 config):
         super().__init__(account=account)
 
         self.account = account

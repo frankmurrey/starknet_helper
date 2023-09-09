@@ -99,8 +99,6 @@ class WalletsTableTop(customtkinter.CTkFrame):
         )
 
     def select_all_checkbox_event(self):
-        print(self.wallet_items)
-
         checkbox_value = self.chose_all_checkbox.get()
         if checkbox_value:
             for wallet in self.wallet_items:

@@ -1,6 +1,6 @@
 from src import enums
 
-from src.schemas.configs.base import SwapSettingsBase
+from src.schemas.configs.transaction_settings_base import SwapSettingsBase
 
 
 class TestConfigSchema(SwapSettingsBase):

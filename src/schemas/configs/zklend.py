@@ -1,5 +1,5 @@
-from src.schemas.configs.base import SupplySettingsBase
-from src.schemas.configs.base import WithdrawSettingsBase
+from src.schemas.configs.transaction_settings_base import SupplySettingsBase
+from src.schemas.configs.transaction_settings_base import WithdrawSettingsBase
 
 from src import enums
 

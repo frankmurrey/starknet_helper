@@ -1,3 +1,5 @@
+from gui.modules.swap import SwapTab
+
 import customtkinter
 
 
@@ -16,30 +18,25 @@ class ModulesFrame(customtkinter.CTkFrame):
             padx=20,
             pady=20,
             sticky="nsew")
-        self.frame.grid_rowconfigure((0, 1, 2, 3, 4, 5, 6, 7, 8), weight=1)
+        self.frame.grid_rowconfigure(0, weight=1)
 
-        # self.frame_label = customtkinter.CTkLabel(
-        #     self.frame,
-        #     text="Modules:",
-        #     font=customtkinter.CTkFont(size=16, weight="bold")
-        # )
-        # self.frame_label.grid(
-        #     row=0,
-        #     column=0,
-        #     padx=20,
-        #     pady=0,
-        #     sticky="w"
-        # )
-
-        self.tabview = customtkinter.CTkTabview(self.frame, width=350)
+        self.tabview = customtkinter.CTkTabview(self.frame, width=300)
         self.tabview.grid(
             row=0,
             column=0,
             padx=20,
-            pady=0,
+            pady=20,
             sticky="nsew",
             rowspan=7
         )
+        self.tabview.grid_columnconfigure(0, weight=1)
+        self.set_default_tab()
 
-
-
+    def set_default_tab(self):
+        tab_name = "Swap"
+        self.tabview.add(tab_name)
+        self.tabview.set(tab_name)
+        SwapTab(
+            self.tabview,
+            tab_name
+        )

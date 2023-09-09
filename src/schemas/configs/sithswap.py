@@ -1,6 +1,6 @@
-from src.schemas.configs.base import SwapSettingsBase
-from src.schemas.configs.base import AddLiquiditySettingsBase
-from src.schemas.configs.base import RemoveLiquiditySettingsBase
+from src.schemas.configs.transaction_settings_base import SwapSettingsBase
+from src.schemas.configs.transaction_settings_base import AddLiquiditySettingsBase
+from src.schemas.configs.transaction_settings_base import RemoveLiquiditySettingsBase
 
 from src import enums
 

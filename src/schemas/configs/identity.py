@@ -1,4 +1,4 @@
-from src.schemas.configs.base import CommonSettingsBase
+from src.schemas.configs.transaction_settings_base import CommonSettingsBase
 
 from src import enums
 

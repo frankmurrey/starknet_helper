@@ -4,7 +4,7 @@ from enum import Enum
 
 from colorama import Fore, Back, Style
 
-from src.schemas.configs.base import CommonSettingsBase
+from src.schemas.configs.transaction_settings_base import TransactionSettingsBase
 from src.schemas.configs.deploy import DeployArgentConfigSchema
 from utlis.repr.misc import Symbol
 from utlis.repr.misc import AsciiPrints
@@ -87,15 +87,15 @@ def get_max_width(max_key_width: int, max_value_width: int) -> int:
     return 2 + max_key_width + 5 + max_value_width + 2
 
 
-def print_module_config(module_config: CommonSettingsBase):
+def print_module_config(module_config: TransactionSettingsBase):
 
     repr_strings = []
 
-    max_key_width = max(len(key) for key in module_config.model_dump(exclude={"module_name"}).keys())
-    max_value_width = max(len(str(value)) for value in module_config.model_dump(exclude={"module_name"}).values())
+    max_key_width = max(len(key) for key in module_config.dict(exclude={"module_name"}).keys())
+    max_value_width = max(len(str(value)) for value in module_config.dict(exclude={"module_name"}).values())
     max_width = get_max_width(max_key_width, max_value_width)
 
-    for key, value in module_config.model_dump(exclude={"module_name"}).items():
+    for key, value in module_config.dict(exclude={"module_name"}).items():
         key_width = max_key_width
         value_width = max_value_width
 

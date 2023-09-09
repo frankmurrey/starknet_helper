@@ -1,0 +1,4 @@
+import tkinter
+
+
+class SwapsTab

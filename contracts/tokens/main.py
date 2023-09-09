@@ -48,12 +48,21 @@ class Tokens:
         logger.error(f"Token {name_query} not found")
         return None
 
-    def get_jedi_available_tokens(self):
+    def get_cg_id_by_name(self, name_query):
+        for token in self.all_tokens:
+            if token.symbol.lower() == name_query.lower():
+                return token.coin_gecko_id
+        logger.error(f"Token {name_query} not found")
+        return None
+
+    @property
+    def jedi_available_tokens(self):
         return [token for token in self.all_tokens if token.is_jedi_available]
 
-    def get_my_swap_available_tokens(self):
+    @property
+    def my_swap_available_tokens(self):
         return [token for token in self.all_tokens if token.is_my_swap_available]
 
-
-if __name__ == '__main__':
-    print(Tokens().get_by_name(name_query='eth'))
+    @property
+    def all_gecko_available_tokens(self):
+        return [token for token in self.all_tokens if token.coin_gecko_id]

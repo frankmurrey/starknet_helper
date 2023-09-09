@@ -1,0 +1,252 @@
+[
+  {
+    "name": "Uint256",
+    "size": 2,
+    "type": "struct",
+    "members": [
+      {
+        "name": "low",
+        "type": "felt",
+        "offset": 0
+      },
+      {
+        "name": "high",
+        "type": "felt",
+        "offset": 1
+      }
+    ]
+  },
+  {
+    "name": "Route",
+    "size": 4,
+    "type": "struct",
+    "members": [
+      {
+        "name": "token_from",
+        "type": "felt",
+        "offset": 0
+      },
+      {
+        "name": "token_to",
+        "type": "felt",
+        "offset": 1
+      },
+      {
+        "name": "exchange_address",
+        "type": "felt",
+        "offset": 2
+      },
+      {
+        "name": "percent",
+        "type": "felt",
+        "offset": 3
+      }
+    ]
+  },
+  {
+    "data": [
+      {
+        "name": "previousOwner",
+        "type": "felt"
+      },
+      {
+        "name": "newOwner",
+        "type": "felt"
+      }
+    ],
+    "keys": [],
+    "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "data": [
+      {
+        "name": "implementation",
+        "type": "felt"
+      }
+    ],
+    "keys": [],
+    "name": "Upgraded",
+    "type": "event"
+  },
+  {
+    "data": [
+      {
+        "name": "previousAdmin",
+        "type": "felt"
+      },
+      {
+        "name": "newAdmin",
+        "type": "felt"
+      }
+    ],
+    "keys": [],
+    "name": "AdminChanged",
+    "type": "event"
+  },
+  {
+    "data": [
+      {
+        "name": "taker_address",
+        "type": "felt"
+      },
+      {
+        "name": "sell_address",
+        "type": "felt"
+      },
+      {
+        "name": "sell_amount",
+        "type": "felt"
+      },
+      {
+        "name": "buy_address",
+        "type": "felt"
+      },
+      {
+        "name": "buy_amount",
+        "type": "felt"
+      },
+      {
+        "name": "beneficiary",
+        "type": "felt"
+      }
+    ],
+    "keys": [],
+    "name": "Swap",
+    "type": "event"
+  },
+  {
+    "name": "initializer",
+    "type": "function",
+    "inputs": [
+      {
+        "name": "owner",
+        "type": "felt"
+      },
+      {
+        "name": "fee_collector_address",
+        "type": "felt"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "name": "getName",
+    "type": "function",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "name",
+        "type": "felt"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "name": "getAdapterClassHash",
+    "type": "function",
+    "inputs": [
+      {
+        "name": "exchange_address",
+        "type": "felt"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "adapter_class_hash",
+        "type": "felt"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "name": "getFeeCollectorAddress",
+    "type": "function",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "fee_collector_address",
+        "type": "felt"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "name": "multi_route_swap",
+    "type": "function",
+    "inputs": [
+      {
+        "name": "token_from_address",
+        "type": "felt"
+      },
+      {
+        "name": "token_from_amount",
+        "type": "Uint256"
+      },
+      {
+        "name": "token_to_address",
+        "type": "felt"
+      },
+      {
+        "name": "token_to_amount",
+        "type": "Uint256"
+      },
+      {
+        "name": "token_to_min_amount",
+        "type": "Uint256"
+      },
+      {
+        "name": "beneficiary",
+        "type": "felt"
+      },
+      {
+        "name": "integrator_fee_amount_bps",
+        "type": "felt"
+      },
+      {
+        "name": "integrator_fee_recipient",
+        "type": "felt"
+      },
+      {
+        "name": "routes_len",
+        "type": "felt"
+      },
+      {
+        "name": "routes",
+        "type": "Route*"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "success",
+        "type": "felt"
+      }
+    ]
+  },
+  {
+    "name": "setAdapterClassHash",
+    "type": "function",
+    "inputs": [
+      {
+        "name": "exchange_address",
+        "type": "felt"
+      },
+      {
+        "name": "adapter_class_hash",
+        "type": "felt"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "name": "setFeeCollectorAddress",
+    "type": "function",
+    "inputs": [
+      {
+        "name": "new_fee_collector_address",
+        "type": "felt"
+      }
+    ],
+    "outputs": []
+  }
+]

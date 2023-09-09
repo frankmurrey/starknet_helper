@@ -1,14 +1,20 @@
-from typing import Union
+from src.schemas.configs.base import SwapSettingsBase
+from src.schemas.configs.base import AddLiquiditySettingsBase
+from src.schemas.configs.base import RemoveLiquiditySettingsBase
 
-from src.schemas.configs.base import CommonSettingsBase
+from src import enums
 
 
-class MySwapConfigSchema(CommonSettingsBase):
-    module_name: str = 'myswap_swap'
-    coin_to_swap: Union[str, None] = ""
-    coin_to_receive: Union[str, None] = ""
-    min_amount_out: Union[int, float, str] = 0
-    max_amount_out: Union[int, float, str] = 0
-    use_all_balance: Union[bool, str] = False
-    send_percent_balance: Union[bool, str] = False
-    slippage: Union[int, float, str] = 0
+class MySwapConfigSchema(SwapSettingsBase):
+    module_name: enums.ModuleName = enums.ModuleName.MY_SWAP
+    module_type: enums.ModuleType = enums.ModuleType.SWAP
+
+
+class MySwapAddLiquidityConfigSchema(AddLiquiditySettingsBase):
+    module_name: enums.ModuleName = enums.ModuleName.MY_SWAP
+    module_type: enums.ModuleType = enums.ModuleType.LIQUIDITY_ADD
+
+
+class MySwapRemoveLiquidityConfigSchema(RemoveLiquiditySettingsBase):
+    module_name: enums.ModuleName = enums.ModuleName.MY_SWAP
+    module_type: enums.ModuleType = enums.ModuleType.LIQUIDITY_REMOVE

@@ -1,13 +1,15 @@
 import os
 import json
-from typing import Union, List
+from typing import Union, List, Dict, Any
 from datetime import datetime
+
+import csv
+import numpy as np
+import pandas as pd
+from loguru import logger
 
 from src import paths
 from src.wallet_manager import WalletManager
-
-import csv
-from loguru import logger
 
 
 class FileManager:
@@ -78,13 +80,14 @@ class FileManager:
             return None
 
     @staticmethod
+    def read_data_from_csv_file(filepath: str) -> Union[List[Dict[str, Any]], None]:
+        df = pd.read_csv(filepath, sep=";")
+        df = df.replace(np.nan, None)
+        return df.to_dict(orient="records")
+
+    @staticmethod
     def get_wallets_from_files():
-        stark_wallets_data = FileManager.read_data_from_txt_file(paths.STARK_WALLETS_FILE)
-        evm_addresses_data = FileManager.read_data_from_txt_file(paths.EVM_ADDRESSES_FILE)
-        proxy_data = FileManager.read_data_from_txt_file(paths.PROXY_FILE)
-        return WalletManager.get_wallets(aptos_wallets_data=stark_wallets_data,
-                                         evm_addresses_data=evm_addresses_data,
-                                         proxy_data=proxy_data)
+        raise NotImplementedError
 
     @staticmethod
     def write_data_to_json_file(file_path: str, data: Union[dict, list]) -> None:

@@ -1,70 +1,95 @@
-from gui.wallet_window.frames import WalletItem
-from gui.wallet_window.frames import WalletTableTop
-from src.schemas.wallet_data import WalletData
-from src.schemas.wallet_data import ProxyData
+import tkinter.messagebox
+import tkinter.filedialog
 
 import customtkinter
 
+from gui.wallet_window.wallets_table import WalletsTable
 
-class WalletsFrame(customtkinter.CTkScrollableFrame):
-    def __init__(
-            self,
-            master,
-            **kwargs):
+from src.wallet_manager import WalletManager
+from utlis.file_manager import FileManager
+from src import paths
+
+
+class WalletsWindow(customtkinter.CTkFrame):
+    def __init__(self, master: any, **kwargs):
         super().__init__(master, **kwargs)
 
-        self.frame = customtkinter.CTkScrollableFrame(master)
-        self.frame.grid(
-            row=1,
-            column=0,
-            padx=20,
-            pady=0,
-            sticky="nsew",
-            rowspan=7
+        self.grid(row=0, column=1, sticky="nsew", padx=20, pady=20)
+
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure((0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10), weight=1)
+
+        self.wallets_table = WalletsTable(self)
+
+        self.import_button = customtkinter.CTkButton(
+            self,
+            text="Import",
+            font=customtkinter.CTkFont(size=12, weight="bold"),
+            width=70,
+            height=30,
+            command=self.load_wallets_csv_file
+        )
+        self.import_button.grid(row=8, column=0, padx=20, pady=10, sticky="wn")
+
+        self.remove_button = customtkinter.CTkButton(
+            self,
+            text="Remove all",
+            font=customtkinter.CTkFont(size=12, weight="bold"),
+            fg_color="#cc0000",
+            hover_color="#5e1914",
+            width=70,
+            height=30,
+            command=self.remove_all_wallets
+        )
+        self.remove_button.grid(row=8, column=0, padx=100, pady=10, sticky="wn")
+
+    @property
+    def wallets(self):
+        return [wallet_item.wallet_data for wallet_item in self.wallets_table.wallets_items]
+
+    def load_wallets_csv_file(self):
+        filepath = tkinter.filedialog.askopenfilename(
+            initialdir=paths.MAIN_DIR,
+            title="Select wallets csv file",
+            filetypes=[("Text files", "*.csv")]
         )
 
-        self.frame.grid_columnconfigure(0, weight=1)
+        if not filepath:
+            return
 
-        start_row = 0
-        start_column = 0
+        wallets_raw_data = FileManager.read_data_from_csv_file(filepath)
+        wallets = WalletManager.get_wallets(wallets_raw_data)
+        self.wallets_table.set_wallets(wallets)
 
-        proxy = ProxyData(
-            host="host",
-            port=8080,
-            username="username",
-            password="password",
-            auth=True,
-            is_mobile=False
+    def remove_selected_wallets(self):
+        # TODO: Ебланский способ
+
+        new_wallets_data = []
+        for wallet_index, wallet_item in enumerate(self.wallets_table.wallets_items):
+            wallet_item.grid_forget()
+            wallet_item.frame.destroy()
+            wallet_item.destroy()
+
+            if not wallet_item.is_chosen:
+                new_wallets_data.append(wallet_item.wallet_data)
+
+        self.wallets_table.set_wallets(new_wallets_data)
+
+    def remove_all_wallets(self):
+
+        msg_box = tkinter.messagebox.askyesno(
+            title="Remove all",
+            message="Are you sure you want to remove all wallets?",
+            icon="warning"
         )
 
-        wallet_item = WalletData(
-            private_key="0x0000000",
-            proxy=proxy,
-            type="Argent"
-        )
-        all_wallet_items = []
-        for i in range(4):
-            wallet_item_grid = {
-                "row": start_row + 1 + i,
-                "column": start_column,
-                "padx": 10,
-                "pady": 2,
-                "sticky": "ew"
-            }
+        if not msg_box:
+            return
 
-            self.wallet_item = WalletItem(master=self.frame,
-                                          grid=wallet_item_grid,
-                                          wallet_data=wallet_item,
-                                          name=f"Wallet {i + 1}")
-            all_wallet_items.append(self.wallet_item)
+        for wallet_index, wallet_item in enumerate(self.wallets_table.wallets_items):
+            wallet_item.grid_forget()
+            wallet_item.frame.destroy()
+            wallet_item.destroy()
 
-        table_grid = {
-            "row": 0,
-            "column": 0,
-            "padx": 20,
-            "pady": (0, 0),
-            "sticky": "ew"
-        }
-        self.table_frame = WalletTableTop(master=master,
-                                          grid=table_grid,
-                                          wallet_items=all_wallet_items)
+        self.wallets_table.set_wallets([])
+

@@ -4,7 +4,6 @@ import tkinter.filedialog
 import customtkinter
 
 from gui.wallet_window.wallets_table import WalletsTable
-from gui.modules.frames import ModulesFrame
 
 from src.wallet_manager import WalletManager
 from utlis.file_manager import FileManager

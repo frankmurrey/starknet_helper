@@ -16,7 +16,7 @@ class WalletsWindow(customtkinter.CTkFrame):
 
         self.grid(row=0, column=1, sticky="nsew", padx=20, pady=20)
 
-        self.grid_columnconfigure(0, weight=1)
+        self.grid_columnconfigure(0,  weight=1)
         self.grid_rowconfigure((0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10), weight=1)
 
         self.wallets_table = WalletsTable(self)
@@ -76,6 +76,8 @@ class WalletsWindow(customtkinter.CTkFrame):
         self.wallets_table.set_wallets(new_wallets_data)
 
     def remove_all_wallets(self):
+        if not self.wallets:
+            return
 
         msg_box = tkinter.messagebox.askyesno(
             title="Remove all",

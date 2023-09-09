@@ -163,5 +163,6 @@ tests/test.py
 *.yaml
 *.yml
 *.xlsx
+*.csv
 tests/
 trash/

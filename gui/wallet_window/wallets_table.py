@@ -25,6 +25,13 @@ class WalletsTable(customtkinter.CTkScrollableFrame):
             rowspan=7
         )
 
+        self.no_wallets_label = customtkinter.CTkLabel(
+            self.frame,
+            text="No wallets",
+            font=customtkinter.CTkFont(size=16, weight="bold")
+        )
+        self.no_wallets_label.grid(row=0, column=0, padx=20, pady=20, sticky="ns")
+
         self.frame.grid_columnconfigure(0, weight=1)
 
         self.wallets_items: List[WalletItem] = []
@@ -41,6 +48,18 @@ class WalletsTable(customtkinter.CTkScrollableFrame):
                                                  wallet_items=self.wallets_items)
 
     def set_wallets(self, wallets: List[WalletData]):
+        if not wallets:
+            self.no_wallets_label = customtkinter.CTkLabel(
+                self.frame,
+                text="No wallets, why delete me?",
+                font=customtkinter.CTkFont(size=16, weight="bold"),
+                corner_radius=10
+            )
+            self.no_wallets_label.grid(row=0, column=0, padx=20, pady=20, sticky="ns")
+        else:
+            self.no_wallets_label.grid_forget()
+            self.no_wallets_label.destroy()
+
         start_row = 0
         start_column = 0
 

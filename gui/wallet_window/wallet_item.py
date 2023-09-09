@@ -115,7 +115,7 @@ class WalletItem(customtkinter.CTkFrame):
         self.edit_button.grid(
             row=0,
             column=3,
-            padx=pad_x,
+            padx=pad_x - 25,
             pady=pad_y,
             sticky="e"
         )

@@ -8,17 +8,14 @@ from PIL import Image
 
 
 class SidebarFrame(customtkinter.CTkFrame):
-    def __init__(self, master):
-        super().__init__(master)
+    def __init__(
+            self,
+            master,
+            **kwargs):
+        super().__init__(master, **kwargs)
         self.master = master
 
-        self.frame = customtkinter.CTkFrame(
-            master=self,
-            width=150,
-            height=900,
-            corner_radius=0
-        )
-        self.frame.grid(row=0,
+        self.grid(row=0,
                         column=0,
                         sticky="nsw"
                         )
@@ -34,7 +31,7 @@ class SidebarFrame(customtkinter.CTkFrame):
             size=(150, 85)
         )
         self.logo_label = customtkinter.CTkLabel(
-            self.frame,
+            self,
             image=logo_image,
             text=""
         )
@@ -45,7 +42,7 @@ class SidebarFrame(customtkinter.CTkFrame):
             pady=(20, 10)
         )
         self.wallets_button = customtkinter.CTkButton(
-            self.frame,
+            self,
             text="Wallets",
             font=customtkinter.CTkFont(
                 size=14,
@@ -62,7 +59,7 @@ class SidebarFrame(customtkinter.CTkFrame):
         )
 
         self.swaps_button = customtkinter.CTkButton(
-            self.frame,
+            self,
             text="Swaps",
             font=customtkinter.CTkFont(
                 size=14,
@@ -80,7 +77,7 @@ class SidebarFrame(customtkinter.CTkFrame):
         )
 
         self.liquidity_button = customtkinter.CTkButton(
-            self.frame,
+            self,
             text="Liquidity",
             font=customtkinter.CTkFont(
                 size=14,
@@ -98,7 +95,7 @@ class SidebarFrame(customtkinter.CTkFrame):
         )
 
         self.appearance_mode_label = customtkinter.CTkLabel(
-            self.frame,
+            self,
             text="Appearance Mode:",
             anchor="w")
         self.appearance_mode_label.grid(
@@ -108,7 +105,7 @@ class SidebarFrame(customtkinter.CTkFrame):
             pady=(0, 75)
         )
         self.appearance_mode_optionemenu = customtkinter.CTkOptionMenu(
-            self.frame,
+            self,
             values=["Dark", "Light", "System"],
             command=self.change_appearance_mode_event
         )
@@ -124,7 +121,7 @@ class SidebarFrame(customtkinter.CTkFrame):
             underline=True
         )
         self.github_button = customtkinter.CTkButton(
-            self.frame,
+            self,
             text="Github origin",
             font=link_font,
             width=140,

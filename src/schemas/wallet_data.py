@@ -1,7 +1,7 @@
 from typing import Union, Optional
 
 from pydantic import BaseModel
-from pydantic import field_validator
+from pydantic import validator
 from loguru import logger
 
 from src import enums
@@ -16,14 +16,14 @@ class WalletData(BaseModel):
     evm_pair_address: Optional[str] = None
     type: enums.PrivateKeyType = enums.PrivateKeyType.argent
 
-    @field_validator("proxy", mode="before")
+    @validator("proxy", pre=True)
     @classmethod
     def validate_proxy(cls, v):
         if isinstance(v, str):
             return parse_proxy_data(proxy_str=v)
         return v
 
-    @field_validator("type", mode="before")
+    @validator("type", pre=True)
     @classmethod
     def validate_type(cls, v):
         if isinstance(v, str):

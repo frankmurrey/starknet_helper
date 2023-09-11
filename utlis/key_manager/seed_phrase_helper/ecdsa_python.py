@@ -6,9 +6,9 @@ from ctypes import c_char_p
 from ctypes import c_void_p
 from ctypes import create_string_buffer
 
-from SeedPhraseHelper.ecdsa_base import EllipticCurveBase
-from SeedPhraseHelper.ecdsa_base import Point
-import SeedPhraseHelper.openssl as ossl
+from utlis.key_manager.seed_phrase_helper.ecdsa_base import EllipticCurveBase
+from utlis.key_manager.seed_phrase_helper.ecdsa_base import Point
+import utlis.key_manager.seed_phrase_helper.openssl as ossl
 
 
 class ECPointAffine(object):

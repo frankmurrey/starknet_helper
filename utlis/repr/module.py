@@ -4,8 +4,7 @@ from enum import Enum
 
 from colorama import Fore, Back, Style
 
-from src.schemas.configs.transaction_settings_base import TransactionSettingsBase
-from src.schemas.configs.deploy import DeployArgentConfigSchema
+from src.schemas.tasks.base import TaskBase
 from utlis.repr.misc import Symbol
 from utlis.repr.misc import AsciiPrints
 from utlis.repr.misc import COLOR_LENGTH
@@ -87,15 +86,15 @@ def get_max_width(max_key_width: int, max_value_width: int) -> int:
     return 2 + max_key_width + 5 + max_value_width + 2
 
 
-def print_module_config(module_config: TransactionSettingsBase):
+def print_module_config(task: TaskBase):
 
     repr_strings = []
 
-    max_key_width = max(len(key) for key in module_config.dict(exclude={"module_name"}).keys())
-    max_value_width = max(len(str(value)) for value in module_config.dict(exclude={"module_name"}).values())
+    max_key_width = max(len(key) for key in task.dict(exclude={"module_name"}).keys())
+    max_value_width = max(len(str(value)) for value in task.dict(exclude={"module_name"}).values())
     max_width = get_max_width(max_key_width, max_value_width)
 
-    for key, value in module_config.dict(exclude={"module_name"}).items():
+    for key, value in task.dict(exclude={"module_name"}).items():
         key_width = max_key_width
         value_width = max_value_width
 
@@ -130,10 +129,9 @@ def print_module_config(module_config: TransactionSettingsBase):
         repr_string += Symbol.right
         repr_string += Fore.RESET
 
-        # repr_strings.append(f"{Symbol.left} {key:>{key_width + 1}} {Symbol.center} {value:<{value_width + 1}} {Symbol.right}")
         repr_strings.append(repr_string)
 
-    repr_strings.insert(0, get_module_name_header(module_config.module_name, max_width))
+    repr_strings.insert(0, get_module_name_header(task.module_name, max_width))
     repr_strings.insert(0, get_border_top(max_width))
     repr_strings.insert(2, get_border_middle(key_width=max_key_width, value_width=max_value_width))
     repr_strings.append(get_border_bottom(key_width=max_key_width, value_width=max_value_width))
@@ -145,20 +143,3 @@ def print_module_config(module_config: TransactionSettingsBase):
     print(*repr_strings, sep="\n")
     print(f"{Fore.LIGHTMAGENTA_EX}Made by Frank Murrey - https://github.com/frankmurrey{Fore.RESET}")
     print(f"{Fore.LIGHTMAGENTA_EX}Starting in {config.DEFAULT_DELAY_SEC} sec...{Fore.RESET}\n")
-
-
-if __name__ == '__main__':
-    from src.schemas.configs.jediswap import JediSwapConfigSchema
-
-    cfg_j = JediSwapConfigSchema(
-        coin_to_swap='usdt',
-        coin_to_receive='usdc',
-        min_amount_out=0.5,
-        max_amount_out=1,
-        slippage=2,
-        test_mode=True,
-        wait_for_receipt=True,
-        txn_wait_timeout_sec=120,
-    )
-
-    print_module_config(cfg_j)

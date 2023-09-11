@@ -15,7 +15,7 @@ class WalletsTable(customtkinter.CTkScrollableFrame):
             **kwargs):
         super().__init__(master, **kwargs)
 
-        self.frame = customtkinter.CTkScrollableFrame(master)
+        self.frame = customtkinter.CTkScrollableFrame(master, width=950)
         self.frame.grid(
             row=1,
             column=0,
@@ -28,7 +28,7 @@ class WalletsTable(customtkinter.CTkScrollableFrame):
         self.no_wallets_label = customtkinter.CTkLabel(
             self.frame,
             text="No wallets",
-            font=customtkinter.CTkFont(size=16, weight="bold")
+            font=customtkinter.CTkFont(size=20, weight="bold")
         )
         self.no_wallets_label.grid(row=0, column=0, padx=20, pady=20, sticky="ns")
 
@@ -48,17 +48,21 @@ class WalletsTable(customtkinter.CTkScrollableFrame):
                                                  wallet_items=self.wallets_items)
 
     def set_wallets(self, wallets: List[WalletData]):
+        # TODO новые импортированные кошельки добавляются в конец списка
         if not wallets:
             self.no_wallets_label = customtkinter.CTkLabel(
                 self.frame,
                 text="No wallets, why delete me?",
-                font=customtkinter.CTkFont(size=16, weight="bold"),
+                font=customtkinter.CTkFont(size=20, weight="bold"),
                 corner_radius=10
             )
             self.no_wallets_label.grid(row=0, column=0, padx=20, pady=20, sticky="ns")
         else:
-            self.no_wallets_label.grid_forget()
-            self.no_wallets_label.destroy()
+            try:
+                self.no_wallets_label.grid_forget()
+                self.no_wallets_label.destroy()
+            except Exception as e:
+                pass
 
         start_row = 0
         start_column = 0

@@ -9,11 +9,10 @@ class WalletsTableTop(customtkinter.CTkFrame):
         super().__init__(master)
 
         self.wallet_items = wallet_items
-
         self.frame = customtkinter.CTkFrame(master)
         self.frame.grid(**grid)
 
-        self.frame.grid_columnconfigure((0, 1, 2, 3), weight=1, uniform="a")
+        self.frame.grid_columnconfigure((0, 1, 2, 3, 4), weight=1, uniform='a')
 
         self.chose_all_checkbox = customtkinter.CTkCheckBox(
             self.frame,
@@ -25,8 +24,7 @@ class WalletsTableTop(customtkinter.CTkFrame):
             command=self.select_all_checkbox_event
         )
 
-        pad_x = 50
-        kf = 0
+        pad_x = (50, 0)
         pad_y = 5
 
         self.chose_all_checkbox.grid(
@@ -45,12 +43,10 @@ class WalletsTableTop(customtkinter.CTkFrame):
         self.wallet_name_label.grid(
             row=0,
             column=0,
-            padx=pad_x + 15,
+            padx=(75, 0),
             pady=pad_y,
             sticky="w"
         )
-
-        pad_x = pad_x + kf
 
         self.wallet_address_label = customtkinter.CTkLabel(
             self.frame,
@@ -61,12 +57,10 @@ class WalletsTableTop(customtkinter.CTkFrame):
         self.wallet_address_label.grid(
             row=0,
             column=1,
-            padx=pad_x - 8,
+            padx=(70, 0),
             pady=pad_y,
             sticky="w"
         )
-
-        pad_x = pad_x + kf
 
         self.wallet_proxy_label = customtkinter.CTkLabel(
             self.frame,
@@ -77,12 +71,10 @@ class WalletsTableTop(customtkinter.CTkFrame):
         self.wallet_proxy_label.grid(
             row=0,
             column=2,
-            padx=pad_x,
+            padx=(70, 0),
             pady=pad_y,
             sticky="w"
         )
-
-        pad_x = pad_x + kf
 
         self.wallet_type_label = customtkinter.CTkLabel(
             self.frame,
@@ -93,7 +85,7 @@ class WalletsTableTop(customtkinter.CTkFrame):
         self.wallet_type_label.grid(
             row=0,
             column=3,
-            padx=pad_x - 10,
+            padx=(55, 0),
             pady=pad_y,
             sticky="w"
         )

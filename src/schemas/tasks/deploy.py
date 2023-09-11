@@ -1,13 +1,13 @@
-from src.schemas.configs.transaction_settings_base import TransactionSettingsBase
+from src.schemas.tasks.base import TaskBase
 
 from src import enums
 
 
-class DeployArgentConfigSchema(TransactionSettingsBase):
+class DeployArgentTask(TaskBase):
     module_name: enums.ModuleName = enums.ModuleName.DEPLOY
     module_type: enums.PrivateKeyType = enums.PrivateKeyType.argent
 
 
-class DeployBraavostConfigSchema(TransactionSettingsBase):
+class DeployBraavostTask(TaskBase):
     module_name: enums.ModuleName = enums.ModuleName.DEPLOY
     module_type: enums.PrivateKeyType = enums.PrivateKeyType.braavos

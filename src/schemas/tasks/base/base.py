@@ -7,12 +7,14 @@ from utlis import validation
 from src import enums
 
 
-class TransactionSettingsBase(BaseModel):
+class TaskBase(BaseModel):
     module_type: enums.ModuleType
     module_name: enums.ModuleName
 
     max_fee: Union[int]
     forced_gas_limit: Union[bool] = False
+
+    # GLOBALS
     wait_for_receipt: Union[bool] = False
     txn_wait_timeout_sec: Union[float] = 60
 
@@ -30,7 +32,10 @@ class TransactionSettingsBase(BaseModel):
         return value
 
     @validator("txn_wait_timeout_sec", pre=True)
-    def validate_txn_wait_timeout_sec_pre(cls, value):
+    def validate_txn_wait_timeout_sec_pre(cls, value, values):
+
+        if values["wait_for_receipt"]:
+            return 0
 
         value = validation.get_converted_to_float(value, "Txn Wait Timeout")
         value = validation.get_positive(value, "Txn Wait Timeout")

@@ -1,14 +1,14 @@
-from src.schemas.configs.transaction_settings_base import SupplySettingsBase
-from src.schemas.configs.transaction_settings_base import WithdrawSettingsBase
+from src.schemas.tasks.base.supply import SupplyTaskBase
+from src.schemas.tasks.base.withdraw import WithdrawTaskBase
 
 from src import enums
 
 
-class ZkLendSupplyConfigSchema(SupplySettingsBase):
+class ZkLendSupplyTask(SupplyTaskBase):
     module_name: enums.ModuleName = enums.ModuleName.ZKLEND
     module_type: enums.ModuleType = enums.ModuleType.SUPPLY
 
 
-class ZkLendWithdrawConfigSchema(WithdrawSettingsBase):
+class ZkLendWithdrawTask(WithdrawTaskBase):
     module_name: enums.ModuleName = enums.ModuleName.ZKLEND
     module_type: enums.ModuleType = enums.ModuleType.WITHDRAW

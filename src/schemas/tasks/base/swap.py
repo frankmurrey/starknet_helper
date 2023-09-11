@@ -2,29 +2,29 @@ from typing import Union
 
 from pydantic import validator
 
-from src.schemas.configs import validation_mixins
-from src.schemas.configs.transaction_settings_base.base import TransactionSettingsBase
-from src.exceptions import ModuleConfigValidationError
+from src.schemas import validation_mixins
+from src.schemas.tasks.base import TaskBase
+from src.exceptions import AppValidationError
 from utlis import validation
 
 
-class SwapSettingsBase(
-    TransactionSettingsBase,
+class SwapTaskBase(
+    TaskBase,
     validation_mixins.SlippageValidationMixin,
     validation_mixins.MinMaxAmountOutValidationMixin,
 ):
     coin_to_swap: Union[str]
     coin_to_receive: Union[str]
 
-    min_amount_out: Union[float]
-    max_amount_out: Union[float]
-
     use_all_balance: Union[bool] = False
     send_percent_balance: Union[bool] = False
 
-    max_price_difference_percent: Union[float] = 2
-
     compare_with_cg_price: Union[bool] = True
+
+    min_amount_out: Union[float]
+    max_amount_out: Union[float]
+
+    max_price_difference_percent: Union[float] = 2
 
     slippage: Union[float] = 0.5
 
@@ -32,7 +32,7 @@ class SwapSettingsBase(
     def validate_coin_to_receive_pre(cls, value, values):
 
         if value == values["coin_to_swap"]:
-            raise ModuleConfigValidationError("Coin to receive cannot be the same as Coin to swap")
+            raise AppValidationError("Coin to receive cannot be the same as Coin to swap")
 
         return value
 

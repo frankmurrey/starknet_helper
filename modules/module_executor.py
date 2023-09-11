@@ -9,7 +9,7 @@ from starknet_py.net.account.account import Account
 from starknet_py.net.full_node_client import FullNodeClient
 from starknet_py.net.models import StarknetChainId
 
-from src.schemas.configs.base import CommonSettingsBase
+from src.schemas.configs.transaction_settings_base.base import TransactionSettingsBase
 from src.schemas.configs.app_config import AppConfigSchema
 from src.schemas.wallet_data import WalletData
 from src.schemas.logs import WalletActionSchema
@@ -53,7 +53,7 @@ class ModuleExecutor:
     Module executor for modules in a modules directory
     """
 
-    def __init__(self, config: CommonSettingsBase):
+    def __init__(self, config: TransactionSettingsBase):
         self.config = config
         self.module_name = config.module_name
         self.module_type = config.module_type
@@ -83,7 +83,7 @@ class ModuleExecutor:
 
         """
         if execution_status is True:
-            return random.randint(self.config.min_delay_sec, self.config.max_delay_sec)
+            return random.randint(int(self.config.min_delay_sec), int(self.config.max_delay_sec))
 
         return cfg.DEFAULT_DELAY_SEC
 

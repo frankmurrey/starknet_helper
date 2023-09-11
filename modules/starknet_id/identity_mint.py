@@ -7,22 +7,26 @@ from starknet_py.net.client_errors import ClientError
 from loguru import logger
 
 import config
-from modules.base import StarkBase
-from src.schemas.configs.identity import IdentityMintConfigSchema
+from modules.base import ModuleBase
+from src.schemas.tasks.identity import IdentityMintTask
 from contracts.starknet_id.main import StarkNetIdContracts
 
 
-class IdentityMint(StarkBase):
-    config: IdentityMintConfigSchema
+class IdentityMint(ModuleBase):
+    task: IdentityMintTask
     account: Account
 
     def __init__(self,
                  account,
-                 config):
-        super().__init__(client=account.client)
+                 task: IdentityMintTask, ):
+
+        super().__init__(
+            client=account.client,
+            task=task,
+        )
 
         self.account = account
-        self.config = config
+        self.task = task
 
         self.stark_id_contracts = StarkNetIdContracts()
         self.router_contract = self.get_contract(address=self.stark_id_contracts.router_address,
@@ -81,14 +85,6 @@ class IdentityMint(StarkBase):
 
         txn_status = await self.simulate_and_send_transfer_type_transaction(account=self.account,
                                                                             calls=txn_payload_calls,
-                                                                            txn_info_message=txn_info_message,
-                                                                            config=self.config)
+                                                                            txn_info_message=txn_info_message, )
 
         return txn_status
-
-
-
-
-
-
-

@@ -2,17 +2,6 @@ import random
 import time
 from typing import Union
 
-import config
-from utlis.key_manager.key_manager import (get_key_pair_from_pk,
-                                           get_argent_addr_from_private_key,
-                                           get_braavos_addr_from_private_key)
-from src.schemas.configs.base import SwapSettingsBase
-from src.schemas.logs import WalletActionSchema
-from src.gecko_pricer import GeckoPricer
-from src.storage import Storage
-from src.storage import ActionStorage
-from contracts.tokens.main import Tokens
-
 from starknet_py.net.account.account import Account
 from starknet_py.net.full_node_client import FullNodeClient
 from starknet_py.net.models import StarknetChainId
@@ -25,19 +14,35 @@ from starknet_py.hash.selector import get_selector_from_name
 from starknet_py.net.http_client import HttpMethod
 from loguru import logger
 
+from utlis.key_manager.key_manager import (get_key_pair_from_pk,
+                                           get_argent_addr_from_private_key,
+                                           get_braavos_addr_from_private_key)
+from src.schemas.tasks.base import TaskBase
+from src.schemas.tasks.base.swap import SwapTaskBase
+from src.schemas.logs import WalletActionSchema
+from src.gecko_pricer import GeckoPricer
+from src.storage import Storage
+from src.storage import ActionStorage
+from contracts.tokens.main import Tokens
+import config
 
-class StarkBase:
+
+class ModuleBase:
     ETH_ADDRESS_MAINNET = '0x049D36570D4E46F48E99674BD3FCC84644DDD6B96F7C741B1562B82F9E004DC7'
 
     def __init__(
             self,
             client: FullNodeClient,
+            task: TaskBase
     ):
+
         self.client = client
         self.chain_id = StarknetChainId.MAINNET
         self.gecko_pricer = GeckoPricer(client=client)
         self.storage = Storage()
         self.tokens = Tokens()
+
+        self.task = task
 
     def i16(self,
             hex_d: str):
@@ -352,70 +357,14 @@ class StarkBase:
 
         return deploy_result
 
-    async def send_swap_type_txn(
-            self,
-            account: Account,
-            config: SwapSettingsBase,
-            txn_payload_data: dict):
-
-        module_name = config.module_name.title()
-
-        out_decimals = round(txn_payload_data['amount_x_decimals'], 4)
-        in_decimals = round(txn_payload_data['amount_y_decimals'], 4)
-
-        coin_x_symbol = config.coin_to_swap.upper()
-        coin_y_symbol = config.coin_to_receive.upper()
-
-        slippage: Union[float, int] = config.slippage
-
-        txn_info_message = (f"Swap ({module_name}) | "
-                            f"{out_decimals} ({coin_x_symbol}) -> "
-                            f"{in_decimals} ({coin_y_symbol}). "
-                            f"Slippage: {slippage}%.")
-
-        coin_x_cg_id = self.tokens.get_cg_id_by_name(coin_x_symbol)
-        coin_y_cg_id = self.tokens.get_cg_id_by_name(coin_y_symbol)
-        if coin_x_cg_id is None or coin_y_cg_id is None:
-            logger.error(f"Error while getting CoinGecko IDs for {coin_x_symbol.upper()} and {coin_y_symbol.upper()}")
-            return False
-
-        if config.compare_with_cg_price is True:
-            max_price_difference_percent: Union[float, int] = config.max_price_difference_percent
-            swap_price_validation_data = await self.gecko_pricer.is_target_price_valid(
-                x_token_id=coin_x_cg_id.lower(),
-                y_token_id=coin_y_cg_id.lower(),
-                x_amount=txn_payload_data['amount_x_decimals'],
-                y_amount=txn_payload_data['amount_y_decimals'],
-                max_price_difference_percent=max_price_difference_percent
-            )
-
-            is_price_valid, price_data = swap_price_validation_data
-            if is_price_valid is False:
-                logger.error(f"Swap rate is not valid ({module_name}). "
-                             f"Gecko rate: {price_data['gecko_price']}, "
-                             f"Swap rate: {price_data['target_price']}")
-                return False
-
-            logger.info(f"Swap rate is valid ({module_name}). "
-                        f"Gecko rate: {price_data['gecko_price']}, "
-                        f"Swap rate: {price_data['target_price']}.")
-
-        txn_status = await self.simulate_and_send_transfer_type_transaction(account=account,
-                                                                            calls=txn_payload_data['calls'],
-                                                                            txn_info_message=txn_info_message,
-                                                                            config=config)
-
-        return txn_status
-
     async def simulate_and_send_transfer_type_transaction(self,
                                                           account: Account,
-                                                          config,
                                                           calls: list,
                                                           txn_info_message: str):
         logger.warning(f"Action: {txn_info_message}")
         current_log_action: WalletActionSchema = ActionStorage().get_current_action()
-        current_log_action.module_name = config.module_name
-        current_log_action.action_type = config.module_type
+        current_log_action.module_name = self.task.module_name
+        current_log_action.action_type = self.task.module_type
 
         target_gas_price_gwei = self.storage.app_config.target_eth_mainnet_gas_price
         target_gas_price_wei = target_gas_price_gwei * 10 ** 9
@@ -462,12 +411,12 @@ class StarkBase:
         logger.success(f"Transaction estimation success, overall fee: "
                        f"{estimate_gas_decimals} ETH.")
 
-        if config.forced_gas_limit is True:
-            gas_limit = int(config.max_fee)
+        if self.task.forced_gas_limit is True:
+            gas_limit = int(self.task.max_fee)
         else:
             gas_limit = int(estimate_transaction * 1.4)
 
-        if config.test_mode is True:
+        if self.task.test_mode is True:
             logger.debug(f"Test mode enabled. Skipping transaction")
             return False
 
@@ -483,14 +432,14 @@ class StarkBase:
 
         txn_hash = response.transaction_hash
 
-        if config.wait_for_receipt is True:
-            logger.debug(f"Txn sent. Waiting for receipt (Timeout in {config.txn_wait_timeout_sec}s)."
+        if self.task.wait_for_receipt is True:
+            logger.debug(f"Txn sent. Waiting for receipt (Timeout in {self.task.txn_wait_timeout_sec}s)."
                          f" Txn Hash: {hex(txn_hash)}")
 
             txn_receipt = await self.wait_for_tx_receipt(tx_hash=txn_hash,
-                                                         time_out_sec=config.txn_wait_timeout_sec)
+                                                         time_out_sec=int(self.task.txn_wait_timeout_sec))
             if txn_receipt is False:
-                err_msg = f"Transaction failed or not in blockchain after {config.txn_wait_timeout_sec}s"
+                err_msg = f"Transaction failed or not in blockchain after {self.task.txn_wait_timeout_sec}s"
                 logger.error(f"{err_msg}. Txn Hash: {hex(txn_hash)}")
 
                 current_log_action.is_success = False
@@ -513,3 +462,64 @@ class StarkBase:
             current_log_action.status = "Txn sent"
             current_log_action.transaction_hash = hex(txn_hash)
             return True
+
+
+class SwapModuleBase(ModuleBase):
+    task: SwapTaskBase
+
+    async def send_swap_type_txn(
+            self,
+            account: Account,
+            txn_payload_data: dict):
+
+        self.task: SwapTaskBase
+
+        module_name = self.task.module_name.title()
+
+        out_decimals = round(txn_payload_data['amount_x_decimals'], 4)
+        in_decimals = round(txn_payload_data['amount_y_decimals'], 4)
+
+        coin_x_symbol = self.task.coin_to_swap.upper()
+        coin_y_symbol = self.task.coin_to_receive.upper()
+
+        slippage: Union[float, int] = self.task.slippage
+
+        txn_info_message = (f"Swap ({module_name}) | "
+                            f"{out_decimals} ({coin_x_symbol}) -> "
+                            f"{in_decimals} ({coin_y_symbol}). "
+                            f"Slippage: {slippage}%.")
+
+        coin_x_cg_id = self.tokens.get_cg_id_by_name(coin_x_symbol)
+        coin_y_cg_id = self.tokens.get_cg_id_by_name(coin_y_symbol)
+        if coin_x_cg_id is None or coin_y_cg_id is None:
+            logger.error(f"Error while getting CoinGecko IDs for {coin_x_symbol.upper()} and {coin_y_symbol.upper()}")
+            return False
+
+        if self.task.compare_with_cg_price is True:
+            max_price_difference_percent: Union[float, int] = self.task.max_price_difference_percent
+            swap_price_validation_data = await self.gecko_pricer.is_target_price_valid(
+                x_token_id=coin_x_cg_id.lower(),
+                y_token_id=coin_y_cg_id.lower(),
+                x_amount=txn_payload_data['amount_x_decimals'],
+                y_amount=txn_payload_data['amount_y_decimals'],
+                max_price_difference_percent=max_price_difference_percent
+            )
+
+            is_price_valid, price_data = swap_price_validation_data
+            if is_price_valid is False:
+                logger.error(f"Swap rate is not valid ({module_name}). "
+                             f"Gecko rate: {price_data['gecko_price']}, "
+                             f"Swap rate: {price_data['target_price']}")
+                return False
+
+            logger.info(f"Swap rate is valid ({module_name}). "
+                        f"Gecko rate: {price_data['gecko_price']}, "
+                        f"Swap rate: {price_data['target_price']}.")
+
+        txn_status = await self.simulate_and_send_transfer_type_transaction(account=account,
+                                                                            calls=txn_payload_data['calls'],
+                                                                            txn_info_message=txn_info_message)
+
+        return txn_status
+
+

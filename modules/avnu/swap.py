@@ -1,28 +1,32 @@
 import random
 from typing import Union
 
-from modules.base import StarkBase
-from src.schemas.configs.avnu import AvnuSwapConfigSchema
-from contracts.tokens.main import Tokens
-from contracts.avnu.main import AvnuContracts
-
 from starknet_py.net.http_client import HttpMethod
 from starknet_py.net.client_errors import ClientError
 from loguru import logger
 
+from modules.base import SwapModuleBase
+from src.schemas.tasks.avnu import AvnuSwapTask
+from contracts.tokens.main import Tokens
+from contracts.avnu.main import AvnuContracts
 
-class AvnuSwap(StarkBase):
-    config: AvnuSwapConfigSchema
+
+class AvnuSwap(SwapModuleBase):
+    task: AvnuSwapTask
 
     def __init__(
             self,
             account,
-            config
+            task: AvnuSwapTask
     ):
-        super().__init__(client=account.client)
+
+        super().__init__(
+            client=account.client,
+            task=task,
+        )
 
         self.account = account
-        self.config = config
+        self.task = task
 
         self.tokens = Tokens()
         self.avnu_contracts = AvnuContracts()
@@ -30,8 +34,8 @@ class AvnuSwap(StarkBase):
                                                  abi=self.avnu_contracts.router_abi,
                                                  provider=account)
 
-        self.coin_x = self.tokens.get_by_name(self.config.coin_to_swap)
-        self.coin_y = self.tokens.get_by_name(self.config.coin_to_receive)
+        self.coin_x = self.tokens.get_by_name(self.task.coin_to_swap)
+        self.coin_y = self.tokens.get_by_name(self.task.coin_to_receive)
 
     async def get_quotes(
             self,
@@ -75,22 +79,22 @@ class AvnuSwap(StarkBase):
 
         wallet_token_balance_decimals = wallet_token_balance_wei / 10 ** token_decimals
 
-        if self.config.use_all_balance is True:
+        if self.task.use_all_balance is True:
             amount_out_wei = wallet_token_balance_wei
 
-        elif self.config.send_percent_balance is True:
-            percent = random.randint(self.config.min_amount_out, self.config.max_amount_out) / 100
+        elif self.task.send_percent_balance is True:
+            percent = random.randint(int(self.task.min_amount_out), int(self.task.max_amount_out)) / 100
             amount_out_wei = int(wallet_token_balance_wei * percent)
 
-        elif wallet_token_balance_decimals < self.config.max_amount_out:
-            amount_out_wei = self.get_random_amount_out_of_token(min_amount=self.config.min_amount_out,
+        elif wallet_token_balance_decimals < self.task.max_amount_out:
+            amount_out_wei = self.get_random_amount_out_of_token(min_amount=self.task.min_amount_out,
                                                                  max_amount=wallet_token_balance_decimals,
                                                                  decimals=token_decimals)
 
         else:
             amount_out_wei = self.get_random_amount_out_of_token(
-                min_amount=self.config.min_amount_out,
-                max_amount=self.config.max_amount_out,
+                min_amount=self.task.min_amount_out,
+                max_amount=self.task.max_amount_out,
                 decimals=token_decimals
             )
 
@@ -104,7 +108,7 @@ class AvnuSwap(StarkBase):
             return None
 
         amount_in_wei = self.i16(quotes['buyAmount'])
-        amount_in_wei_with_slippage = int(amount_in_wei * (1 - (self.config.slippage / 100)))
+        amount_in_wei_with_slippage = int(amount_in_wei * (1 - (self.task.slippage / 100)))
 
         exchange_address = quotes['routes'][0]['address']
 
@@ -157,7 +161,7 @@ class AvnuSwap(StarkBase):
 
         txn_status = await self.send_swap_type_txn(
             account=self.account,
-            config=self.config,
+            task=self.task,
             txn_payload_data=txn_payload_data
         )
 

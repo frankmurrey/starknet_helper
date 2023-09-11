@@ -7,22 +7,26 @@ from contracts.jediswap.main import JediSwapContracts
 from modules.jediswap.base import JediSwapBase
 from modules.jediswap.math import get_lp_burn_output
 
-from src.schemas.configs.jediswap import JediSwapAddLiquidityConfigSchema
-from src.schemas.configs.jediswap import JediSwapRemoveLiquidityConfigSchema
+from src.schemas.tasks.jediswap import JediSwapAddLiquidityTask
+from src.schemas.tasks.jediswap import JediSwapRemoveLiquidityTask
 
 
 from loguru import logger
 
 
 class JediSwapAddLiquidity(JediSwapBase):
-    config: JediSwapAddLiquidityConfigSchema
+    task: JediSwapAddLiquidityTask
 
     def __init__(self,
                  account,
-                 config):
-        super().__init__(account=account)
+                 task: JediSwapAddLiquidityTask, ):
 
-        self.config = config
+        super().__init__(
+            account=account,
+            task=task,
+        )
+
+        self.task = task
         self.account = account
 
         self.tokens = Tokens()
@@ -31,8 +35,8 @@ class JediSwapAddLiquidity(JediSwapBase):
                                                  abi=self.jedi_contracts.router_abi,
                                                  provider=account)
 
-        self.coin_x = self.tokens.get_by_name(self.config.coin_x)
-        self.coin_y = self.tokens.get_by_name(self.config.coin_y)
+        self.coin_x = self.tokens.get_by_name(self.task.coin_x)
+        self.coin_y = self.tokens.get_by_name(self.task.coin_y)
 
         self.amount_x_out_decimals = None
         self.amount_y_out_decimals = None
@@ -40,16 +44,16 @@ class JediSwapAddLiquidity(JediSwapBase):
     async def build_txn_payload_calls(self):
         amounts_x_out: dict = await self.get_amounts_out_from_balance(
             coin_x_obj=self.coin_x,
-            use_all_balance=self.config.use_all_balance_x,
-            send_percent_balance=self.config.send_percent_balance_x,
-            min_amount_out=self.config.min_amount_out_x,
-            max_amount_out=self.config.max_amount_out_x
+            use_all_balance=self.task.use_all_balance_x,
+            send_percent_balance=self.task.send_percent_balance_x,
+            min_amount_out=self.task.min_amount_out_x,
+            max_amount_out=self.task.max_amount_out_x
         )
         if amounts_x_out is None:
             return None
 
         amount_x_out_wei = amounts_x_out['amount_wei']
-        amount_x_out_wei_with_slippage = int(amount_x_out_wei * (1 - (self.config.slippage / 100)))
+        amount_x_out_wei_with_slippage = int(amount_x_out_wei * (1 - (self.task.slippage / 100)))
         self.amount_x_out_decimals = amounts_x_out['amount_decimals']
 
         amounts_y_out: dict = await self.get_amounts_in(amount_out_wei=amount_x_out_wei,
@@ -60,7 +64,7 @@ class JediSwapAddLiquidity(JediSwapBase):
             return None
 
         amount_y_out_wei = amounts_y_out['amount_wei']
-        amount_y_out_wei_with_slippage = int(amount_y_out_wei * (1 - (self.config.slippage / 100)))
+        amount_y_out_wei_with_slippage = int(amount_y_out_wei * (1 - (self.task.slippage / 100)))
         self.amount_y_out_decimals = amounts_y_out['amount_decimals']
 
         txn_deadline = int(time.time() + 3600)
@@ -102,24 +106,26 @@ class JediSwapAddLiquidity(JediSwapBase):
         txn_info_message = (f"Add Liquidity (JediSwap) | "
                             f"{round(self.amount_x_out_decimals, 5)} ({self.coin_x.symbol.upper()}) "
                             f"+ {round(self.amount_y_out_decimals, 5)} ({self.coin_y.symbol.upper()}). "
-                            f"Slippage: {self.config.slippage}%.")
+                            f"Slippage: {self.task.slippage}%.")
         txn_status = await self.simulate_and_send_transfer_type_transaction(account=self.account,
                                                                             calls=txn_payload_calls,
-                                                                            txn_info_message=txn_info_message,
-                                                                            config=self.config)
+                                                                            txn_info_message=txn_info_message, )
 
         return txn_status
 
 
 class JediSwapRemoveLiquidity(JediSwapBase):
-    config: JediSwapRemoveLiquidityConfigSchema
+    task: JediSwapRemoveLiquidityTask
 
     def __init__(self,
                  account,
-                 config):
-        super().__init__(account=account)
+                 task: JediSwapRemoveLiquidityTask, ):
+        super().__init__(
+            account=account,
+            task=task,
+        )
 
-        self.config = config
+        self.task = task
         self.account = account
 
         self.tokens = Tokens()
@@ -132,8 +138,8 @@ class JediSwapRemoveLiquidity(JediSwapBase):
                                                   abi=self.jedi_contracts.factory_abi,
                                                   provider=account)
 
-        self.coin_x = self.tokens.get_by_name(self.config.coin_x)
-        self.coin_y = self.tokens.get_by_name(self.config.coin_y)
+        self.coin_x = self.tokens.get_by_name(self.task.coin_x)
+        self.coin_y = self.tokens.get_by_name(self.task.coin_y)
 
         self.amount_out_decimals = None
 
@@ -242,8 +248,8 @@ class JediSwapRemoveLiquidity(JediSwapBase):
         amount_x_out_wei = amounts_out[0]
         amount_y_out_wei = amounts_out[1]
 
-        amount_x_out_with_slippage = int(amount_x_out_wei * (1 - (self.config.slippage / 100)))
-        amount_y_out_with_slippage = int(amount_y_out_wei * (1 - (self.config.slippage / 100)))
+        amount_x_out_with_slippage = int(amount_x_out_wei * (1 - (self.task.slippage / 100)))
+        amount_y_out_with_slippage = int(amount_y_out_wei * (1 - (self.task.slippage / 100)))
 
         dead_line = int(time.time() + 3600)
 
@@ -274,11 +280,10 @@ class JediSwapRemoveLiquidity(JediSwapBase):
         txn_info_message = (f"Remove Liquidity (JediSwap). "
                             f"Pool: {self.coin_x.symbol.upper()} + {self.coin_y.symbol.upper()}. "
                             f"LP amount out: {self.amount_out_decimals}. "
-                            f"Slippage: {self.config.slippage}%.")
+                            f"Slippage: {self.task.slippage}%.")
 
         txn_status = await self.simulate_and_send_transfer_type_transaction(account=self.account,
                                                                             calls=txn_payload_calls,
-                                                                            txn_info_message=txn_info_message,
-                                                                            config=self.config)
+                                                                            txn_info_message=txn_info_message, )
 
         return txn_status

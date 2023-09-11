@@ -1,25 +1,29 @@
-from modules.base import StarkBase
-from src.schemas.configs.deploy import DeployArgentConfigSchema
-from src.schemas.logs import WalletActionSchema
-from src.storage import ActionStorage
-from utlis.key_manager.key_manager import get_key_pair_from_pk
-
 from starknet_py.net.account.account import Account
 from starknet_py.net.models.transaction import DeployAccount
 from loguru import logger
 
+from modules.base import ModuleBase
+from src.schemas.tasks.deploy import DeployArgentTask
+from src.schemas.logs import WalletActionSchema
+from src.storage import ActionStorage
+from utlis.key_manager.key_manager import get_key_pair_from_pk
 
-class DeployArgent(StarkBase):
-    config: DeployArgentConfigSchema
+
+class DeployArgent(ModuleBase):
+    task: DeployArgentTask
     account: Account
 
     def __init__(self,
                  private_key: str,
                  account,
-                 config):
-        super().__init__(client=account.client)
+                 task: DeployArgentTask, ):
 
-        self.config = config
+        super().__init__(
+            client=account.client,
+            task=task,
+        )
+
+        self.task = task
         self.account = account
         self.pk = private_key
 
@@ -37,8 +41,8 @@ class DeployArgent(StarkBase):
 
         logger.warning(f"Action: Deploy Argent account")
         current_log_action: WalletActionSchema = ActionStorage().get_current_action()
-        current_log_action.module_name = self.config.module_name
-        current_log_action.action_type = self.config.module_type
+        current_log_action.module_name = self.task.module_name
+        current_log_action.action_type = self.task.module_type
 
         account = self.get_account_argent(private_key=self.pk)
         nonce = await self.get_nonce(account=account)
@@ -85,12 +89,12 @@ class DeployArgent(StarkBase):
         logger.success(f"Transaction estimation success, overall fee: "
                        f"{overall_fee / 10 ** 18} ETH.")
 
-        if self.config.test_mode is True:
+        if self.task.test_mode is True:
             logger.debug(f"Test mode enabled. Skipping transaction")
             return False
 
-        if self.config.forced_gas_limit is True:
-            gas_limit = int(self.config.gas_limit)
+        if self.task.forced_gas_limit is True:
+            gas_limit = int(self.task.max_fee)
         else:
             gas_limit = int(overall_fee * 1.4)
 
@@ -108,14 +112,14 @@ class DeployArgent(StarkBase):
 
             txn_hash = deploy_result.hash
 
-            if self.config.wait_for_receipt is True:
-                logger.debug(f"Txn sent. Waiting for receipt (Timeout in {self.config.txn_wait_timeout_sec}s)."
+            if self.task.wait_for_receipt is True:
+                logger.debug(f"Txn sent. Waiting for receipt (Timeout in {self.task.txn_wait_timeout_sec}s)."
                              f" Txn Hash: {hex(txn_hash)}")
 
                 txn_receipt = await self.wait_for_tx_receipt(tx_hash=txn_hash,
-                                                             time_out_sec=self.config.txn_wait_timeout_sec)
+                                                             time_out_sec=int(self.task.txn_wait_timeout_sec))
                 if txn_receipt is False:
-                    err_msg = f"Txn timeout ({self.config.txn_wait_timeout_sec}s)."
+                    err_msg = f"Txn timeout ({self.task.txn_wait_timeout_sec}s)."
                     logger.error(err_msg)
                     current_log_action.is_success = False
                     current_log_action.status = err_msg

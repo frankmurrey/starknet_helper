@@ -1,23 +1,26 @@
 import random
 
-from modules.base import StarkBase
+from modules.base import ModuleBase
 from contracts.tokens.main import Tokens
 from contracts.zklend.main import ZkLendContracts
-from src.schemas.configs.zklend import ZkLendSupplyConfigSchema
+from src.schemas.tasks.zklend import ZkLendSupplyTask
 
 from loguru import logger
 
 
-class ZkLendSupply(StarkBase):
-    config: ZkLendSupplyConfigSchema
+class ZkLendSupply(ModuleBase):
+    task: ZkLendSupplyTask
 
     def __init__(
             self,
             account,
-            config):
-        super().__init__(client=account.client)
+            task: ZkLendSupplyTask):
+        super().__init__(
+            client=account.client,
+            task=task,
+        )
 
-        self.config = config
+        self.task = task
         self.account = account
 
         self.tokens = Tokens()
@@ -26,7 +29,7 @@ class ZkLendSupply(StarkBase):
                                                  abi=self.zk_lend_contracts.router_abi,
                                                  provider=account)
 
-        self.coin_x = self.tokens.get_by_name(self.config.coin_to_supply)
+        self.coin_x = self.tokens.get_by_name(self.task.coin_to_supply)
 
         self.amount_out_decimals = None
 
@@ -44,22 +47,22 @@ class ZkLendSupply(StarkBase):
 
         wallet_token_balance_decimals = wallet_token_balance_wei / 10 ** token_x_decimals
 
-        if self.config.use_all_balance is True:
+        if self.task.use_all_balance is True:
             amount_out_wei = wallet_token_balance_wei
 
-        elif self.config.send_percent_balance is True:
-            percent = random.randint(self.config.min_amount_out, self.config.max_amount_out) / 100
+        elif self.task.send_percent_balance is True:
+            percent = random.randint(int(self.task.min_amount_out), int(self.task.max_amount_out)) / 100
             amount_out_wei = int(wallet_token_balance_wei * percent)
 
-        elif wallet_token_balance_decimals < self.config.max_amount_out:
-            amount_out_wei = self.get_random_amount_out_of_token(min_amount=self.config.min_amount_out,
+        elif wallet_token_balance_decimals < self.task.max_amount_out:
+            amount_out_wei = self.get_random_amount_out_of_token(min_amount=self.task.min_amount_out,
                                                                  max_amount=wallet_token_balance_decimals,
                                                                  decimals=token_x_decimals)
 
         else:
             amount_out_wei = self.get_random_amount_out_of_token(
-                min_amount=self.config.min_amount_out,
-                max_amount=self.config.max_amount_out,
+                min_amount=self.task.min_amount_out,
+                max_amount=self.task.max_amount_out,
                 decimals=token_x_decimals
             )
 
@@ -100,7 +103,7 @@ class ZkLendSupply(StarkBase):
 
         calls = [approve_call, deposit_call]
 
-        if self.config.enable_collateral is True:
+        if self.task.enable_collateral is True:
             enable_collateral_call = self.build_enable_collateral_call()
             calls.append(enable_collateral_call)
 
@@ -112,11 +115,10 @@ class ZkLendSupply(StarkBase):
             return False
 
         txn_info_message = (f"Supply (ZkLend) | {round(self.amount_out_decimals, 4)} ({self.coin_x.symbol.upper()}). "
-                            f"Enable collateral: {self.config.enable_collateral}.")
+                            f"Enable collateral: {self.task.enable_collateral}.")
 
         txn_status = await self.simulate_and_send_transfer_type_transaction(account=self.account,
                                                                             calls=txn_payload_calls,
-                                                                            txn_info_message=txn_info_message,
-                                                                            config=self.config)
+                                                                            txn_info_message=txn_info_message, )
 
         return txn_status

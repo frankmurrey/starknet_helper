@@ -1,22 +1,25 @@
-from modules.base import StarkBase
+from modules.base import ModuleBase
 from contracts.tokens.main import Tokens
 from contracts.zklend.main import ZkLendContracts
-from src.schemas.configs.zklend import ZkLendWithdrawConfigSchema
+from src.schemas.tasks.zklend import ZkLendWithdrawTask
 
 from loguru import logger
 
 
-class ZkLendWithdraw(StarkBase):
-    config: ZkLendWithdrawConfigSchema
+class ZkLendWithdraw(ModuleBase):
+    task: ZkLendWithdrawTask
 
     def __init__(
             self,
             account,
-            config
+            task: ZkLendWithdrawTask
     ):
-        super().__init__(client=account.client)
+        super().__init__(
+            client=account.client,
+            task=task,
+        )
 
-        self.config = config
+        self.task = task
         self.account = account
 
         self.tokens = Tokens()
@@ -25,7 +28,7 @@ class ZkLendWithdraw(StarkBase):
                                                  abi=self.zk_lend_contracts.router_abi,
                                                  provider=account)
 
-        self.coin_x = self.tokens.get_by_name(self.config.coin_to_withdraw)
+        self.coin_x = self.tokens.get_by_name(self.task.coin_to_withdraw)
         self.coin_zx = self.tokens.get_by_name(f"z{self.coin_x.symbol.lower()}")
 
         self.amount_out_decimals = None
@@ -59,7 +62,6 @@ class ZkLendWithdraw(StarkBase):
 
         txn_status = await self.simulate_and_send_transfer_type_transaction(account=self.account,
                                                                             calls=txn_payload_calls,
-                                                                            txn_info_message=txn_info_message,
-                                                                            config=self.config)
+                                                                            txn_info_message=txn_info_message, )
 
         return txn_status

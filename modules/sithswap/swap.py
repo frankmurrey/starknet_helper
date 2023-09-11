@@ -3,22 +3,27 @@ from typing import Union
 
 from contracts.tokens.main import Tokens
 from contracts.sithswap.main import SithSwapContracts
+from modules.base import SwapModuleBase
 from modules.sithswap.base import SithBase
-from src.schemas.configs.sithswap import SithSwapConfigSchema
+from src.schemas.tasks.sithswap import SithSwapTask
 
 from starknet_py.net.account.account import Account
 
 
-class SithSwap(SithBase):
-    config: SithSwapConfigSchema
+class SithSwap(SithBase, SwapModuleBase):
+    task: SithSwapTask
     account: Account
 
     def __init__(self,
                  account,
-                 config):
-        super().__init__(account=account)
+                 task: SithSwapTask):
 
-        self.config = config
+        super().__init__(
+            account=account,
+            task=task,
+        )
+
+        self.task = task
         self.account = account
 
         self.tokens = Tokens()
@@ -27,16 +32,16 @@ class SithSwap(SithBase):
                                                  abi=self.sith_swap_contracts.router_abi,
                                                  provider=account)
 
-        self.coin_x = self.tokens.get_by_name(self.config.coin_to_swap)
-        self.coin_y = self.tokens.get_by_name(self.config.coin_to_receive)
+        self.coin_x = self.tokens.get_by_name(self.task.coin_to_swap)
+        self.coin_y = self.tokens.get_by_name(self.task.coin_to_receive)
 
     async def build_txn_payload_data(self) -> Union[dict, None]:
         amount_x_wei = await self.get_amount_out_from_balance(
             coin_x=self.coin_x,
-            use_all_balance=self.config.use_all_balance,
-            send_percent_balance=self.config.send_percent_balance,
-            min_amount_out=self.config.min_amount_out,
-            max_amount_out=self.config.max_amount_out
+            use_all_balance=self.task.use_all_balance,
+            send_percent_balance=self.task.send_percent_balance,
+            min_amount_out=self.task.min_amount_out,
+            max_amount_out=self.task.max_amount_out
         )
         coin_x_decimals = await self.get_token_decimals(contract_address=self.coin_x.contract_address,
                                                         abi=self.coin_x.abi,
@@ -56,7 +61,7 @@ class SithSwap(SithBase):
             return None
 
         amount_in = amounts_y_data['amount_in_wei']
-        amount_in_wei_with_slippage = int(amount_in * (1 - (self.config.slippage / 100)))
+        amount_in_wei_with_slippage = int(amount_in * (1 - (self.task.slippage / 100)))
         coin_y_decimals = await self.get_token_decimals(contract_address=self.coin_y.contract_address,
                                                         abi=self.coin_y.abi,
                                                         provider=self.account)
@@ -96,7 +101,6 @@ class SithSwap(SithBase):
 
         txn_status = await self.send_swap_type_txn(
             account=self.account,
-            config=self.config,
             txn_payload_data=txn_payload_data
         )
 

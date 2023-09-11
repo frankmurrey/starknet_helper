@@ -1,21 +1,25 @@
-from modules.base import StarkBase
+from modules.base import ModuleBase
 from modules.dmail.random_generator import generate_random_profile
-from src.schemas.configs.dmail import DmailSendMailConfigSchema
+from src.schemas.tasks.dmail import DmailSendMailTask
 from src.schemas.dmail_profile import DmailProfileSchema
 from contracts.dmail.main import DmailContracts
 
 
-class DmailSendMail(StarkBase):
-    config: DmailSendMailConfigSchema
+class DmailSendMail(ModuleBase):
+    task: DmailSendMailTask
 
     def __init__(
             self,
             account,
-            config
+            task: DmailSendMailTask,
     ):
-        super().__init__(client=account.client)
 
-        self.config = config
+        super().__init__(
+            client=account.client,
+            task=task,
+        )
+
+        self.task = task
         self.account = account
 
         self.dmail_contracts = DmailContracts()
@@ -45,10 +49,6 @@ class DmailSendMail(StarkBase):
 
         txn_status = await self.simulate_and_send_transfer_type_transaction(account=self.account,
                                                                             calls=txn_payload_calls,
-                                                                            txn_info_message=txn_info_message,
-                                                                            config=self.config)
+                                                                            txn_info_message=txn_info_message, )
 
         return txn_status
-
-
-

@@ -2,16 +2,23 @@ import random
 from typing import Union
 
 from contracts.base import TokenBase
-from modules.base import StarkBase
-
+from modules.base import SwapModuleBase
+from src.schemas.tasks.jediswap import JediSwapTask
 
 from loguru import logger
 
 
-class JediSwapBase(StarkBase):
+class JediSwapBase(SwapModuleBase):
+    task: JediSwapTask
+
     def __init__(self,
-                 account):
-        super().__init__(client=account.client)
+                 account,
+                 task: JediSwapTask, ):
+
+        super().__init__(
+            client=account.client,
+            task=task,
+        )
         self._account = account
 
     async def get_amounts_out_from_balance(

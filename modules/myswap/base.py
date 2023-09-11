@@ -2,13 +2,14 @@ from typing import Union
 
 from contracts.base import TokenBase
 from contracts.tokens.main import Tokens
-from modules.base import StarkBase
+from modules.base import SwapModuleBase
 from modules.myswap.math import get_amount_in_from_reserves
+from src.schemas.tasks.myswap import MySwapTask
 
 from loguru import logger
 
 
-class MySwapBase(StarkBase):
+class MySwapBase(SwapModuleBase):
     pools: dict = {
         1: ['ETH', 'USDC'],
         2: ['DAI', 'ETH'],
@@ -20,10 +21,17 @@ class MySwapBase(StarkBase):
         8: ['ORDS', 'ETH'],
     }
 
+    task: MySwapTask
+
     def __init__(
             self,
-            account):
-        super().__init__(client=account.client)
+            account,
+            task: MySwapTask, ):
+
+        super().__init__(
+            client=account.client,
+            task=task,
+        )
         self._account = account
 
         self.tokens = Tokens()
@@ -132,4 +140,3 @@ class MySwapBase(StarkBase):
         amount_in_after_dao_fee = amount_in_after_slippage * (1 - (fee / 100000))
 
         return int(amount_in_after_dao_fee)
-

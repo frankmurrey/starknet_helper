@@ -55,14 +55,12 @@ class Tokens:
         logger.error(f"Token {name_query} not found")
         return None
 
-    @property
-    def jedi_available_tokens(self):
-        return [token for token in self.all_tokens if token.is_jedi_available]
-
-    @property
-    def my_swap_available_tokens(self):
-        return [token for token in self.all_tokens if token.is_my_swap_available]
-
-    @property
-    def all_gecko_available_tokens(self):
-        return [token for token in self.all_tokens if token.coin_gecko_id]
+    def get_tokens_by_protocol(
+            self,
+            protocol: str
+    ) -> list:
+        tokens = []
+        for token in self.all_tokens:
+            if protocol.lower() in token.available_protocol:
+                tokens.append(token)
+        return tokens

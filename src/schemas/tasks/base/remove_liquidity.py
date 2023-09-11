@@ -1,11 +1,11 @@
 from typing import Union
 
-from src.schemas.configs import validation_mixins
-from src.schemas.configs.transaction_settings_base.base import TransactionSettingsBase
+from src.schemas import validation_mixins
+from src.schemas.tasks.base import TaskBase
 
 
-class RemoveLiquiditySettingsBase(
-    TransactionSettingsBase,
+class RemoveLiquidityTaskBase(
+    TaskBase,
     validation_mixins.SlippageValidationMixin,
     validation_mixins.SameCoinValidationMixin
 ):

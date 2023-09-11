@@ -1,8 +1,8 @@
 from src import enums
 
-from src.schemas.configs.transaction_settings_base import SwapSettingsBase
+from src.schemas.tasks.base.swap import SwapTaskBase
 
 
-class TestConfigSchema(SwapSettingsBase):
+class TestTask(SwapTaskBase):
     module_name: enums.ModuleName = enums.ModuleName.TEST
     module_type: enums.ModuleType = enums.ModuleType.TEST

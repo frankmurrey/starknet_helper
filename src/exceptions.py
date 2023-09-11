@@ -1,7 +1,7 @@
 from pydantic import ValidationError
 
 
-class ModuleConfigValidationError(ValueError):
+class AppValidationError(ValueError):
     def __init__(
             self,
             message: str,

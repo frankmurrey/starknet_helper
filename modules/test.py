@@ -1,10 +1,10 @@
-from modules.base import StarkBase
+from modules.base import ModuleBase
 from src.schemas.configs.app_config import AppConfigSchema
 
 from starknet_py.net.http_client import HttpMethod
 
 
-class ModulesTest(StarkBase):
+class ModulesTest(ModuleBase):
     def __init__(
             self,
             account,

@@ -1,13 +1,13 @@
-from src.schemas.configs.transaction_settings_base import CommonSettingsBase
+from src.schemas.configs.transaction_settings_base import TransactionSettingsBase
 
 from src import enums
 
 
-class DeployArgentConfigSchema(CommonSettingsBase):
+class DeployArgentConfigSchema(TransactionSettingsBase):
     module_name: enums.ModuleName = enums.ModuleName.DEPLOY
     module_type: enums.PrivateKeyType = enums.PrivateKeyType.argent
 
 
-class DeployBraavostConfigSchema(CommonSettingsBase):
+class DeployBraavostConfigSchema(TransactionSettingsBase):
     module_name: enums.ModuleName = enums.ModuleName.DEPLOY
     module_type: enums.PrivateKeyType = enums.PrivateKeyType.braavos

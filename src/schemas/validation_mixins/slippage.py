@@ -6,6 +6,8 @@ from utlis import validation
 
 class SlippageValidationMixin(BaseModel):
 
+    slippage: float
+
     @validator("slippage", pre=True, check_fields=False)
     def validate_slippage_pre(cls, value):
 

@@ -4,6 +4,7 @@ import tkinter.filedialog
 import customtkinter
 
 from gui.wallet_window.wallets_table import WalletsTable
+from gui.wallet_window.actions_frame import ActionsFrame
 
 from src.wallet_manager import WalletManager
 from utlis.file_manager import FileManager
@@ -13,35 +14,67 @@ from src import paths
 class WalletsWindow(customtkinter.CTkFrame):
     def __init__(self, master: any, **kwargs):
         super().__init__(master, **kwargs)
+        self.master = master
+        self.actions_top_level_window = None
 
         self.grid(row=0, column=1, sticky="nsew", padx=20, pady=20)
-
-        self.grid_columnconfigure(0,  weight=1)
-        self.grid_rowconfigure((0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10), weight=1)
+        self.grid_rowconfigure((0, 1, 2, 3, 4, 5, 6), weight=1)
+        self.grid_rowconfigure(8, weight=0)
+        self.grid_rowconfigure(9, weight=1)
 
         self.wallets_table = WalletsTable(self)
 
+        self.button_frame = customtkinter.CTkFrame(self)
+        self.button_frame.grid(
+            row=8,
+            column=0,
+            padx=20,
+            pady=2,
+            sticky="nsew"
+        )
+
         self.import_button = customtkinter.CTkButton(
-            self,
+            self.button_frame,
             text="Import",
             font=customtkinter.CTkFont(size=12, weight="bold"),
-            width=70,
+            width=100,
             height=30,
             command=self.load_wallets_csv_file
         )
-        self.import_button.grid(row=8, column=0, padx=20, pady=10, sticky="wn")
+        self.import_button.grid(
+            row=0,
+            column=0,
+            padx=20,
+            pady=10,
+            sticky="wn"
+        )
 
         self.remove_button = customtkinter.CTkButton(
-            self,
+            self.button_frame,
             text="Remove all",
             font=customtkinter.CTkFont(size=12, weight="bold"),
             fg_color="#cc0000",
             hover_color="#5e1914",
-            width=70,
+            width=100,
             height=30,
             command=self.remove_all_wallets
         )
-        self.remove_button.grid(row=8, column=0, padx=100, pady=10, sticky="wn")
+        self.remove_button.grid(
+            row=0,
+            column=1,
+            padx=0,
+            pady=10,
+            sticky="wn"
+        )
+
+        self.actions_frame = ActionsFrame(self)
+        self.actions_frame.grid(
+                row=9,
+                column=0,
+                padx=20,
+                pady=10,
+                sticky="nsew"
+        )
 
     @property
     def wallets(self):
@@ -94,4 +127,5 @@ class WalletsWindow(customtkinter.CTkFrame):
             wallet_item.destroy()
 
         self.wallets_table.set_wallets([])
+
 

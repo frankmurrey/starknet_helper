@@ -15,10 +15,14 @@ class SidebarFrame(customtkinter.CTkFrame):
         super().__init__(master, **kwargs)
         self.master = master
 
-        self.grid(row=0,
-                        column=0,
-                        sticky="nsw"
-                        )
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure((0, 1, 2, 3, 4, 5, 6, 7, 8), weight=0)
+        self.grid_rowconfigure(9, weight=1)
+        self.grid(
+            row=0,
+            column=0,
+            sticky="nsw"
+        )
         self.tabview = customtkinter.CTkTabview(
             self,
             width=400,
@@ -102,7 +106,8 @@ class SidebarFrame(customtkinter.CTkFrame):
             row=9,
             column=0,
             padx=20,
-            pady=(0, 75)
+            pady=(0, 80),
+            sticky="s"
         )
         self.appearance_mode_optionemenu = customtkinter.CTkOptionMenu(
             self,
@@ -113,7 +118,8 @@ class SidebarFrame(customtkinter.CTkFrame):
             row=9,
             column=0,
             padx=20,
-            pady=(0, 20)
+            pady=(0, 50),
+            sticky="s"
         )
 
         link_font = customtkinter.CTkFont(
@@ -135,7 +141,8 @@ class SidebarFrame(customtkinter.CTkFrame):
             row=9,
             column=0,
             padx=20,
-            pady=(40, 0)
+            pady=(0, 10),
+            sticky="s"
         )
 
     def change_appearance_mode_event(self, new_appearance_mode: str):

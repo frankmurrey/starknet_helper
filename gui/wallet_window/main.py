@@ -1,11 +1,13 @@
 import tkinter.messagebox
 import tkinter.filedialog
+from typing import List
 
 import customtkinter
 
+from gui.wallet_window.add_wallet_window import AddWalletWindow
 from gui.wallet_window.wallets_table import WalletsTable
 from gui.wallet_window.actions_frame import ActionsFrame
-
+from src.schemas.wallet_data import WalletData
 from src.wallet_manager import WalletManager
 from utlis.file_manager import FileManager
 from src import paths
@@ -25,13 +27,7 @@ class WalletsWindow(customtkinter.CTkFrame):
         self.wallets_table = WalletsTable(self)
 
         self.button_frame = customtkinter.CTkFrame(self)
-        self.button_frame.grid(
-            row=8,
-            column=0,
-            padx=20,
-            pady=2,
-            sticky="nsew"
-        )
+        self.button_frame.grid(row=8, column=0, padx=20, pady=2, sticky="nsew")
 
         self.import_button = customtkinter.CTkButton(
             self.button_frame,
@@ -39,15 +35,19 @@ class WalletsWindow(customtkinter.CTkFrame):
             font=customtkinter.CTkFont(size=12, weight="bold"),
             width=100,
             height=30,
-            command=self.load_wallets_csv_file
+            command=self.load_wallets_csv_file,
         )
-        self.import_button.grid(
-            row=0,
-            column=0,
-            padx=20,
-            pady=10,
-            sticky="wn"
+        self.import_button.grid(row=0, column=0, padx=10, pady=10, sticky="wn")
+
+        self.add_wallet_button = customtkinter.CTkButton(
+            self.button_frame,
+            text="Add wallet",
+            font=customtkinter.CTkFont(size=12, weight="bold"),
+            width=100,
+            height=30,
+            command=self.add_wallet_button_clicked,
         )
+        self.add_wallet_button.grid(row=0, column=1, padx=(0, 10), pady=10, sticky="wn")
 
         self.remove_button = customtkinter.CTkButton(
             self.button_frame,
@@ -57,34 +57,43 @@ class WalletsWindow(customtkinter.CTkFrame):
             hover_color="#5e1914",
             width=100,
             height=30,
-            command=self.remove_all_wallets
+            command=self.remove_all_wallets,
         )
-        self.remove_button.grid(
-            row=0,
-            column=1,
-            padx=0,
-            pady=10,
-            sticky="wn"
-        )
+        self.remove_button.grid(row=0, column=2, padx=0, pady=10, sticky="wn")
 
         self.actions_frame = ActionsFrame(self)
-        self.actions_frame.grid(
-                row=9,
-                column=0,
-                padx=20,
-                pady=10,
-                sticky="nsew"
-        )
+        self.actions_frame.grid(row=9, column=0, padx=20, pady=10, sticky="nsew")
+
+        # ADD WALLET
+        self.add_wallet_window = None
 
     @property
     def wallets(self):
-        return [wallet_item.wallet_data for wallet_item in self.wallets_table.wallets_items]
+        return [
+            wallet_item.wallet_data for wallet_item in self.wallets_table.wallets_items
+        ]
+
+    def set_wallets(self, wallets: List[WalletData]):
+        if not len(self.wallets):
+            self.wallets_table.set_wallets(wallets)
+            return
+
+        remove_previous_wallets = tkinter.messagebox.askyesno(
+            title="Remove previous wallets",
+            message="Remove previous wallets?",
+            icon="warning",
+        )
+
+        if not remove_previous_wallets:
+            self.wallets_table.add_wallets(wallets)
+        else:
+            self.wallets_table.set_wallets(wallets)
 
     def load_wallets_csv_file(self):
         filepath = tkinter.filedialog.askopenfilename(
             initialdir=paths.MAIN_DIR,
             title="Select wallets csv file",
-            filetypes=[("Text files", "*.csv")]
+            filetypes=[("Text files", "*.csv")],
         )
 
         if not filepath:
@@ -92,40 +101,30 @@ class WalletsWindow(customtkinter.CTkFrame):
 
         wallets_raw_data = FileManager.read_data_from_csv_file(filepath)
         wallets = WalletManager.get_wallets(wallets_raw_data)
-        self.wallets_table.set_wallets(wallets)
-
-    def remove_selected_wallets(self):
-        # TODO: Ебланский способ
-
-        new_wallets_data = []
-        for wallet_index, wallet_item in enumerate(self.wallets_table.wallets_items):
-            wallet_item.grid_forget()
-            wallet_item.frame.destroy()
-            wallet_item.destroy()
-
-            if not wallet_item.is_chosen:
-                new_wallets_data.append(wallet_item.wallet_data)
-
-        self.wallets_table.set_wallets(new_wallets_data)
+        self.set_wallets(wallets)
 
     def remove_all_wallets(self):
-        if not self.wallets:
-            return
-
         msg_box = tkinter.messagebox.askyesno(
             title="Remove all",
             message="Are you sure you want to remove all wallets?",
-            icon="warning"
+            icon="warning",
         )
 
         if not msg_box:
             return
 
-        for wallet_index, wallet_item in enumerate(self.wallets_table.wallets_items):
-            wallet_item.grid_forget()
-            wallet_item.frame.destroy()
-            wallet_item.destroy()
+        self.wallets_table.remove_all_wallets()
 
-        self.wallets_table.set_wallets([])
+    def add_wallet_button_clicked(self):
+        if self.add_wallet_window:
+            return
 
+        self.add_wallet_window = AddWalletWindow(
+            master=self.master,
+            on_add_wallet=self.add_wallet_callback,
+        )
 
+    def add_wallet_callback(self, wallet_data: WalletData):
+        self.wallets_table.add_wallets([wallet_data])
+        self.add_wallet_window.destroy()
+        self.add_wallet_window = None

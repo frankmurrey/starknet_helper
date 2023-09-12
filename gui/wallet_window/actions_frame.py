@@ -260,7 +260,7 @@ class ButtonActionsFrame(customtkinter.CTkFrame):
             self,
             text="-",
             font=customtkinter.CTkFont(size=12, weight="bold"),
-            fg_color="#cc0000",
+            fg_color="#db524b",
             hover_color="#5e1914",
             width=25,
             height=25,
@@ -332,9 +332,11 @@ class RunSettingsFrame(customtkinter.CTkFrame):
         self.test_mode_checkbox = customtkinter.CTkCheckBox(
             self,
             text="Test mode",
+            text_color="#F47174",
             font=customtkinter.CTkFont(size=12, weight="bold"),
             checkbox_width=18,
             checkbox_height=18,
+            command=self.test_mode_checkbox_event
         )
         self.test_mode_checkbox.grid(
             row=0,
@@ -358,7 +360,11 @@ class RunSettingsFrame(customtkinter.CTkFrame):
         )
 
         self.min_delay_entry_spinbox = FloatSpinbox(self,
-                                                    step_size=5)
+                                                    step_size=5,
+                                                    width=105)
+        self.min_delay_entry_spinbox.entry.configure(
+            textvariable=Variable(value=40)
+        )
         self.min_delay_entry_spinbox.grid(
             row=2,
             column=0,
@@ -381,7 +387,11 @@ class RunSettingsFrame(customtkinter.CTkFrame):
         )
 
         self.max_delay_entry_spinbox = FloatSpinbox(self,
-                                                    step_size=5)
+                                                    step_size=5,
+                                                    width=105)
+        self.max_delay_entry_spinbox.entry.configure(
+            textvariable=Variable(value=80)
+        )
         self.max_delay_entry_spinbox.grid(
             row=2,
             column=1,
@@ -403,15 +413,21 @@ class RunSettingsFrame(customtkinter.CTkFrame):
             sticky="w"
         )
 
-        self.txn_wait_timeout_seconds_entry = customtkinter.CTkEntry(
-            self,
-            font=customtkinter.CTkFont(size=12),
-            width=70,
+        self.txn_wait_timeout_seconds_spinbox = FloatSpinbox(self,
+                                                             step_size=5,
+                                                             width=105)
+        self.txn_wait_timeout_seconds_spinbox.entry.configure(
             state="disabled",
-            textvariable=Variable(value=""),
-            fg_color='#3f3f3f'
+            fg_color="#3f3f3f",
+            textvariable=Variable(value="")
         )
-        self.txn_wait_timeout_seconds_entry.grid(
+        self.txn_wait_timeout_seconds_spinbox.add_button.configure(
+            state="disabled"
+        )
+        self.txn_wait_timeout_seconds_spinbox.subtract_button.configure(
+            state="disabled"
+        )
+        self.txn_wait_timeout_seconds_spinbox.grid(
             row=4,
             column=0,
             padx=20,
@@ -421,7 +437,7 @@ class RunSettingsFrame(customtkinter.CTkFrame):
 
         self.wait_for_receipt_checkbox = customtkinter.CTkCheckBox(
             self,
-            text="Wait for receipt",
+            text="Wait for txn",
             font=customtkinter.CTkFont(size=12),
             checkbox_width=18,
             checkbox_height=18,
@@ -437,14 +453,34 @@ class RunSettingsFrame(customtkinter.CTkFrame):
 
     def wait_for_txn_checkbox_event(self):
         if self.wait_for_receipt_checkbox.get():
-            self.txn_wait_timeout_seconds_entry.configure(
+            self.txn_wait_timeout_seconds_spinbox.entry.configure(
                 state="normal",
-                textvariable=Variable(value=140),
-                fg_color='#343638'
+                fg_color="gray16",
+                textvariable=Variable(value=120)
+            )
+            self.txn_wait_timeout_seconds_spinbox.add_button.configure(
+                state="normal")
+
+            self.txn_wait_timeout_seconds_spinbox.subtract_button.configure(
+                state="normal")
+        else:
+            self.txn_wait_timeout_seconds_spinbox.entry.configure(
+                state="disabled",
+                fg_color="#3f3f3f",
+                textvariable=Variable(value="")
+            )
+            self.txn_wait_timeout_seconds_spinbox.add_button.configure(
+                state="disabled")
+
+            self.txn_wait_timeout_seconds_spinbox.subtract_button.configure(
+                state="disabled")
+
+    def test_mode_checkbox_event(self):
+        if self.test_mode_checkbox.get():
+            self.test_mode_checkbox.configure(
+                text_color="#6fc276"
             )
         else:
-            self.txn_wait_timeout_seconds_entry.configure(
-                state="disabled",
-                textvariable=Variable(value=""),
-                fg_color='#3f3f3f'
+            self.test_mode_checkbox.configure(
+                text_color="#F47174"
             )

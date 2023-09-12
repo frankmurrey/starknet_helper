@@ -2,6 +2,9 @@ import tkinter.messagebox
 from typing import Callable, Union
 
 from gui.modules.swap import SwapTab
+from gui.modules.add_liquidity import AddLiquidityTab
+from gui.modules.remove_liquidity import RemoveLiquidityTab
+from gui.modules.supply import SupplyLendingTab
 
 import customtkinter
 
@@ -40,6 +43,8 @@ class InteractionTopLevelWindow(customtkinter.CTkToplevel):
             sticky="nsew"
         )
         self.tabview.grid_columnconfigure(0, weight=1)
+
+        self.current_tab_name = None
         self.current_tab = None
         self.set_default_tab()
 
@@ -59,6 +64,43 @@ class InteractionTopLevelWindow(customtkinter.CTkToplevel):
             sticky="w"
         )
 
+    def set_new_tab(
+            self,
+            tab_name: str):
+        if self.current_tab_name is not None:
+            self.tabview.delete(self.current_tab_name.title())
+
+        self.tabview.add(tab_name)
+        self.tabview.set(tab_name)
+
+        if tab_name == "Swap":
+            self.current_tab = SwapTab(
+                self.tabview,
+                tab_name
+            )
+            self.current_tab_name = tab_name
+
+        elif tab_name == "Add Liquidity":
+            self.current_tab = AddLiquidityTab(
+                self.tabview,
+                tab_name
+            )
+            self.current_tab_name = tab_name
+
+        elif tab_name == "Remove Liquidity":
+            self.current_tab = RemoveLiquidityTab(
+                self.tabview,
+                tab_name
+            )
+            self.current_tab_name = tab_name
+
+        elif tab_name == "Supply Lending":
+            self.current_tab = SupplyLendingTab(
+                self.tabview,
+                tab_name
+            )
+            self.current_tab_name = tab_name
+
     def set_default_tab(self):
         tab_name = self.chose_module_frame.modules_option_menu.get()
         self.tabview.add(tab_name.title())
@@ -67,6 +109,7 @@ class InteractionTopLevelWindow(customtkinter.CTkToplevel):
             self.tabview,
             tab_name
         )
+        self.current_tab_name = tab_name
 
     def get_repeats_amount(self) -> Union[int, None]:
         try:
@@ -134,8 +177,12 @@ class ChoseModuleFrame(customtkinter.CTkFrame):
             self,
             values=[
                 'Swap',
-                "Liquidity"
+                "Add Liquidity",
+                "Remove Liquidity",
+                "Supply Lending",
+                "Withdraw Lending",
             ],
+            command=master.set_new_tab
         )
         self.modules_option_menu.grid(
             row=1,

@@ -64,6 +64,8 @@ class InteractionTopLevelWindow(customtkinter.CTkToplevel):
             sticky="w"
         )
 
+        self.after(10, self.focus_force)
+
     def set_new_tab(
             self,
             tab_name: str):

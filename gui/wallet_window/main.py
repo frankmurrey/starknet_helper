@@ -53,7 +53,7 @@ class WalletsWindow(customtkinter.CTkFrame):
             self.button_frame,
             text="Remove all",
             font=customtkinter.CTkFont(size=12, weight="bold"),
-            fg_color="#cc0000",
+            fg_color="#db524b",
             hover_color="#5e1914",
             width=100,
             height=30,

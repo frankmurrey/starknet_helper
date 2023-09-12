@@ -136,6 +136,7 @@ class SwapFrame(customtkinter.CTkFrame):
         self.protocol_combo = customtkinter.CTkComboBox(
             self.frame,
             values=self.protocol_options,
+            width=120,
             command=self.protocol_change_event
         )
         self.protocol_combo.grid(
@@ -161,6 +162,7 @@ class SwapFrame(customtkinter.CTkFrame):
         self.coin_to_swap_combo = customtkinter.CTkComboBox(
             self.frame,
             values=self.coin_to_swap_options,
+            width=120,
             command=self.update_coin_options
         )
         self.coin_to_swap_combo.grid(
@@ -185,6 +187,7 @@ class SwapFrame(customtkinter.CTkFrame):
 
         self.coin_to_receive_combo = customtkinter.CTkComboBox(
             self.frame,
+            width=120,
             values=self.coin_to_receive_options
         )
         self.coin_to_receive_combo.grid(
@@ -209,7 +212,7 @@ class SwapFrame(customtkinter.CTkFrame):
 
         self.min_amount_entry = customtkinter.CTkEntry(
             self.frame,
-            width=140
+            width=120
         )
         self.min_amount_entry.grid(
             row=5,
@@ -233,7 +236,7 @@ class SwapFrame(customtkinter.CTkFrame):
 
         self.max_amount_entry = customtkinter.CTkEntry(
             self.frame,
-            width=140
+            width=120
         )
         self.max_amount_entry.grid(
             row=5,
@@ -315,7 +318,7 @@ class SwapFrame(customtkinter.CTkFrame):
 
         self.max_price_difference_percent_entry = customtkinter.CTkEntry(
             self.frame,
-            width=70,
+            width=120,
             textvariable=Variable(value=2)
         )
         self.max_price_difference_percent_entry.grid(

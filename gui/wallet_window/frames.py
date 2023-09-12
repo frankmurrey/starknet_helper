@@ -71,7 +71,7 @@ class WalletsTableTop(customtkinter.CTkFrame):
         self.wallet_proxy_label.grid(
             row=0,
             column=2,
-            padx=(70, 0),
+            padx=(85, 0),
             pady=pad_y,
             sticky="w"
         )
@@ -85,7 +85,7 @@ class WalletsTableTop(customtkinter.CTkFrame):
         self.wallet_type_label.grid(
             row=0,
             column=3,
-            padx=(55, 0),
+            padx=(95, 0),
             pady=pad_y,
             sticky="w"
         )

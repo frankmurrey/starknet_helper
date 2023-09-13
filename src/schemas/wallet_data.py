@@ -16,7 +16,7 @@ class WalletData(BaseModel):
     name: Optional[str] = None
     private_key: str
     proxy: Optional[ProxyData] = None
-    evm_pair_address: Optional[str] = None
+    pair_address: Optional[str] = None
     type: enums.PrivateKeyType = enums.PrivateKeyType.argent
 
     @validator("proxy", pre=True)

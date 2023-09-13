@@ -1,6 +1,8 @@
 import customtkinter
 
 from src.schemas.wallet_data import WalletData
+from utlis.key_manager.key_manager import get_argent_addr_from_private_key
+from utlis.key_manager.key_manager import get_braavos_addr_from_private_key
 from src import enums
 
 
@@ -60,7 +62,7 @@ class WalletItem(customtkinter.CTkFrame):
 
         self.wallet_address_label = customtkinter.CTkLabel(
             self.frame,
-            text=self.get_short_address(wallet_data.private_key),
+            text=self.get_short_address(wallet_data.address),
             font=customtkinter.CTkFont(size=12, weight="bold"),
             anchor="w"
         )

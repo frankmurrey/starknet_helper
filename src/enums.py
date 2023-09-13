@@ -7,8 +7,8 @@ class ModuleType(str, Enum):
     SUPPLY = 'supply'
     BORROW = 'borrow'
     WITHDRAW = 'withdraw'
-    LIQUIDITY_ADD = "liquidity_add"
-    LIQUIDITY_REMOVE = "liquidity_remove"
+    LIQUIDITY_ADD = "liq_add"
+    LIQUIDITY_REMOVE = "liq_remove"
     SEND_MAIL = 'send_mail'
     TEST = 'test'
 

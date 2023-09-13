@@ -1,10 +1,15 @@
 import tkinter.messagebox
+from tkinter import Variable
 from typing import Callable, Union
 
 from gui.modules.swap import SwapTab
 from gui.modules.add_liquidity import AddLiquidityTab
 from gui.modules.remove_liquidity import RemoveLiquidityTab
 from gui.modules.supply import SupplyLendingTab
+from gui.modules.withdraw import WithdrawLendingTab
+from gui.modules.stark_id import StarkIdMintTab
+from gui.modules.dmail import DmailSendMailTab
+from gui.modules.deploy import DeployTab
 
 import customtkinter
 
@@ -18,17 +23,17 @@ class InteractionTopLevelWindow(customtkinter.CTkToplevel):
     ):
         super().__init__(*args, **kwargs)
         self.title("New action")
-        self.grid_columnconfigure(0, weight=0)
-        self.grid_columnconfigure(1, weight=0)
-        self.grid_columnconfigure(2, weight=1)
+        self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=0)
         self.grid_rowconfigure(1, weight=0)
 
         self.parent = parent
 
+        self.current_tab_name = None
+        self.current_tab = None
+
         self.chose_module_frame = ChoseModuleFrame(
-            master=self
-        )
+            master=self)
 
         self.tabview = customtkinter.CTkTabview(
             self,
@@ -44,8 +49,6 @@ class InteractionTopLevelWindow(customtkinter.CTkToplevel):
         )
         self.tabview.grid_columnconfigure(0, weight=1)
 
-        self.current_tab_name = None
-        self.current_tab = None
         self.set_default_tab()
 
         self.confirm_button = customtkinter.CTkButton(
@@ -59,7 +62,7 @@ class InteractionTopLevelWindow(customtkinter.CTkToplevel):
         self.confirm_button.grid(
             row=2,
             column=0,
-            padx=20,
+            padx=40,
             pady=(0, 20),
             sticky="w"
         )
@@ -70,7 +73,7 @@ class InteractionTopLevelWindow(customtkinter.CTkToplevel):
             self,
             tab_name: str):
         if self.current_tab_name is not None:
-            self.tabview.delete(self.current_tab_name.title())
+            self.tabview.delete(self.current_tab_name)
 
         self.tabview.add(tab_name)
         self.tabview.set(tab_name)
@@ -81,12 +84,14 @@ class InteractionTopLevelWindow(customtkinter.CTkToplevel):
                 tab_name
             )
             self.current_tab_name = tab_name
+            self.chose_module_frame.float_spinbox.max_value = 100
 
         elif tab_name == "Add Liquidity":
             self.current_tab = AddLiquidityTab(
                 self.tabview,
                 tab_name
             )
+            self.chose_module_frame.float_spinbox.max_value = 100
             self.current_tab_name = tab_name
 
         elif tab_name == "Remove Liquidity":
@@ -95,6 +100,8 @@ class InteractionTopLevelWindow(customtkinter.CTkToplevel):
                 tab_name
             )
             self.current_tab_name = tab_name
+            self.chose_module_frame.float_spinbox.max_value = 1
+            self.chose_module_frame.float_spinbox.entry.configure(textvariable=Variable(value=1))
 
         elif tab_name == "Supply Lending":
             self.current_tab = SupplyLendingTab(
@@ -102,6 +109,41 @@ class InteractionTopLevelWindow(customtkinter.CTkToplevel):
                 tab_name
             )
             self.current_tab_name = tab_name
+            self.chose_module_frame.float_spinbox.max_value = 100
+
+        elif tab_name == "Withdraw Lending":
+            self.current_tab = WithdrawLendingTab(
+                self.tabview,
+                tab_name
+            )
+            self.current_tab_name = tab_name
+            self.chose_module_frame.float_spinbox.max_value = 1
+            self.chose_module_frame.float_spinbox.entry.configure(textvariable=Variable(value=1))
+
+        elif tab_name == "Stark ID Mint":
+            self.current_tab = StarkIdMintTab(
+                self.tabview,
+                tab_name
+            )
+            self.current_tab_name = tab_name
+            self.chose_module_frame.float_spinbox.max_value = 100
+
+        elif tab_name == "Dmail Send Mail":
+            self.current_tab = DmailSendMailTab(
+                self.tabview,
+                tab_name
+            )
+            self.current_tab_name = tab_name,
+            self.chose_module_frame.float_spinbox.max_value = 100
+
+        elif tab_name == "Deploy":
+            self.current_tab = DeployTab(
+                self.tabview,
+                tab_name
+            )
+            self.current_tab_name = tab_name
+            self.chose_module_frame.float_spinbox.max_value = 1
+            self.chose_module_frame.float_spinbox.entry.configure(textvariable=Variable(value=1))
 
     def set_default_tab(self):
         tab_name = self.chose_module_frame.modules_option_menu.get()
@@ -151,9 +193,9 @@ class InteractionTopLevelWindow(customtkinter.CTkToplevel):
 class ChoseModuleFrame(customtkinter.CTkFrame):
     def __init__(
             self,
-            master
-    ):
+            master):
         super().__init__(master=master)
+        self.master = master
         self.grid(
             row=0,
             column=0,
@@ -183,6 +225,9 @@ class ChoseModuleFrame(customtkinter.CTkFrame):
                 "Remove Liquidity",
                 "Supply Lending",
                 "Withdraw Lending",
+                "Stark ID Mint",
+                "Dmail Send Mail",
+                "Deploy"
             ],
             command=master.set_new_tab
         )
@@ -207,7 +252,7 @@ class ChoseModuleFrame(customtkinter.CTkFrame):
             sticky="w"
         )
 
-        self.float_spinbox = FloatSpinbox(master=self)
+        self.float_spinbox = FloatSpinbox(master=self, max_value=100)
         self.float_spinbox.grid(
             row=1,
             column=1,
@@ -221,6 +266,7 @@ class FloatSpinbox(customtkinter.CTkFrame):
     def __init__(
             self,
             *args,
+            max_value: Union[int] = 100,
             width: int = 100,
             height: int = 32,
             step_size: Union[int, float] = 1,
@@ -230,6 +276,7 @@ class FloatSpinbox(customtkinter.CTkFrame):
         super().__init__(*args, width=width, height=height, **kwargs)
 
         self.step_size = int(step_size)
+        self.max_value = int(max_value)
         self.command = command
 
         self.configure(fg_color=("gray78", "gray21"))
@@ -255,6 +302,8 @@ class FloatSpinbox(customtkinter.CTkFrame):
             self.command()
         try:
             value = int(self.entry.get()) + self.step_size
+            if value > self.max_value:
+                value = self.max_value
             self.entry.delete(0, "end")
             self.entry.insert(0, value)
         except ValueError:

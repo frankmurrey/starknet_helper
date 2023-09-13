@@ -37,7 +37,10 @@ class SwapTaskBase(
         return value
 
     @validator("max_price_difference_percent", pre=True)
-    def validate_max_price_difference_percent_pre(cls, value):
+    def validate_max_price_difference_percent_pre(cls, value, values):
+
+        if not values["compare_with_cg_price"]:
+            return 0
 
         value = validation.get_converted_to_float(value, "Max Price Difference Percent")
         value = validation.get_positive(value, "Max Price Difference Percent", include_zero=True)

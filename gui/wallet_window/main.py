@@ -1,8 +1,10 @@
 import tkinter.messagebox
 import tkinter.filedialog
-from typing import List
+from typing import List, Union
 
 import customtkinter
+from pydantic import ValidationError
+from loguru import logger
 
 from gui.wallet_window.add_wallet_window import AddWalletWindow
 from gui.wallet_window.wallets_table import WalletsTable
@@ -119,15 +121,28 @@ class WalletsWindow(customtkinter.CTkFrame):
         self.wallets_table.remove_all_wallets()
 
     def add_wallet_button_clicked(self):
-        if self.add_wallet_window:
+        if self.add_wallet_window is not None:
             return
 
         self.add_wallet_window = AddWalletWindow(
             master=self.master,
             on_add_wallet=self.add_wallet_callback,
         )
+        self.add_wallet_window.frame.name_entry.entry.configure(
+            textvariable=tkinter.StringVar(value=f"Wallet {len(self.wallets)}")
+        )
 
-    def add_wallet_callback(self, wallet_data: WalletData):
+        self.add_wallet_window.protocol(
+            "WM_DELETE_WINDOW", self.close_add_wallet_window
+        )
+
+    def add_wallet_callback(self, wallet_data: Union[WalletData, None]):
+        if wallet_data is None:
+            return
+
         self.wallets_table.add_wallets([wallet_data])
+        self.close_add_wallet_window()
+
+    def close_add_wallet_window(self):
         self.add_wallet_window.destroy()
         self.add_wallet_window = None

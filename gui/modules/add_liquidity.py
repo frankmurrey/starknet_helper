@@ -6,10 +6,13 @@ import customtkinter
 
 from tkinter import Variable
 from loguru import logger
+from pydantic.error_wrappers import ValidationError
 
 from src import enums
 from contracts.tokens.main import Tokens
 from gui.modules.txn_settings_frame import TxnSettingFrame
+from src.schemas.tasks.base.add_liquidity import AddLiquidityTaskBase
+from src.schemas import tasks
 
 
 class AddLiquidityTab:
@@ -44,6 +47,49 @@ class AddLiquidityTab:
                 "sticky": "nsew"
             }
         )
+
+    def get_config_schema(self) -> Union[Callable, None]:
+        swap_protocol = self.liquidity_frame.protocol_combo.get().lower()
+        if swap_protocol == enums.ModuleName.JEDI_SWAP:
+            return tasks.JediSwapAddLiquidityTask
+
+        elif swap_protocol == enums.ModuleName.SITHSWAP:
+            return tasks.SithSwapAddLiquidityTask
+
+        elif swap_protocol == enums.ModuleName.MY_SWAP:
+            return tasks.MySwapAddLiquidityTask
+
+        else:
+            return None
+
+    def build_config_data(self):
+        config_schema = self.get_config_schema()
+        if config_schema is None:
+            logger.error("No config schema found")
+            return None
+
+        try:
+            config_data: AddLiquidityTaskBase = config_schema(
+                coin_x=self.liquidity_frame.coin_x_combobox.get(),
+                coin_y=self.liquidity_frame.coin_y_combobox.get(),
+                use_all_balance_x=self.liquidity_frame.use_all_balance_x_checkbox.get(),
+                send_percent_balance_x=self.liquidity_frame.send_percent_balance_x_checkbox.get(),
+                min_amount_out_x=self.liquidity_frame.min_amount_out_x_entry.get(),
+                max_amount_out_x=self.liquidity_frame.max_amount_out_x_entry.get(),
+                slippage=self.liquidity_frame.slippage_entry.get(),
+                max_fee=self.txn_settings_frame.max_fee_entry.get(),
+                forced_gas_limit=self.txn_settings_frame.forced_gas_limit_check_box.get()
+            )
+
+            return config_data
+
+        except ValidationError as e:
+            error_messages = "\n\n".join([error["msg"] for error in e.errors()])
+            messagebox.showerror(
+                title="Config validation error",
+                message=error_messages
+            )
+            return None
 
 
 class AddLiquidityFrame(customtkinter.CTkFrame):

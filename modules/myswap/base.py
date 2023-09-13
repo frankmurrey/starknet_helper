@@ -1,12 +1,13 @@
 from typing import Union
+from typing import TYPE_CHECKING
 
 from contracts.base import TokenBase
 from contracts.tokens.main import Tokens
 from modules.base import SwapModuleBase
 from modules.myswap.math import get_amount_in_from_reserves
-from src.schemas.tasks.myswap import MySwapTask
 
-from loguru import logger
+if TYPE_CHECKING:
+    from src.schemas.tasks.myswap import MySwapTask
 
 
 class MySwapBase(SwapModuleBase):
@@ -21,12 +22,12 @@ class MySwapBase(SwapModuleBase):
         8: ['ORDS', 'ETH'],
     }
 
-    task: MySwapTask
+    task: 'MySwapTask'
 
     def __init__(
             self,
             account,
-            task: MySwapTask, ):
+            task):
 
         super().__init__(
             client=account.client,

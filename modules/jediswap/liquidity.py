@@ -1,25 +1,26 @@
 import time
 from typing import Union
-
-from contracts.tokens.main import Tokens
-from contracts.jediswap.main import JediSwapContracts
-
-from modules.jediswap.base import JediSwapBase
-from modules.jediswap.math import get_lp_burn_output
-
-from src.schemas.tasks.jediswap import JediSwapAddLiquidityTask
-from src.schemas.tasks.jediswap import JediSwapRemoveLiquidityTask
-
+from typing import TYPE_CHECKING
 
 from loguru import logger
 
 
+from contracts.tokens.main import Tokens
+from contracts.jediswap.main import JediSwapContracts
+from modules.jediswap.base import JediSwapBase
+from modules.jediswap.math import get_lp_burn_output
+
+if TYPE_CHECKING:
+    from src.schemas.tasks.jediswap import JediSwapAddLiquidityTask
+    from src.schemas.tasks.jediswap import JediSwapRemoveLiquidityTask
+
+
 class JediSwapAddLiquidity(JediSwapBase):
-    task: JediSwapAddLiquidityTask
+    task: 'JediSwapAddLiquidityTask'
 
     def __init__(self,
                  account,
-                 task: JediSwapAddLiquidityTask, ):
+                 task: 'JediSwapAddLiquidityTask'):
 
         super().__init__(
             account=account,
@@ -115,11 +116,11 @@ class JediSwapAddLiquidity(JediSwapBase):
 
 
 class JediSwapRemoveLiquidity(JediSwapBase):
-    task: JediSwapRemoveLiquidityTask
+    task: 'JediSwapRemoveLiquidityTask'
 
     def __init__(self,
                  account,
-                 task: JediSwapRemoveLiquidityTask, ):
+                 task: 'JediSwapRemoveLiquidityTask', ):
         super().__init__(
             account=account,
             task=task,

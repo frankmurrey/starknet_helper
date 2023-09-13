@@ -1,22 +1,25 @@
 import time
 from typing import Union
+from typing import TYPE_CHECKING
 
 from contracts.tokens.main import Tokens
 from contracts.jediswap.main import JediSwapContracts
 from modules.jediswap.base import JediSwapBase
-from src.schemas.tasks.jediswap import JediSwapTask
 from src.gecko_pricer import GeckoPricer
 
 from starknet_py.net.account.account import Account
 
+if TYPE_CHECKING:
+    from src.schemas.tasks.jediswap import JediSwapTask
+
 
 class JediSwap(JediSwapBase):
-    task: JediSwapTask
+    task: 'JediSwapTask'
     account: Account
 
     def __init__(self,
                  account,
-                 task: JediSwapTask, ):
+                 task: 'JediSwapTask', ):
         super().__init__(
             account=account,
             task=task,
@@ -84,7 +87,7 @@ class JediSwap(JediSwapBase):
             'amount_y_decimals': amounts_in['amount_decimals'],
         }
 
-    async def send_swap_txn(self):
+    async def send_txn(self):
         txn_payload_data = await self.build_txn_payload_data()
         if txn_payload_data is None:
             return False

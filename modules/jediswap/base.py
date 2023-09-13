@@ -1,19 +1,22 @@
 import random
 from typing import Union
-
-from contracts.base import TokenBase
-from modules.base import SwapModuleBase
-from src.schemas.tasks.jediswap import JediSwapTask
+from typing import TYPE_CHECKING
 
 from loguru import logger
 
+from contracts.base import TokenBase
+from modules.base import SwapModuleBase
+
+if TYPE_CHECKING:
+    from src.schemas.tasks.jediswap import JediSwapTask
+
 
 class JediSwapBase(SwapModuleBase):
-    task: JediSwapTask
+    task: 'JediSwapTask'
 
     def __init__(self,
                  account,
-                 task: JediSwapTask, ):
+                 task):
 
         super().__init__(
             client=account.client,

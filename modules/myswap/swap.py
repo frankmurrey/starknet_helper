@@ -1,25 +1,25 @@
 import random
 from typing import Union
+from typing import TYPE_CHECKING
+
+from starknet_py.net.account.account import Account
+from loguru import logger
 
 from contracts.tokens.main import Tokens
 from contracts.myswap.main import MySwapContracts
-
 from modules.myswap.base import MySwapBase
 
-from src.schemas.tasks.myswap import MySwapTask
-
-from starknet_py.net.account.account import Account
-
-from loguru import logger
+if TYPE_CHECKING:
+    from src.schemas.tasks.myswap import MySwapTask
 
 
 class MySwap(MySwapBase):
-    task: MySwapTask
+    task: 'MySwapTask'
     account: Account
 
     def __init__(self,
                  account,
-                 task: MySwapTask, ):
+                 task: 'MySwapTask', ):
         super().__init__(
             account=account,
             task=task,
@@ -122,7 +122,7 @@ class MySwap(MySwapBase):
             "amount_y_decimals": amount_y_decimals
         }
 
-    async def send_swap_txn(self):
+    async def send_txn(self):
         txn_payload_data = await self.build_txn_payload_data()
         if txn_payload_data is None:
             return False

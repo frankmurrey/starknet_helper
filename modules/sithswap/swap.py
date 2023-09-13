@@ -1,22 +1,25 @@
 import time
 from typing import Union
+from typing import TYPE_CHECKING
+
+from starknet_py.net.account.account import Account
 
 from contracts.tokens.main import Tokens
 from contracts.sithswap.main import SithSwapContracts
 from modules.base import SwapModuleBase
 from modules.sithswap.base import SithBase
-from src.schemas.tasks.sithswap import SithSwapTask
 
-from starknet_py.net.account.account import Account
+if TYPE_CHECKING:
+    from src.schemas.tasks.sithswap import SithSwapTask
 
 
 class SithSwap(SithBase, SwapModuleBase):
-    task: SithSwapTask
+    task: 'SithSwapTask'
     account: Account
 
     def __init__(self,
                  account,
-                 task: SithSwapTask):
+                 task: 'SithSwapTask'):
 
         super().__init__(
             account=account,
@@ -94,7 +97,7 @@ class SithSwap(SithBase, SwapModuleBase):
             'amount_y_decimals': amount_y_decimals,
         }
 
-    async def send_swap_txn(self):
+    async def send_txn(self):
         txn_payload_data = await self.build_txn_payload_data()
         if txn_payload_data is None:
             return False

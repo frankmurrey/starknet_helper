@@ -1,17 +1,21 @@
+from typing import TYPE_CHECKING
+
 from modules.base import ModuleBase
 from modules.dmail.random_generator import generate_random_profile
-from src.schemas.tasks.dmail import DmailSendMailTask
 from src.schemas.dmail_profile import DmailProfileSchema
 from contracts.dmail.main import DmailContracts
 
+if TYPE_CHECKING:
+    from src.schemas.tasks.dmail import DmailSendMailTask
+
 
 class DmailSendMail(ModuleBase):
-    task: DmailSendMailTask
+    task: 'DmailSendMailTask'
 
     def __init__(
             self,
             account,
-            task: DmailSendMailTask,
+            task: 'DmailSendMailTask',
     ):
 
         super().__init__(
@@ -40,7 +44,7 @@ class DmailSendMail(ModuleBase):
 
         return [mail_call]
 
-    async def send_mail_txn(self):
+    async def send_txn(self):
         txn_payload_calls = await self.build_txn_payload_calls()
         if txn_payload_calls is None:
             return False

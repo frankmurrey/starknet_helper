@@ -1,25 +1,28 @@
 import random
 from typing import Union
+from typing import TYPE_CHECKING
+
+from loguru import logger
 
 from contracts.myswap.main import MySwapContracts
 from modules.myswap.base import MySwapBase
 from modules.myswap.math import calc_output_burn_liquidity
-from src.schemas.tasks.myswap import MySwapAddLiquidityTask
-from src.schemas.tasks.myswap import MySwapRemoveLiquidityTask
 
-from loguru import logger
+if TYPE_CHECKING:
+    from src.schemas.tasks.myswap import MySwapAddLiquidityTask
+    from src.schemas.tasks.myswap import MySwapRemoveLiquidityTask
 
 
 class MySwapAddLiquidity(MySwapBase):
 
-    task: MySwapAddLiquidityTask
+    task: 'MySwapAddLiquidityTask'
 
     def __init__(self,
                  account,
-                 task: MySwapAddLiquidityTask, ):
+                 task: 'MySwapAddLiquidityTask', ):
         super().__init__(
             account=account,
-            task=task,
+            task=task
         )
 
         self.task = task
@@ -155,7 +158,7 @@ class MySwapAddLiquidity(MySwapBase):
                 token_pair[1]: amount_1_decimals
                 }
 
-    async def send_add_liq_txn(self):
+    async def send_txn(self):
         txn_payload_data: dict = await self.build_txn_payload_data()
         if txn_payload_data is None:
             return False
@@ -178,11 +181,11 @@ class MySwapAddLiquidity(MySwapBase):
 
 class MySwapRemoveLiquidity(MySwapBase):
 
-    task: MySwapRemoveLiquidityTask
+    task: 'MySwapRemoveLiquidityTask'
 
     def __init__(self,
                  account,
-                 task: MySwapRemoveLiquidityTask, ):
+                 task: 'MySwapRemoveLiquidityTask', ):
         super().__init__(
             account=account,
             task=task,
@@ -327,7 +330,7 @@ class MySwapRemoveLiquidity(MySwapBase):
                 token_pair[1]: amount_out_1_decimals
                 }
 
-    async def send_remove_liq_txn(self):
+    async def send_txn(self):
         txn_payload: dict = await self.build_txn_payload_data()
         if txn_payload is None:
             return False

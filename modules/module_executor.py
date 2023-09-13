@@ -18,25 +18,6 @@ from src.action_logger import ActionLogger
 from src.proxy_manager import ProxyManager
 from src.custom_client_session import CustomSession
 
-from modules.jediswap.swap import JediSwap
-from modules.jediswap.liquidity import JediSwapAddLiquidity
-from modules.jediswap.liquidity import JediSwapRemoveLiquidity
-from modules.myswap.swap import MySwap
-from modules.myswap.liquidity import MySwapAddLiquidity
-from modules.myswap.liquidity import MySwapRemoveLiquidity
-from modules.deploy.deploy_argent import DeployArgent
-from modules.deploy.deploy_braavos import DeployBraavos
-from modules.avnu.swap import AvnuSwap
-from modules.sithswap.swap import SithSwap
-from modules.sithswap.liquidity import SithSwapAddLiquidity
-from modules.sithswap.liquidity import SithSwapRemoveLiquidity
-from modules.k10swap.swap import K10Swap
-from modules.starknet_id.identity_mint import IdentityMint
-from modules.zklend.supply import ZkLendSupply
-from modules.zklend.withdraw import ZkLendWithdraw
-from modules.test import ModulesTest
-
-
 from utlis.key_manager.key_manager import get_argent_addr_from_private_key
 from utlis.key_manager.key_manager import get_braavos_addr_from_private_key
 from utlis.key_manager.key_manager import get_key_pair_from_pk
@@ -219,172 +200,23 @@ class ModuleExecutor:
             chain=StarknetChainId.MAINNET
         )
 
-        if self.module_name == enums.ModuleName.JEDI_SWAP:
-            if self.module_type == enums.ModuleType.SWAP:
-                assert isinstance(self.task, tasks.JediSwapTask)
+        if self.module_name == enums.ModuleName.DEPLOY:
+            assert isinstance(self.task, tasks.DeployTask)
 
-                module = JediSwap(
-                    account=account,
-                    task=self.task
-                )
-                execution_status = await module.send_swap_txn()
-
-            elif self.module_type == enums.ModuleType.LIQUIDITY_ADD:
-                assert isinstance(self.task, tasks.JediSwapAddLiquidityTask)
-
-                module = JediSwapAddLiquidity(
-                    account=account,
-                    task=self.task
-                )
-                execution_status = await module.send_add_liq_txn()
-
-            elif self.module_type == enums.ModuleType.LIQUIDITY_REMOVE:
-                assert isinstance(self.task, tasks.JediSwapRemoveLiquidityTask)
-
-                module = JediSwapRemoveLiquidity(
-                    account=account,
-                    task=self.task
-                )
-                execution_status = await module.send_remove_liq_txn()
-
-        elif self.module_name == enums.ModuleName.MY_SWAP:
-            if self.module_type == enums.ModuleType.SWAP:
-                assert isinstance(self.task, tasks.MySwapTask)
-
-                module = MySwap(
-                    account=account,
-                    task=self.task
-                )
-                execution_status = await module.send_swap_txn()
-
-            elif self.module_type == enums.ModuleType.LIQUIDITY_ADD:
-                assert isinstance(self.task, tasks.MySwapAddLiquidityTask)
-
-                module = MySwapAddLiquidity(
-                    account=account,
-                    task=self.task
-                )
-                execution_status = await module.send_add_liq_txn()
-
-            elif self.module_type == enums.ModuleType.LIQUIDITY_REMOVE:
-                assert isinstance(self.task, tasks.MySwapRemoveLiquidityTask)
-
-                module = MySwapRemoveLiquidity(
-                    account=account,
-                    task=self.task
-                )
-                execution_status = await module.send_remove_liq_txn()
-
-        elif self.module_name == enums.ModuleName.DEPLOY:
-            if self.module_type == enums.PrivateKeyType.argent:
-                assert isinstance(self.task, tasks.DeployArgentTask)
-
-                module = DeployArgent(
-                    account=account,
-                    task=self.task,
-                    private_key=wallet_data.private_key
-                )
-                execution_status = await module.send_deploy_txn()
-
-            elif self.module_type == enums.PrivateKeyType.braavos:
-                assert isinstance(self.task, tasks.DeployBraavostTask)
-
-                module = DeployBraavos(
-                    account=account,
-                    task=self.task,
-                    private_key=wallet_data.private_key
-                )
-                execution_status = await module.send_deploy_txn()
-
-        elif self.module_name == enums.ModuleName.AVNU:
-            assert isinstance(self.task, tasks.AvnuSwapTask)
-
-            if self.module_type == enums.ModuleType.SWAP:
-                module = AvnuSwap(
-                    account=account,
-                    task=self.task
-                )
-                execution_status = await module.send_swap_txn()
-
-        elif self.module_name == enums.ModuleName.SITHSWAP:
-            assert isinstance(self.task, tasks.SithSwapTask)
-
-            if self.module_type == enums.ModuleType.SWAP:
-                module = SithSwap(
-                    account=account,
-                    task=self.task
-                )
-                execution_status = await module.send_swap_txn()
-
-            elif self.module_type == enums.ModuleType.LIQUIDITY_ADD:
-                assert isinstance(self.task, tasks.SithSwapAddLiquidityTask)
-
-                module = SithSwapAddLiquidity(
-                    account=account,
-                    task=self.task
-                )
-                execution_status = await module.send_add_liq_txn()
-
-            elif self.module_type == enums.ModuleType.LIQUIDITY_REMOVE:
-                assert isinstance(self.task, tasks.SithSwapRemoveLiquidityTask)
-
-                module = SithSwapRemoveLiquidity(
-                    account=account,
-                    task=self.task
-                )
-                execution_status = await module.send_remove_liq_txn()
-
-        elif self.module_name == enums.ModuleName.K10SWAP:
-            assert isinstance(self.task, tasks.K10SwapTask)
-
-            if self.module_type == enums.ModuleType.SWAP:
-                module = K10Swap(
-                    account=account,
-                    task=self.task
-                )
-                execution_status = await module.send_swap_txn()
-
-        elif self.module_name == enums.ModuleName.IDENTITY:
-            if self.module_type == enums.ModuleType.MINT:
-                assert isinstance(self.task, tasks.IdentityMintTask)
-
-                module = IdentityMint(
-                    account=account,
-                    task=self.task
-                )
-                execution_status = await module.send_mint_txn()
-
-        elif self.module_name == enums.ModuleName.ZKLEND:
-            if self.module_type == enums.ModuleType.SUPPLY:
-                assert isinstance(self.task, tasks.ZkLendSupplyTask)
-
-                module = ZkLendSupply(
-                    account=account,
-                    task=self.task
-                )
-                execution_status = await module.send_supply_txn()
-
-            elif self.module_type == enums.ModuleType.WITHDRAW:
-                assert isinstance(self.task, tasks.ZkLendWithdrawTask)
-
-                module = ZkLendWithdraw(
-                    account=account,
-                    task=self.task
-                )
-                execution_status = await module.send_withdraw_txn()
-
-        elif self.module_type == enums.ModuleType.TEST:
-            assert isinstance(self.task, tasks.TestTask)
-
-            module = ModulesTest(
+            module = self.task.module(
+                private_key=wallet_data.private_key,
                 account=account,
-                config=self.task
+                task=self.task,
+                key_type=wallet_data.type
             )
-            execution_status = await module.test()
+            execution_status = await module.send_txn()
 
         else:
-            await connector.close()
-            raise ValueError(f"Invalid module name: {self.module_name}")
+            module = self.task.module(
+                account=account,
+                task=self.task
+            )
+            execution_status = await module.send_txn()
 
         if self.task.test_mode is False:
             ActionLogger.log_action_from_storage()

@@ -1,6 +1,6 @@
 import customtkinter
 
-from src.schemas.configs.transaction_settings_base.swap import SwapSettingsBase
+from src.schemas.tasks.base.swap import SwapTaskBase
 
 
 class WalletActionFrame(customtkinter.CTkFrame):

@@ -1,56 +1,96 @@
+from typing import TYPE_CHECKING
+
 from starknet_py.net.account.account import Account
 from starknet_py.net.models.transaction import DeployAccount
 from loguru import logger
 
 from modules.base import ModuleBase
-from src.schemas.tasks.deploy import DeployArgentTask
 from src.schemas.logs import WalletActionSchema
+from src import enums
 from src.storage import ActionStorage
 from utlis.key_manager.key_manager import get_key_pair_from_pk
 
+if TYPE_CHECKING:
+    from src.schemas.tasks.deploy import DeployTask
 
-class DeployArgent(ModuleBase):
-    task: DeployArgentTask
+
+class Deploy(ModuleBase):
+    task: 'DeployTask'
     account: Account
 
-    def __init__(self,
-                 private_key: str,
-                 account,
-                 task: DeployArgentTask, ):
-
+    def __init__(
+            self,
+            private_key: str,
+            key_type: enums.PrivateKeyType,
+            account,
+            task: 'DeployTask',
+    ):
         super().__init__(
             client=account.client,
-            task=task,
+            task=task
         )
 
         self.task = task
         self.account = account
         self.pk = private_key
+        self.key_type = key_type
+
+        if self.key_type == enums.PrivateKeyType.argent:
+            self.get_account = self.get_account_argent
+        elif self.key_type == enums.PrivateKeyType.braavos:
+            self.get_account = self.get_account_braavos
+        else:
+            raise Exception(f"Unknown key type: {self.key_type}")
+
+    def get_key_data(
+            self,
+            key_pair) -> dict:
+
+        if self.key_type == enums.PrivateKeyType.argent:
+            class_hash = 0x025ec026985a3bf9d0cc1fe17326b245dfdc3ff89b8fde106542a3ea56c5a918
+            account_initialize_call_data = [key_pair.public_key, 0]
+
+            call_data = [
+                0x33434ad846cdd5f23eb73ff09fe6fddd568284a0fb7d1be20ee482f044dabe2,
+                0x79dc0da7c54b95f10aa182ad0a46400db63156920adb65eca2654c0945a463,
+                len(account_initialize_call_data),
+                *account_initialize_call_data
+            ]
+
+        elif self.key_type == enums.PrivateKeyType.braavos:
+            class_hash = 0x025ec026985a3bf9d0cc1fe17326b245dfdc3ff89b8fde106542a3ea56c5a918
+            account_initialize_call_data = [key_pair.public_key, 0]
+
+            call_data = [
+                0x33434ad846cdd5f23eb73ff09fe6fddd568284a0fb7d1be20ee482f044dabe2,
+                0x79dc0da7c54b95f10aa182ad0a46400db63156920adb65eca2654c0945a463,
+                len(account_initialize_call_data),
+                *account_initialize_call_data
+            ]
+
+        else:
+            raise Exception(f"Unknown key type: {self.key_type}")
+
+        return {
+            "class_hash": class_hash,
+            "call_data": call_data
+        }
 
     async def send_deploy_txn(self):
         key_pair = get_key_pair_from_pk(self.pk)
-        class_hash = 0x025ec026985a3bf9d0cc1fe17326b245dfdc3ff89b8fde106542a3ea56c5a918
-        account_initialize_call_data = [key_pair.public_key, 0]
+        key_data = self.get_key_data(key_pair=key_pair)
 
-        call_data = [
-            0x33434ad846cdd5f23eb73ff09fe6fddd568284a0fb7d1be20ee482f044dabe2,
-            0x79dc0da7c54b95f10aa182ad0a46400db63156920adb65eca2654c0945a463,
-            len(account_initialize_call_data),
-            *account_initialize_call_data
-        ]
-
-        logger.warning(f"Action: Deploy Argent account")
+        logger.warning(f"Action: Deploy {self.key_type.title()} account")
         current_log_action: WalletActionSchema = ActionStorage().get_current_action()
         current_log_action.module_name = self.task.module_name
         current_log_action.action_type = self.task.module_type
 
-        account = self.get_account_argent(private_key=self.pk)
-        nonce = await self.get_nonce(account=account)
+        nonce = await self.get_nonce(account=self.account)
 
         deploy_txn = DeployAccount(
-            class_hash=class_hash,
+            class_hash=key_data["class_hash"],
             contract_address_salt=key_pair.public_key,
-            constructor_calldata=call_data,
+            constructor_calldata=key_data["call_data"],
             version=1,
             max_fee=int(1e15),
             nonce=nonce,
@@ -101,12 +141,12 @@ class DeployArgent(ModuleBase):
         try:
             deploy_result = await self.account.deploy_account(
                 address=self.account.address,
-                class_hash=class_hash,
+                class_hash=key_data["class_hash"],
                 salt=key_pair.public_key,
                 key_pair=key_pair,
                 client=self.client,
                 chain=self.chain_id,
-                constructor_calldata=call_data,
+                constructor_calldata=key_data["call_data"],
                 max_fee=gas_limit
             )
 

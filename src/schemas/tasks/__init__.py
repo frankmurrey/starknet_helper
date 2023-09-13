@@ -6,8 +6,7 @@ from .base.swap import SwapTaskBase
 from .base.withdraw import WithdrawTaskBase
 
 from .avnu import AvnuSwapTask
-from .deploy import DeployArgentTask
-from .deploy import DeployBraavostTask
+from .deploy import DeployTask
 from .dmail import DmailSendMailTask
 from .identity import IdentityMintTask
 from .jediswap import JediSwapTask

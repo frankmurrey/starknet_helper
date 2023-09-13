@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Callable
 
 from pydantic import BaseModel
 from pydantic import validator
@@ -10,6 +10,7 @@ from src import enums
 class TaskBase(BaseModel):
     module_type: enums.ModuleType
     module_name: enums.ModuleName
+    module: Callable
 
     max_fee: Union[int]
     forced_gas_limit: Union[bool] = False

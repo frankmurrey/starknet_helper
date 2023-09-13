@@ -1,13 +1,10 @@
-from typing import Callable
-from typing import Union
-from tkinter import messagebox
 
 import customtkinter
 
 from tkinter import Variable
-from loguru import logger
 
 from src import enums
+from src.schemas.tasks.zklend import SupplyTaskBase
 from contracts.tokens.main import Tokens
 from gui.modules.txn_settings_frame import TxnSettingFrame
 
@@ -43,6 +40,17 @@ class SupplyLendingTab:
                 "pady": 20,
                 "sticky": "nsew"
             }
+        )
+
+    def build_config_data(self):
+        return SupplyTaskBase(
+            coin_to_supply=self.supply_frame.token_to_supply_combobox.get(),
+            min_amount_out=self.supply_frame.min_amount_out_entry.get(),
+            max_amount_out=self.supply_frame.max_amount_out_entry.get(),
+            use_all_balance=self.supply_frame.use_all_balance_checkbox.get(),
+            send_percent_balance=self.supply_frame.send_percent_balance_checkbox.get(),
+            enable_collateral=self.supply_frame.enable_collateral_checkbox.get(),
+            max_fee=self.txn_settings_frame.max_fee_entry.get(),
         )
 
 

@@ -1,20 +1,23 @@
 import random
+from typing import TYPE_CHECKING
+
+from loguru import logger
 
 from modules.base import ModuleBase
 from contracts.tokens.main import Tokens
 from contracts.zklend.main import ZkLendContracts
-from src.schemas.tasks.zklend import ZkLendSupplyTask
 
-from loguru import logger
+if TYPE_CHECKING:
+    from src.schemas.tasks.zklend import ZkLendSupplyTask
 
 
 class ZkLendSupply(ModuleBase):
-    task: ZkLendSupplyTask
+    task: 'ZkLendSupplyTask'
 
     def __init__(
             self,
             account,
-            task: ZkLendSupplyTask):
+            task: 'ZkLendSupplyTask'):
         super().__init__(
             client=account.client,
             task=task,
@@ -109,7 +112,7 @@ class ZkLendSupply(ModuleBase):
 
         return calls
 
-    async def send_supply_txn(self):
+    async def send_txn(self):
         txn_payload_calls = await self.build_txn_payload_calls()
         if txn_payload_calls is None:
             return False

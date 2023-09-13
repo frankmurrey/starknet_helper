@@ -1,13 +1,8 @@
-from typing import Callable
-from typing import Union
-from tkinter import messagebox
-
 import customtkinter
 
-from tkinter import Variable
-from loguru import logger
 
 from src import enums
+from src.schemas.tasks.zklend import ZkLendWithdrawTask
 from contracts.tokens.main import Tokens
 from gui.modules.txn_settings_frame import TxnSettingFrame
 
@@ -44,6 +39,12 @@ class WithdrawLendingTab:
                 "pady": 20,
                 "sticky": "nsew"
             }
+        )
+
+    def build_config_data(self):
+        return ZkLendWithdrawTask(
+            coin_to_withdraw=self.withdraw_frame.token_to_withdraw_combobox.get(),
+            max_fee=self.txn_settings_frame.max_fee_entry.get(),
         )
 
 

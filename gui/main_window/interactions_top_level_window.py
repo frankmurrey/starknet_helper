@@ -127,13 +127,12 @@ class InteractionTopLevelWindow(customtkinter.CTkToplevel):
             )
             self.current_tab_name = tab_name
             self.chose_module_frame.float_spinbox.max_value = 100
-
         elif tab_name == "Dmail Send Mail":
             self.current_tab = DmailSendMailTab(
                 self.tabview,
                 tab_name
             )
-            self.current_tab_name = tab_name,
+            self.current_tab_name = tab_name
             self.chose_module_frame.float_spinbox.max_value = 100
 
         elif tab_name == "Deploy":
@@ -149,7 +148,7 @@ class InteractionTopLevelWindow(customtkinter.CTkToplevel):
         tab_name = self.chose_module_frame.modules_option_menu.get()
         self.tabview.add(tab_name.title())
         self.tabview.set(tab_name.title())
-        self.current_tab = SwapTab(
+        self.current_tab = DeployTab(
             self.tabview,
             tab_name
         )
@@ -184,7 +183,7 @@ class InteractionTopLevelWindow(customtkinter.CTkToplevel):
 
         self.parent.set_action(
             {
-                "config_data": config_data,
+                "task": config_data,
                 "repeats": repeats
             }
         )
@@ -220,14 +219,14 @@ class ChoseModuleFrame(customtkinter.CTkFrame):
         self.modules_option_menu = customtkinter.CTkOptionMenu(
             self,
             values=[
+                'Deploy',
                 'Swap',
                 "Add Liquidity",
                 "Remove Liquidity",
                 "Supply Lending",
                 "Withdraw Lending",
                 "Stark ID Mint",
-                "Dmail Send Mail",
-                "Deploy"
+                "Dmail Send Mail"
             ],
             command=master.set_new_tab
         )

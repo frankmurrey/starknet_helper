@@ -1,6 +1,7 @@
 import random
 
 from typing import Union
+from typing import TYPE_CHECKING
 
 from starknet_py.net.account.account import Account
 from starknet_py.net.client_errors import ClientError
@@ -8,17 +9,19 @@ from loguru import logger
 
 import config
 from modules.base import ModuleBase
-from src.schemas.tasks.identity import IdentityMintTask
 from contracts.starknet_id.main import StarkNetIdContracts
+
+if TYPE_CHECKING:
+    from src.schemas.tasks.identity import IdentityMintTask
 
 
 class IdentityMint(ModuleBase):
-    task: IdentityMintTask
+    task: 'IdentityMintTask'
     account: Account
 
     def __init__(self,
                  account,
-                 task: IdentityMintTask, ):
+                 task: 'IdentityMintTask'):
 
         super().__init__(
             client=account.client,
@@ -76,7 +79,7 @@ class IdentityMint(ModuleBase):
 
         return calls
 
-    async def send_mint_txn(self):
+    async def send_txn(self):
         txn_payload_calls = await self.build_txn_payload_calls()
         if txn_payload_calls is None:
             return False

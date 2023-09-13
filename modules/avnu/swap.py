@@ -1,23 +1,26 @@
 import random
 from typing import Union
+from typing import TYPE_CHECKING
 
 from starknet_py.net.http_client import HttpMethod
 from starknet_py.net.client_errors import ClientError
 from loguru import logger
 
 from modules.base import SwapModuleBase
-from src.schemas.tasks.avnu import AvnuSwapTask
 from contracts.tokens.main import Tokens
 from contracts.avnu.main import AvnuContracts
 
+if TYPE_CHECKING:
+    from src.schemas.tasks.avnu import AvnuSwapTask
+
 
 class AvnuSwap(SwapModuleBase):
-    task: AvnuSwapTask
+    task: 'AvnuSwapTask'
 
     def __init__(
             self,
             account,
-            task: AvnuSwapTask
+            task: 'AvnuSwapTask'
     ):
 
         super().__init__(
@@ -154,14 +157,13 @@ class AvnuSwap(SwapModuleBase):
             'amount_y_decimals': amount_y_decimals,
         }
 
-    async def send_swap_txn(self):
+    async def send_txn(self):
         txn_payload_data = await self.build_txn_payload_data()
         if txn_payload_data is None:
             return False
 
         txn_status = await self.send_swap_type_txn(
             account=self.account,
-            task=self.task,
             txn_payload_data=txn_payload_data
         )
 

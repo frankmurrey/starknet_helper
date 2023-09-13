@@ -1,28 +1,32 @@
 import time
-from typing import Union
-
-from modules.sithswap.base import SithBase
-from modules.sithswap.math import calc_output_burn_liquidity
-from contracts.tokens.main import Tokens
-from contracts.sithswap.main import SithSwapContracts
-from src.schemas.tasks.sithswap import SithSwapAddLiquidityTask
-from src.schemas.tasks.sithswap import SithSwapRemoveLiquidityTask
+from typing import TYPE_CHECKING
 
 from loguru import logger
 from starknet_py.net.client_errors import ClientError
 from starknet_py.net.account.account import Account
 
 
+from modules.sithswap.base import SithBase
+from modules.sithswap.math import calc_output_burn_liquidity
+from contracts.tokens.main import Tokens
+from contracts.sithswap.main import SithSwapContracts
+
+
+if TYPE_CHECKING:
+    from src.schemas.tasks.sithswap import SithSwapAddLiquidityTask
+    from src.schemas.tasks.sithswap import SithSwapRemoveLiquidityTask
+
+
 class SithSwapAddLiquidity(SithBase):
-    task: SithSwapAddLiquidityTask
+    task: 'SithSwapAddLiquidityTask'
 
     def __init__(self,
                  account,
-                 task: SithSwapAddLiquidityTask, ):
+                 task: 'SithSwapAddLiquidityTask'):
 
         super().__init__(
             account=account,
-            task=task,
+            task=task
         )
 
         self.task = task
@@ -155,7 +159,7 @@ class SithSwapAddLiquidity(SithBase):
 
         return calls
 
-    async def send_add_liq_txn(self):
+    async def send_txn(self):
         amounts_out_data: dict = await self.get_amounts_out_data()
         if amounts_out_data is None:
             return None
@@ -177,11 +181,11 @@ class SithSwapAddLiquidity(SithBase):
 
 
 class SithSwapRemoveLiquidity(SithBase):
-    task: SithSwapRemoveLiquidityTask
+    task: 'SithSwapRemoveLiquidityTask'
 
     def __init__(self,
                  account,
-                 task: SithSwapRemoveLiquidityTask):
+                 task: 'SithSwapRemoveLiquidityTask'):
 
         super().__init__(
             account=account,
@@ -317,7 +321,7 @@ class SithSwapRemoveLiquidity(SithBase):
             'calls': calls
         }
 
-    async def send_remove_liq_txn(self):
+    async def send_txn(self):
         amounts_out_data = await self.build_txn_payload_data()
         if amounts_out_data is None:
             return None

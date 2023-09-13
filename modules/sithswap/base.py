@@ -1,24 +1,27 @@
 import random
 from typing import Union
+from typing import TYPE_CHECKING
+
+from loguru import logger
+from starknet_py.net.client_errors import ClientError
 
 from modules.base import ModuleBase
 from contracts.base import TokenBase
 from contracts.tokens.main import Tokens
 from modules.sithswap.math import get_amount_in_from_reserves
-from src.schemas.tasks.sithswap import SithSwapTask
 
-from loguru import logger
-from starknet_py.net.client_errors import ClientError
+if TYPE_CHECKING:
+    from src.schemas.tasks.sithswap import SithSwapTask
 
 
 class SithBase(ModuleBase):
     stable_coin_symbols: list = ['USDC', 'USDT', 'DAI']
 
-    task: SithSwapTask
+    task: 'SithSwapTask'
 
     def __init__(self,
                  account,
-                 task: SithSwapTask):
+                 task):
 
         super().__init__(
             client=account.client,

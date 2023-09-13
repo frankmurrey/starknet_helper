@@ -94,9 +94,9 @@ class ActionsFrame(customtkinter.CTkFrame):
             action_item = WalletActionFrame(
                 master=self.current_actions_frame,
                 grid=actions_item_grid,
-                config=action_data["config_data"],
                 repeats=action_data["repeats"],
-                fg_color="grey21"
+                fg_color="grey21",
+                task=action_data["task"],
             )
             self.action_items.append(action_item)
 

@@ -12,7 +12,7 @@ class WalletsTableTop(customtkinter.CTkFrame):
         self.frame = customtkinter.CTkFrame(master)
         self.frame.grid(**grid)
 
-        self.frame.grid_columnconfigure((0, 1, 2, 3, 4), weight=1, uniform='a')
+        self.frame.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1, uniform='a')
 
         self.chose_all_checkbox = customtkinter.CTkCheckBox(
             self.frame,
@@ -62,6 +62,20 @@ class WalletsTableTop(customtkinter.CTkFrame):
             sticky="w"
         )
 
+        self.pair_address_label = customtkinter.CTkLabel(
+            self.frame,
+            text="Pair Address",
+            font=customtkinter.CTkFont(size=12, weight="bold")
+        )
+
+        self.pair_address_label.grid(
+            row=0,
+            column=2,
+            padx=(60, 0),
+            pady=pad_y,
+            sticky="w"
+        )
+
         self.wallet_proxy_label = customtkinter.CTkLabel(
             self.frame,
             text="Proxy",
@@ -70,8 +84,8 @@ class WalletsTableTop(customtkinter.CTkFrame):
 
         self.wallet_proxy_label.grid(
             row=0,
-            column=2,
-            padx=(85, 0),
+            column=3,
+            padx=(80, 0),
             pady=pad_y,
             sticky="w"
         )
@@ -84,7 +98,7 @@ class WalletsTableTop(customtkinter.CTkFrame):
 
         self.wallet_type_label.grid(
             row=0,
-            column=3,
+            column=4,
             padx=(95, 0),
             pady=pad_y,
             sticky="w"

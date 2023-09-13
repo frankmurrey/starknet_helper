@@ -51,7 +51,10 @@ class AddWalletFrame(customtkinter.CTkFrame):
         self.address_entry = objects.CTkEntryWithLabel(
             self,
             label_text="Address",
-            state="disabled",
+            state="disabled"
+        )
+        self.address_entry.entry.configure(
+            fg_color="gray25"
         )
         self.address_entry.grid(row=2, column=0, padx=10, pady=0, sticky="w")
 

@@ -13,7 +13,7 @@ class WalletsTable(customtkinter.CTkScrollableFrame):
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
 
-        self.frame = customtkinter.CTkScrollableFrame(master, width=950)
+        self.frame = customtkinter.CTkScrollableFrame(master, width=1100)
         self.frame.grid(row=1, column=0, padx=20, pady=0, sticky="nsew", rowspan=7)
 
         self.no_wallets_label = customtkinter.CTkLabel(

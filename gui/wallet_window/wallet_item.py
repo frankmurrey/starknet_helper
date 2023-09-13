@@ -22,7 +22,7 @@ class WalletItem(customtkinter.CTkFrame):
         self.frame = customtkinter.CTkFrame(master)
         self.frame.grid(**grid)
 
-        self.frame.grid_columnconfigure((0, 1, 2, 3, 4), weight=1, uniform="uniform")
+        self.frame.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1, uniform="uniform")
 
         self.frame.grid_rowconfigure(0, weight=1)
 
@@ -69,7 +69,21 @@ class WalletItem(customtkinter.CTkFrame):
         self.wallet_address_label.grid(
             row=0,
             column=1,
-            padx=0,
+            padx=(0, 0),
+            pady=pad_y,
+        )
+
+        pair_address = self.get_short_address(wallet_data.pair_address) if wallet_data.pair_address else "-"
+        self.pair_address_label = customtkinter.CTkLabel(
+            self.frame,
+            text=pair_address,
+            font=customtkinter.CTkFont(size=12, weight="bold"),
+            anchor="w"
+        )
+        self.pair_address_label.grid(
+            row=0,
+            column=2,
+            padx=(20, 0),
             pady=pad_y,
         )
 
@@ -81,7 +95,7 @@ class WalletItem(customtkinter.CTkFrame):
         )
         self.proxy_address_label.grid(
             row=0,
-            column=2,
+            column=3,
             padx=(30, 0),
             pady=pad_y,
             sticky="w"
@@ -94,7 +108,7 @@ class WalletItem(customtkinter.CTkFrame):
         )
         self.wallet_type_label.grid(
             row=0,
-            column=3,
+            column=4,
             padx=(100, 0),
             pady=pad_y,
             sticky="w"
@@ -109,10 +123,10 @@ class WalletItem(customtkinter.CTkFrame):
         )
         self.edit_button.grid(
             row=0,
-            column=4,
-            padx=(0, 80),
+            column=5,
+            padx=(60, 0),
             pady=pad_y,
-            sticky="e"
+            sticky="w"
         )
 
     @property

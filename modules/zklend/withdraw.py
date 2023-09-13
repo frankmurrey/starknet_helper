@@ -1,18 +1,22 @@
-from modules.base import ModuleBase
-from contracts.tokens.main import Tokens
-from contracts.zklend.main import ZkLendContracts
-from src.schemas.tasks.zklend import ZkLendWithdrawTask
+from typing import TYPE_CHECKING
 
 from loguru import logger
 
+from modules.base import ModuleBase
+from contracts.tokens.main import Tokens
+from contracts.zklend.main import ZkLendContracts
+
+if TYPE_CHECKING:
+    from src.schemas.tasks.zklend import ZkLendWithdrawTask
+
 
 class ZkLendWithdraw(ModuleBase):
-    task: ZkLendWithdrawTask
+    task: 'ZkLendWithdrawTask'
 
     def __init__(
             self,
             account,
-            task: ZkLendWithdrawTask
+            task: 'ZkLendWithdrawTask'
     ):
         super().__init__(
             client=account.client,
@@ -53,7 +57,7 @@ class ZkLendWithdraw(ModuleBase):
 
         return [withdraw_call]
 
-    async def send_withdraw_txn(self):
+    async def send_txn(self):
         txn_payload_calls = await self.build_txn_payload_calls()
         if txn_payload_calls is None:
             return False

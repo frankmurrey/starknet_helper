@@ -1,26 +1,27 @@
 import time
 import random
 from typing import Union
+from typing import TYPE_CHECKING
+
+from starknet_py.net.account.account import Account
+from loguru import logger
 
 from contracts.tokens.main import Tokens
 from contracts.k10swap.main import K10SwapContracts
-
 from modules.base import SwapModuleBase
 
-from src.schemas.tasks.k10swap import K10SwapTask
 
-from starknet_py.net.account.account import Account
-
-from loguru import logger
+if TYPE_CHECKING:
+    from src.schemas.tasks.k10swap import K10SwapTask
 
 
 class K10Swap(SwapModuleBase):
-    task: K10SwapTask
+    task: 'K10SwapTask'
     account: Account
 
     def __init__(self,
                  account,
-                 task: K10SwapTask):
+                 task: 'K10SwapTask'):
 
         super().__init__(
             client=account.client,
@@ -136,7 +137,7 @@ class K10Swap(SwapModuleBase):
             'amount_y_decimals': amount_y_decimals,
         }
 
-    async def send_swap_txn(self):
+    async def send_txn(self):
         txn_payload_data = await self.build_txn_payload_data()
         if txn_payload_data is None:
             return False

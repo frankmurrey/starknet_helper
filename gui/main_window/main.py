@@ -20,6 +20,7 @@ def run_gui():
 class MainWindow(customtkinter.CTk):
     def __init__(self):
         super().__init__()
+        self.resizable(False, False)
         self.title("StarkNet Helper by @frankmurrey")
 
         self.geometry(f"{1280}x{1000}+100+100")

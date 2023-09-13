@@ -104,6 +104,9 @@ class WalletsWindow(customtkinter.CTkFrame):
         self.set_wallets(wallets)
 
     def remove_all_wallets(self):
+        if not self.wallets:
+            return
+
         msg_box = tkinter.messagebox.askyesno(
             title="Remove all",
             message="Are you sure you want to remove all wallets?",

@@ -1,4 +1,5 @@
 from typing import Callable
+from pydantic import Field
 
 from src.schemas.tasks.base.swap import SwapTaskBase
 from src.schemas.tasks.base.add_liquidity import AddLiquidityTaskBase
@@ -12,16 +13,16 @@ from src import enums
 class MySwapTask(SwapTaskBase):
     module_name: enums.ModuleName = enums.ModuleName.MY_SWAP
     module_type: enums.ModuleType = enums.ModuleType.SWAP
-    module: Callable = MySwap
+    module: Callable = Field(default=MySwap)
 
 
 class MySwapAddLiquidityTask(AddLiquidityTaskBase):
     module_name: enums.ModuleName = enums.ModuleName.MY_SWAP
     module_type: enums.ModuleType = enums.ModuleType.LIQUIDITY_ADD
-    module: Callable = MySwapAddLiquidity
+    module: Callable = Field(default=MySwapAddLiquidity)
 
 
 class MySwapRemoveLiquidityTask(RemoveLiquidityTaskBase):
     module_name: enums.ModuleName = enums.ModuleName.MY_SWAP
     module_type: enums.ModuleType = enums.ModuleType.LIQUIDITY_REMOVE
-    module: Callable = MySwapRemoveLiquidity
+    module: Callable = Field(default=MySwapRemoveLiquidity)

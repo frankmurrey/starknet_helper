@@ -9,9 +9,6 @@ def parse_proxy_data(proxy_str: str) -> Union[ProxyData, None]:
     if not proxy_str:
         return None
 
-    if proxy_str == "##":
-        return None
-
     try:
         if proxy_str.startswith('m$'):
             is_mobile = True

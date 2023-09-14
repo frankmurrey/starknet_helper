@@ -1,15 +1,7 @@
 import customtkinter
-import webbrowser
 
-from utlis.file_manager import FileManager
-from src.storage import Storage
-from src import paths
 from gui.main_window.frames import SidebarFrame
-from gui.modules.frames import ModulesFrame
-from gui.wallet_window.right_frame import RightFrame
-
-from tkinter import messagebox, filedialog
-from PIL import Image
+from gui.wallet_right_window.right_frame import RightFrame
 
 
 def run_gui():

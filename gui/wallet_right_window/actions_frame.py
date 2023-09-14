@@ -48,10 +48,10 @@ class ActionsFrame(customtkinter.CTkFrame):
             height=30
         )
         self.start_button.grid(
-            row=4,
+            row=3,
             column=0,
             padx=20,
-            pady=10,
+            pady=5,
             sticky="w"
         )
 
@@ -305,7 +305,7 @@ class ButtonActionsFrame(customtkinter.CTkFrame):
     def add_action_button_event(self):
         if self.actions_top_level_window is None or not self.actions_top_level_window.winfo_exists():
             self.actions_top_level_window = InteractionTopLevelWindow(parent=self.master)
-            self.actions_top_level_window.geometry("450x1000+1505+100")
+            self.actions_top_level_window.geometry("450x900+1505+100")
             self.actions_top_level_window.resizable(False, False)
         else:
             self.actions_top_level_window.focus()
@@ -337,13 +337,34 @@ class RunSettingsFrame(customtkinter.CTkFrame):
             font=customtkinter.CTkFont(size=12, weight="bold"),
             checkbox_width=18,
             checkbox_height=18,
-            command=self.test_mode_checkbox_event
+            command=self.test_mode_checkbox_event,
+            onvalue=True,
+            offvalue=False
         )
         self.test_mode_checkbox.grid(
             row=0,
             column=0,
             padx=20,
-            pady=20,
+            pady=(20, 10),
+            sticky="ew"
+        )
+
+        self.shuffle_wallets_checkbox = customtkinter.CTkCheckBox(
+            self,
+            text="Shuffle wallets",
+            text_color="#F47174",
+            font=customtkinter.CTkFont(size=12, weight="bold"),
+            checkbox_width=18,
+            checkbox_height=18,
+            command=self.shuffle_wallets_checkbox_event,
+            onvalue=True,
+            offvalue=False
+        )
+        self.shuffle_wallets_checkbox.grid(
+            row=1,
+            column=0,
+            padx=20,
+            pady=(0, 10),
             sticky="ew"
         )
 
@@ -353,7 +374,7 @@ class RunSettingsFrame(customtkinter.CTkFrame):
             font=customtkinter.CTkFont(size=12, weight="bold")
         )
         self.min_delay_label.grid(
-            row=1,
+            row=2,
             column=0,
             padx=20,
             pady=0,
@@ -367,7 +388,7 @@ class RunSettingsFrame(customtkinter.CTkFrame):
             textvariable=Variable(value=40)
         )
         self.min_delay_entry_spinbox.grid(
-            row=2,
+            row=3,
             column=0,
             padx=20,
             pady=(0, 10),
@@ -380,7 +401,7 @@ class RunSettingsFrame(customtkinter.CTkFrame):
             font=customtkinter.CTkFont(size=12, weight="bold")
         )
         self.max_delay_label.grid(
-            row=1,
+            row=2,
             column=1,
             padx=20,
             pady=0,
@@ -394,7 +415,7 @@ class RunSettingsFrame(customtkinter.CTkFrame):
             textvariable=Variable(value=80)
         )
         self.max_delay_entry_spinbox.grid(
-            row=2,
+            row=3,
             column=1,
             padx=20,
             pady=(0, 10),
@@ -407,7 +428,7 @@ class RunSettingsFrame(customtkinter.CTkFrame):
             font=customtkinter.CTkFont(size=12, weight="bold")
         )
         txn_wait_timeout_seconds_label.grid(
-            row=3,
+            row=4,
             column=0,
             padx=20,
             pady=0,
@@ -429,7 +450,7 @@ class RunSettingsFrame(customtkinter.CTkFrame):
             state="disabled"
         )
         self.txn_wait_timeout_seconds_spinbox.grid(
-            row=4,
+            row=5,
             column=0,
             padx=20,
             pady=0,
@@ -439,13 +460,15 @@ class RunSettingsFrame(customtkinter.CTkFrame):
         self.wait_for_receipt_checkbox = customtkinter.CTkCheckBox(
             self,
             text="Wait for txn",
-            font=customtkinter.CTkFont(size=12),
+            font=customtkinter.CTkFont(size=12, weight="bold"),
             checkbox_width=18,
             checkbox_height=18,
-            command=self.wait_for_txn_checkbox_event
+            command=self.wait_for_txn_checkbox_event,
+            onvalue=True,
+            offvalue=False
         )
         self.wait_for_receipt_checkbox.grid(
-            row=5,
+            row=6,
             column=0,
             padx=20,
             pady=(10, 0),
@@ -483,5 +506,15 @@ class RunSettingsFrame(customtkinter.CTkFrame):
             )
         else:
             self.test_mode_checkbox.configure(
+                text_color="#F47174"
+            )
+
+    def shuffle_wallets_checkbox_event(self):
+        if self.shuffle_wallets_checkbox.get():
+            self.shuffle_wallets_checkbox.configure(
+                text_color="#6fc276"
+            )
+        else:
+            self.shuffle_wallets_checkbox.configure(
                 text_color="#F47174"
             )

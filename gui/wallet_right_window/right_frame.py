@@ -15,7 +15,7 @@ from utlis.file_manager import FileManager
 from src import paths
 
 
-class WalletsWindow(customtkinter.CTkFrame):
+class RightFrame(customtkinter.CTkFrame):
     def __init__(self, master: any, **kwargs):
         super().__init__(master, **kwargs)
         self.master = master
@@ -39,7 +39,7 @@ class WalletsWindow(customtkinter.CTkFrame):
             height=30,
             command=self.load_wallets_csv_file,
         )
-        self.import_button.grid(row=0, column=0, padx=10, pady=10, sticky="wn")
+        self.import_button.grid(row=0, column=0, padx=20, pady=10, sticky="wn")
 
         self.add_wallet_button = customtkinter.CTkButton(
             self.button_frame,
@@ -49,7 +49,7 @@ class WalletsWindow(customtkinter.CTkFrame):
             height=30,
             command=self.add_wallet_button_clicked,
         )
-        self.add_wallet_button.grid(row=0, column=1, padx=(0, 10), pady=10, sticky="wn")
+        self.add_wallet_button.grid(row=0, column=1, padx=(0, 20), pady=10, sticky="wn")
 
         self.remove_button = customtkinter.CTkButton(
             self.button_frame,

@@ -101,17 +101,18 @@ class WalletItem(customtkinter.CTkFrame):
             sticky="w"
         )
 
+        wallet_type = f"{wallet_data.type.title()} (Cairo: {wallet_data.cairo_version})"
         self.wallet_type_label = customtkinter.CTkLabel(
             self.frame,
-            text=wallet_data.type.title(),
+            text=wallet_type,
             font=customtkinter.CTkFont(size=12, weight="bold")
         )
         self.wallet_type_label.grid(
             row=0,
             column=4,
-            padx=(100, 0),
+            padx=(60, 0),
             pady=pad_y,
-            sticky="w"
+            sticky="e"
         )
 
         self.edit_button = customtkinter.CTkButton(

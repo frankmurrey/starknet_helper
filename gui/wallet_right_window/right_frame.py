@@ -6,9 +6,9 @@ import customtkinter
 from pydantic import ValidationError
 from loguru import logger
 
-from gui.wallet_window.add_wallet_window import AddWalletWindow
-from gui.wallet_window.wallets_table import WalletsTable
-from gui.wallet_window.actions_frame import ActionsFrame
+from gui.wallet_right_window.add_wallet_window import AddWalletWindow
+from gui.wallet_right_window.wallets_table import WalletsTable
+from gui.wallet_right_window.actions_frame import ActionsFrame
 from src.schemas.wallet_data import WalletData
 from src.wallet_manager import WalletManager
 from utlis.file_manager import FileManager

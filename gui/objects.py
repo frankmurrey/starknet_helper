@@ -9,13 +9,25 @@ class CTkEntryWithLabel(customtkinter.CTkFrame):
     Entry with a label
     """
 
-    def __init__(self, master, label_text: str, state: str = tkinter.NORMAL, **kwargs):
+    def __init__(
+            self,
+            master,
+            label_text: str,
+            textvariable: Union[tkinter.Variable, None] = None,
+            state: str = tkinter.NORMAL,
+            **kwargs
+    ):
         super().__init__(master, fg_color="transparent", **kwargs)
 
         self.label = customtkinter.CTkLabel(self, text=label_text)
         self.label.grid(row=0, column=0, padx=0, pady=0, sticky="w")
 
-        self.entry = customtkinter.CTkEntry(self, state=state, **kwargs)
+        self.entry = customtkinter.CTkEntry(
+            self,
+            state=state,
+            textvariable=textvariable,
+            **kwargs
+        )
         self.entry.grid(row=1, column=0, padx=0, pady=0, sticky="w")
 
     def get(self):

@@ -34,7 +34,7 @@ class WalletsTable(customtkinter.CTkScrollableFrame):
     def wallets(self):
         return [wallet_item.wallet_data for wallet_item in self.wallets_items]
 
-    def remove_all_wallets(self):
+    def remove_all_wallets(self, show_no_wallets: bool = True):
         if not len(self.wallets):
             return
 
@@ -44,7 +44,9 @@ class WalletsTable(customtkinter.CTkScrollableFrame):
             wallet_item.destroy()
 
         self.wallets_items.clear()
-        self.show_no_wallets_label()
+
+        if show_no_wallets:
+            self.show_no_wallets_label()
 
     def show_no_wallets_label(self):
         self.no_wallets_label = customtkinter.CTkLabel(
@@ -86,7 +88,7 @@ class WalletsTable(customtkinter.CTkScrollableFrame):
         """
 
         self.destroy_no_wallets_label()
-        self.remove_all_wallets()
+        self.remove_all_wallets(show_no_wallets=False)
 
         start_row = 0
         start_column = 0

@@ -10,3 +10,23 @@ class ProxyData(BaseModel):
     password: str = None
     auth: bool = False
     is_mobile: bool = False
+
+    def to_string(self):
+        proxy_string = ""
+        if self.is_mobile:
+            proxy_string += "m$"
+
+        if self.host:
+            proxy_string += f"{self.host}"
+
+        if self.port:
+            proxy_string += f":{self.port}"
+
+        if self.username and self.password:
+            proxy_string += f":{self.username}:{self.password}"
+
+        return proxy_string
+
+
+if __name__ == '__main__':
+    print(ProxyData(host="", port="").to_string())

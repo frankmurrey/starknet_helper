@@ -1,9 +1,10 @@
+from typing import Callable, Union
+
 import customtkinter
 
+from src.schemas.proxy_data import ProxyData
 from src.schemas.wallet_data import WalletData
-from utlis.key_manager.key_manager import get_argent_addr_from_private_key
-from utlis.key_manager.key_manager import get_braavos_addr_from_private_key
-from src import enums
+from gui.wallet_right_window.wallet_window import WalletWindow
 
 
 class WalletItem(customtkinter.CTkFrame):
@@ -12,11 +13,14 @@ class WalletItem(customtkinter.CTkFrame):
             master,
             grid: dict,
             wallet_data: WalletData,
-            index: int,):
+            # on_wallet_save: Callable[[WalletData], None],
+            index: int,
+    ):
 
         super().__init__(master)
 
         self.wallet_data = wallet_data
+        # self.on_wallet_save = on_wallet_save
         self.index = index
 
         self.frame = customtkinter.CTkFrame(master)
@@ -89,8 +93,7 @@ class WalletItem(customtkinter.CTkFrame):
 
         self.proxy_address_label = customtkinter.CTkLabel(
             self.frame,
-            text=self.get_short_proxy(host='http://192.168.321.23.1',
-                                      port='12345'),
+            text=self.get_short_proxy(wallet_data.proxy),
             font=customtkinter.CTkFont(size=12, weight="bold")
         )
         self.proxy_address_label.grid(
@@ -121,6 +124,7 @@ class WalletItem(customtkinter.CTkFrame):
             font=customtkinter.CTkFont(size=12, weight="bold"),
             width=45,
             height=25,
+            command=self.edit_wallet_button_clicked
         )
         self.edit_button.grid(
             row=0,
@@ -129,6 +133,9 @@ class WalletItem(customtkinter.CTkFrame):
             pady=pad_y,
             sticky="w"
         )
+
+        # EDIT WALLET
+        self.edit_window = None
 
     @property
     def is_chosen(self):
@@ -142,13 +149,39 @@ class WalletItem(customtkinter.CTkFrame):
 
     @staticmethod
     def get_short_proxy(
-            host: str,
-            port: str
+            proxy: Union[ProxyData, None] = None,
     ):
-        if "//" in host:
-            host = host.split("//")[1]
+        if isinstance(proxy, ProxyData) and proxy.host is not None:
+            return f"{proxy.host}" + (f":{proxy.port}" if proxy.port is not None else "")
+        else:
+            return ""
 
-        # proxy = host[:8] + " " + ":" + port
-        proxy = host + port
+    def update_wallet_data(self, wallet_data: WalletData):
+        self.wallet_data = wallet_data
 
-        return proxy
+        self.wallet_name_label.configure(text=wallet_data.name if wallet_data.name is not None else f"Wallet {self.index + 1}")
+        self.wallet_address_label.configure(text=self.get_short_address(wallet_data.address))
+        self.pair_address_label.configure(text=self.get_short_address(wallet_data.pair_address))
+        self.proxy_address_label.configure(text=self.get_short_proxy(wallet_data.proxy))
+        self.wallet_type_label.configure(text=f"{wallet_data.type.title()} (Cairo: {wallet_data.cairo_version})")
+
+    def edit_wallet_button_clicked(self):
+        if self.edit_window is not None:
+            return
+
+        self.edit_window = WalletWindow(
+            master=self.master,
+            wallet_data=self.wallet_data,
+            on_wallet_save=self.edit_wallet_callback,
+        )
+
+    def edit_wallet_callback(self, wallet_data: WalletData):
+        if wallet_data is None:
+            return
+
+        self.update_wallet_data(wallet_data)
+        self.close_edit_wallet_window()
+
+    def close_edit_wallet_window(self):
+        self.edit_window.close()
+        self.edit_window = None

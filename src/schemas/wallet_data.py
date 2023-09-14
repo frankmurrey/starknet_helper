@@ -19,6 +19,7 @@ class WalletData(BaseModel):
     pair_address: str
     proxy: Optional[ProxyData] = None
     type: enums.PrivateKeyType = enums.PrivateKeyType.argent
+    cairo_version: int = 1
 
     @validator("proxy", pre=True)
     def validate_proxy(cls, v):
@@ -46,8 +47,10 @@ class WalletData(BaseModel):
     @property
     def address(self) -> str:
         if self.type == enums.PrivateKeyType.argent:
-            return hex(get_argent_addr_from_private_key(private_key=self.private_key))
+            return hex(get_argent_addr_from_private_key(private_key=self.private_key,
+                                                        cairo_version=self.cairo_version))
         elif self.type == enums.PrivateKeyType.braavos:
-            return hex(get_braavos_addr_from_private_key(private_key=self.private_key))
+            return hex(get_braavos_addr_from_private_key(private_key=self.private_key,
+                                                         cairo_version=self.cairo_version))
         else:
             raise exceptions.AppValidationError(f"Bad private key type: {self.type}")

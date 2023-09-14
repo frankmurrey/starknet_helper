@@ -1,7 +1,7 @@
 import time
 import random
 from datetime import timedelta, datetime
-from typing import List, Union, Callable, Optional
+from typing import List, Union, Optional
 
 import aiohttp.typedefs
 from loguru import logger
@@ -18,8 +18,6 @@ from src.action_logger import ActionLogger
 from src.proxy_manager import ProxyManager
 from src.custom_client_session import CustomSession
 
-from utlis.key_manager.key_manager import get_argent_addr_from_private_key
-from utlis.key_manager.key_manager import get_braavos_addr_from_private_key
 from utlis.key_manager.key_manager import get_key_pair_from_pk
 from utlis.xlsx import write_balance_data_to_xlsx
 from utlis.repr.module import print_module_config
@@ -44,13 +42,6 @@ class ModuleExecutor:
 
         self.wallets: List[WalletData] = []
 
-        if self.app_config.private_key_type == enums.PrivateKeyType.braavos:
-            self.get_addr_from_private_key: Callable[[str], str] = get_braavos_addr_from_private_key
-        elif self.app_config.private_key_type == enums.PrivateKeyType.argent:
-            self.get_addr_from_private_key: Callable[[str], str] = get_argent_addr_from_private_key
-        else:
-            raise ValueError(f"Invalid private key type: {self.app_config.private_key_type}")
-
     def get_delay_sec(self, execution_status: bool) -> int:
         """
         Get the delay in seconds based on the execution status.
@@ -63,7 +54,9 @@ class ModuleExecutor:
 
         """
         if execution_status is True:
-            return random.randint(int(self.task.min_delay_sec), int(self.task.max_delay_sec))
+            return random.randint(
+                int(self.task.min_delay_sec), int(self.task.max_delay_sec)
+            )
 
         return cfg.DEFAULT_DELAY_SEC
 
@@ -80,7 +73,11 @@ class ModuleExecutor:
         length = len(private_key)
         start_index = length // 10
         end_index = length - start_index
-        blurred_private_key = private_key[:start_index] + '*' * (end_index - start_index) + private_key[end_index + 4:]
+        blurred_private_key = (
+            private_key[:start_index]
+            + "*" * (end_index - start_index)
+            + private_key[end_index + 4 :]
+        )
 
         return blurred_private_key
 
@@ -98,17 +95,20 @@ class ModuleExecutor:
 
         if self.task.test_mode:
             wallets = wallets[:3]
-            logger.warning(f"Test mode enabled. Working only with {len(wallets)} wallets\n")
+            logger.warning(
+                f"Test mode enabled. Working only with {len(wallets)} wallets\n"
+            )
 
         wallets_amount = len(wallets)
         for index, wallet_data in enumerate(wallets):
-            wallet_address = self.get_addr_from_private_key(wallet_data.private_key)
+            wallet_data: WalletData
 
-            logger.info(f"[{index + 1}] - {hex(wallet_address)}")
+            logger.info(f"[{index + 1}] - {wallet_data.address}")
             logger.info(f"PK - {self.blur_private_key(wallet_data.private_key)}")
 
-            execute_status: bool = await self.execute_module(wallet_data=wallet_data,
-                                                             base_url=self.app_config.rpc_url)
+            execute_status: bool = await self.execute_module(
+                wallet_data=wallet_data, base_url=self.app_config.rpc_url
+            )
 
             if index == wallets_amount - 1:
                 logger.info(f"Process is finished\n")
@@ -119,16 +119,17 @@ class ModuleExecutor:
             delta = timedelta(seconds=time_delay_sec)
             result_datetime = datetime.now() + delta
 
-            logger.info(f"Waiting {time_delay_sec} seconds, next wallet {result_datetime}\n")
+            logger.info(
+                f"Waiting {time_delay_sec} seconds, next wallet {result_datetime}\n"
+            )
             time.sleep(time_delay_sec)
 
-    async def execute_module(self,
-                             wallet_data: WalletData,
-                             base_url: str) -> Union[bool, None]:
-
+    async def execute_module(
+            self,
+            wallet_data: WalletData,
+            base_url: str
+    ) -> Union[bool, None]:
         execution_status = None
-        wallet_address: int = self.get_addr_from_private_key(wallet_data.private_key)
-
         proxy_data = wallet_data.proxy
         proxy_manager = ProxyManager(proxy_data=proxy_data)
         proxies = proxy_manager.get_proxy()
@@ -138,7 +139,7 @@ class ModuleExecutor:
 
         action_log_data = WalletActionSchema(
             date_time=datetime.now().strftime("%d-%m-%Y_%H-%M-%S"),
-            wallet_address=hex(wallet_address)
+            wallet_address=wallet_data.address,
         )
 
         if proxy_data:
@@ -147,10 +148,15 @@ class ModuleExecutor:
 
             proxy_set_up_status = False
 
-            if proxy_data.is_mobile is True and self.app_config.mobile_proxy_rotation is True:
+            if (
+                proxy_data.is_mobile is True
+                and self.app_config.mobile_proxy_rotation is True
+            ):
                 rotation_link = self.app_config.mobile_proxy_rotation_link
                 if not rotation_link:
-                    err_msg = "Mobile proxy rotation link is not set (go to app_config.json)"
+                    err_msg = (
+                        "Mobile proxy rotation link is not set (go to app_config.json)"
+                    )
                     logger.error(err_msg)
 
                     action_log_data.is_success = False
@@ -176,7 +182,8 @@ class ModuleExecutor:
                 proxy_set_up_status = True
 
                 logger.info(
-                    f"Proxy valid, using {wallet_data.proxy.host}:{wallet_data.proxy.port} (ip: {current_ip})")
+                    f"Proxy valid, using {wallet_data.proxy.host}:{wallet_data.proxy.port} (ip: {current_ip})"
+                )
 
             if proxy_set_up_status is False:
                 action_logger = ActionLogger(action_data=action_log_data)
@@ -184,20 +191,21 @@ class ModuleExecutor:
                 return False
 
         self.action_storage.update_current_action(action_data=action_log_data)
-        wallet_address = self.get_addr_from_private_key(wallet_data.private_key)
         key_pair = get_key_pair_from_pk(wallet_data.private_key)
 
-        proxy_unit: Optional[aiohttp.typedefs.StrOrURL] = proxies.get('http://') if proxies else None
+        proxy_unit: Optional[aiohttp.typedefs.StrOrURL] = (
+            proxies.get("http://") if proxies else None
+        )
 
         connector = aiohttp.TCPConnector(limit=10)
         custom_session = CustomSession(proxy=proxy_unit, connector=connector)
         client = FullNodeClient(node_url=base_url, session=custom_session)
 
         account = Account(
-            address=wallet_address,
+            address=wallet_data.address,
             client=client,
             key_pair=key_pair,
-            chain=StarknetChainId.MAINNET
+            chain=StarknetChainId.MAINNET,
         )
 
         if self.module_name == enums.ModuleName.DEPLOY:
@@ -207,15 +215,12 @@ class ModuleExecutor:
                 private_key=wallet_data.private_key,
                 account=account,
                 task=self.task,
-                key_type=wallet_data.type
+                key_type=wallet_data.type,
             )
             execution_status = await module.send_txn()
 
         else:
-            module = self.task.module(
-                account=account,
-                task=self.task
-            )
+            module = self.task.module(account=account, task=self.task)
             execution_status = await module.send_txn()
 
         if self.task.test_mode is False:

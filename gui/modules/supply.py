@@ -1,10 +1,11 @@
 
 import customtkinter
+from pydantic.error_wrappers import ValidationError
 
-from tkinter import Variable
+from tkinter import Variable, messagebox
 
 from src import enums
-from src.schemas.tasks.zklend import SupplyTaskBase
+from src.schemas.tasks.zklend import ZkLendSupplyTask
 from contracts.tokens.main import Tokens
 from gui.modules.txn_settings_frame import TxnSettingFrame
 
@@ -43,15 +44,22 @@ class SupplyLendingTab:
         )
 
     def build_config_data(self):
-        return SupplyTaskBase(
-            coin_to_supply=self.supply_frame.token_to_supply_combobox.get(),
-            min_amount_out=self.supply_frame.min_amount_out_entry.get(),
-            max_amount_out=self.supply_frame.max_amount_out_entry.get(),
-            use_all_balance=self.supply_frame.use_all_balance_checkbox.get(),
-            send_percent_balance=self.supply_frame.send_percent_balance_checkbox.get(),
-            enable_collateral=self.supply_frame.enable_collateral_checkbox.get(),
-            max_fee=self.txn_settings_frame.max_fee_entry.get(),
-        )
+        try:
+            return ZkLendSupplyTask(
+                coin_to_supply=self.supply_frame.token_to_supply_combobox.get(),
+                min_amount_out=self.supply_frame.min_amount_out_entry.get(),
+                max_amount_out=self.supply_frame.max_amount_out_entry.get(),
+                use_all_balance=self.supply_frame.use_all_balance_checkbox.get(),
+                send_percent_balance=self.supply_frame.send_percent_balance_checkbox.get(),
+                enable_collateral=self.supply_frame.enable_collateral_checkbox.get(),
+                max_fee=self.txn_settings_frame.max_fee_entry.get(),
+            )
+        except ValidationError as e:
+            error_messages = "\n\n".join([error["msg"] for error in e.errors()])
+            messagebox.showerror(
+                title="Config validation error", message=error_messages
+            )
+            return None
 
 
 class SupplyLending(customtkinter.CTkFrame):

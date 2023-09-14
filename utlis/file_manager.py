@@ -9,7 +9,7 @@ import pandas as pd
 from loguru import logger
 
 from src import paths
-from src.wallet_manager import WalletManager
+from src import exceptions
 
 
 class FileManager:
@@ -90,14 +90,19 @@ class FileManager:
         raise NotImplementedError
 
     @staticmethod
-    def write_data_to_json_file(file_path: str, data: Union[dict, list]) -> None:
+    def write_data_to_json_file(
+            file_path: str,
+            data: Union[dict, list],
+            raise_exception: bool = False
+    ) -> None:
         try:
             with open(file_path, "w") as file:
                 json.dump(data, file, indent=4)
 
         except Exception as e:
             logger.error(f"Error while writing file \"{file_path}\": {e}")
-            logger.exception(e)
+            if raise_exception:
+                raise exceptions.AppValidationError(f"Error while writing file \"{file_path}\": {e}")
 
     @staticmethod
     def create_new_logs_dir(dir_name_suffix=None):

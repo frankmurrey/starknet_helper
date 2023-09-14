@@ -6,7 +6,7 @@ from src.storage import Storage
 from src import paths
 from gui.main_window.frames import SidebarFrame
 from gui.modules.frames import ModulesFrame
-from gui.wallet_window.main import WalletsWindow
+from gui.wallet_window.right_frame import RightFrame
 
 from tkinter import messagebox, filedialog
 from PIL import Image
@@ -23,7 +23,7 @@ class MainWindow(customtkinter.CTk):
         self.resizable(False, False)
         self.title("StarkNet Helper by @frankmurrey")
 
-        self.geometry(f"{1400}x{1000}+100+100")
+        self.geometry(f"{1400}x{900}+100+100")
 
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=0)
@@ -32,7 +32,7 @@ class MainWindow(customtkinter.CTk):
         self.sidebar_frame = SidebarFrame(self)
         self.sidebar_frame.grid(row=0, column=0, sticky="nsew")
 
-        self.right_frame = WalletsWindow(self)
+        self.right_frame = RightFrame(self)
 
 
 

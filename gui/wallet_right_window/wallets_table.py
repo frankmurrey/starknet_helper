@@ -1,11 +1,9 @@
-import tkinter.messagebox
 from typing import List
 
 import customtkinter
 
 from gui.wallet_right_window.wallet_item import WalletItem
 from gui.wallet_right_window.frames import WalletsTableTop
-from src.schemas.proxy_data import ProxyData
 from src.schemas.wallet_data import WalletData
 
 

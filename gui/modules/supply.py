@@ -62,7 +62,6 @@ class SupplyLendingTab:
             return None
 
 
-
 class SupplyLending(customtkinter.CTkFrame):
     def __init__(
             self,

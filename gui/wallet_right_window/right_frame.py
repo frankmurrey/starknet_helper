@@ -3,8 +3,6 @@ import tkinter.filedialog
 from typing import List, Union
 
 import customtkinter
-from pydantic import ValidationError
-from loguru import logger
 
 from gui.wallet_right_window.add_wallet_window import AddWalletWindow
 from gui.wallet_right_window.wallets_table import WalletsTable

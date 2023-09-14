@@ -4,7 +4,7 @@ from typing import List, Union
 
 import customtkinter
 
-from gui.wallet_right_window.add_wallet_window import AddWalletWindow
+from gui.wallet_right_window.wallet_window import WalletWindow
 from gui.wallet_right_window.wallets_table import WalletsTable
 from gui.wallet_right_window.actions_frame import ActionsFrame
 from src.schemas.wallet_data import WalletData
@@ -122,9 +122,9 @@ class RightFrame(customtkinter.CTkFrame):
         if self.add_wallet_window is not None:
             return
 
-        self.add_wallet_window = AddWalletWindow(
+        self.add_wallet_window = WalletWindow(
             master=self.master,
-            on_add_wallet=self.add_wallet_callback,
+            on_wallet_save=self.add_wallet_callback,
         )
         self.add_wallet_window.frame.name_entry.entry.configure(
             textvariable=tkinter.StringVar(value=f"Wallet {len(self.wallets)}")
@@ -142,5 +142,5 @@ class RightFrame(customtkinter.CTkFrame):
         self.close_add_wallet_window()
 
     def close_add_wallet_window(self):
-        self.add_wallet_window.destroy()
+        self.add_wallet_window.close()
         self.add_wallet_window = None

@@ -59,3 +59,32 @@ def write_wallet_action_to_xlsx():
     except Exception as e:
         logger.error(f"Error while logging all actions to xlsx: {e}")
         return
+
+
+def write_generated_wallets_to_xlsx(
+        path: str,
+        data: list[dict]
+):
+    datapd = {
+        "Mn": [],
+        "Pk": [],
+        "Addr": [],
+        "PubK": []
+    }
+
+    for wallet in data:
+        datapd["Mn"].append(wallet["mnemonic"])
+        datapd["Pk"].append(wallet["private_key"])
+        datapd["Addr"].append(wallet["address"])
+        datapd["PubK"].append(wallet["public_key"])
+
+    df = pd.DataFrame(datapd)
+    try:
+        df.to_excel(path, index=False)
+
+        logger.warning(f"Generated wallets saved to {path}")
+
+    except Exception as e:
+        logger.error(f"Error while saving generated wallets to {path}: {e}")
+
+

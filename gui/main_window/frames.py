@@ -3,6 +3,7 @@ import webbrowser
 
 from src import paths
 from gui.main_window.tools_window import ToolsWindow
+from gui.main_window.settings_window import SettingsWindow
 
 from PIL import Image
 
@@ -16,6 +17,7 @@ class SidebarFrame(customtkinter.CTkFrame):
         self.master = master
 
         self.tools_window = None
+        self.settings_window = None
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure((0, 1, 2, 3, 4, 5, 6, 7, 8), weight=0)
@@ -50,13 +52,28 @@ class SidebarFrame(customtkinter.CTkFrame):
         self.tools_button = customtkinter.CTkButton(
             self,
             text="Tools",
-            command=self.tools_button_event
+            command=self.tools_button_event,
+            font=customtkinter.CTkFont(size=12, weight="bold")
         )
         self.tools_button.grid(
             row=1,
             column=0,
             padx=25,
-            pady=(0, 10),
+            pady=20,
+            sticky="w"
+        )
+
+        self.settings_button = customtkinter.CTkButton(
+            self,
+            text="Settings",
+            font=customtkinter.CTkFont(size=12, weight="bold"),
+            command=self.settings_button_event
+        )
+        self.settings_button.grid(
+            row=2,
+            column=0,
+            padx=25,
+            pady=(0, 20),
             sticky="w"
         )
 
@@ -128,9 +145,18 @@ class SidebarFrame(customtkinter.CTkFrame):
     def tools_button_event(self):
         if self.tools_window is None or not self.tools_window.winfo_exists():
             self.tools_window = ToolsWindow(self)
-            self.tools_window.geometry("450x1000+1505+100")
+            self.tools_window.geometry("450x900+1505+100")
             self.tools_window.resizable(False, False)
         else:
             self.tools_window.focus()
+
+    def settings_button_event(self):
+        if self.settings_window is None or not self.settings_window.winfo_exists():
+            self.settings_window = SettingsWindow(self)
+            self.settings_window.geometry("450x900+1505+100")
+            self.settings_window.resizable(False, False)
+        else:
+            self.settings_window.focus()
+
 
 

@@ -15,9 +15,7 @@ class Storage:
     class __Singleton:
 
         def __init__(self):
-            self.__wallets_data = FileManager.get_wallets_from_files()
             self.__app_config: AppConfigSchema = self.__load_app_config()
-            self.__wallet_balances = []
 
         def set_wallets_data(self, value):
             self.__wallets_data = value

@@ -16,7 +16,7 @@ from utlis.proxy import parse_proxy_data
 class WalletData(BaseModel):
     name: Optional[str] = None
     private_key: str
-    pair_address: str
+    pair_address: Optional[str] = None
     proxy: Optional[ProxyData] = None
     type: enums.PrivateKeyType = enums.PrivateKeyType.argent
     cairo_version: int = 1

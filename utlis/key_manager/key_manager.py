@@ -2,9 +2,7 @@ import hashlib
 
 from utlis.key_manager.seed_phrase_helper.crypto import (HDPrivateKey,
                                                          HDKey)
-from starknet_py.net.models import (AddressRepresentation,
-                                    StarknetChainId,
-                                    parse_address)
+from starknet_py.net.account.account import Account
 from starknet_py.net.signer.stark_curve_signer import KeyPair
 
 from starknet_py.hash.address import compute_address
@@ -42,7 +40,10 @@ def get_braavos_key_from_phrase(mnemonic):
     return private_key
 
 
-def get_braavos_addr_from_private_key(private_key):
+def get_braavos_addr_from_private_key(
+        private_key: hex,
+        cairo_version: int = 1
+) -> hex:
     class_hash = 0x03131fa018d520a037686ce3efddeab8f28895662f019ca3ca18a626650f7d1e
     key_pair = KeyPair.from_private_key(private_key)
     salt = key_pair.public_key
@@ -62,20 +63,31 @@ def get_braavos_addr_from_private_key(private_key):
     return address
 
 
-def get_argent_addr_from_private_key(private_key):
-    class_hash = 0x025ec026985a3bf9d0cc1fe17326b245dfdc3ff89b8fde106542a3ea56c5a918
+def get_argent_addr_from_private_key(
+        private_key: hex,
+        cairo_version: int = 1
+) -> hex:
+    if cairo_version == 0:
+        class_hash = 0x025ec026985a3bf9d0cc1fe17326b245dfdc3ff89b8fde106542a3ea56c5a918
+    elif cairo_version == 1:
+        class_hash = 0x01a736d6ed154502257f02b1ccdf4d9d1089f80811cd6acad48e6b6a9d1f2003
+    else:
+        raise ValueError(f'Invalid cairo version: {cairo_version}')
 
     key_pair = KeyPair.from_private_key(private_key)
     salt = key_pair.public_key
 
     account_initialize_call_data = [key_pair.public_key, 0]
 
-    call_data = [
-        0x33434ad846cdd5f23eb73ff09fe6fddd568284a0fb7d1be20ee482f044dabe2,
-        0x79dc0da7c54b95f10aa182ad0a46400db63156920adb65eca2654c0945a463,
-        len(account_initialize_call_data),
-        *account_initialize_call_data
-    ]
+    if cairo_version == 0:
+        call_data = [
+            0x33434ad846cdd5f23eb73ff09fe6fddd568284a0fb7d1be20ee482f044dabe2,
+            0x79dc0da7c54b95f10aa182ad0a46400db63156920adb65eca2654c0945a463,
+            len(account_initialize_call_data),
+            *account_initialize_call_data
+        ]
+    else:
+        call_data = account_initialize_call_data
 
     address = compute_address(
         salt=salt,

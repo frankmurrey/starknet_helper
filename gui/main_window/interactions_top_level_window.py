@@ -153,6 +153,8 @@ class InteractionTopLevelWindow(customtkinter.CTkToplevel):
             tab_name
         )
         self.current_tab_name = tab_name
+        self.chose_module_frame.float_spinbox.max_value = 1
+        self.chose_module_frame.float_spinbox.entry.configure(textvariable=Variable(value=1))
 
     def get_repeats_amount(self) -> Union[int, None]:
         try:
@@ -265,6 +267,7 @@ class FloatSpinbox(customtkinter.CTkFrame):
     def __init__(
             self,
             *args,
+            start_index: int = 1,
             max_value: Union[int] = 100,
             width: int = 100,
             height: int = 32,
@@ -294,7 +297,7 @@ class FloatSpinbox(customtkinter.CTkFrame):
                                                   command=self.add_button_callback)
         self.add_button.grid(row=0, column=2, padx=(0, 3), pady=3)
 
-        self.entry.insert(0, "1")
+        self.entry.insert(0, start_index)
 
     def add_button_callback(self):
         if self.command is not None:

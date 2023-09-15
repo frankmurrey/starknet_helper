@@ -175,6 +175,10 @@ class WalletItem(customtkinter.CTkFrame):
             on_wallet_save=self.edit_wallet_callback,
         )
 
+        self.edit_window.protocol(
+            "WM_DELETE_WINDOW", self.close_edit_wallet_window
+        )
+
     def edit_wallet_callback(self, wallet_data: WalletData):
         if wallet_data is None:
             return

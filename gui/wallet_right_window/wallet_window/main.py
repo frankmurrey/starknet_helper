@@ -225,7 +225,7 @@ class WalletWindow(customtkinter.CTkToplevel):
         super().__init__(master)
 
         self.title("Add wallet")
-        self.geometry("300x450")
+        self.geometry("320x450")
 
         self.after(10, self.focus_force)
 
@@ -237,7 +237,7 @@ class WalletWindow(customtkinter.CTkToplevel):
         self.frame = WalletFrame(
             self,
             on_wallet_save=on_wallet_save,
-            wallet_data=wallet_data,
+            wallet_data=wallet_data
         )
 
     def close(self):

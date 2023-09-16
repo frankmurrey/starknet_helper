@@ -211,6 +211,9 @@ class KeyExtractorFrame(customtkinter.CTkFrame):
                                                  defaultextension=".txt",
                                                  filetypes=(("Text files", "*.txt"),),
                                                  initialfile=f"extracted.txt")
+        if not file_path:
+            return
+
         with open(file_path, "w") as file:
             for private_key in private_keys:
                 file.write(f"{private_key}\n")

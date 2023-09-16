@@ -42,9 +42,16 @@ def get_braavos_key_from_phrase(mnemonic):
 
 def get_braavos_addr_from_private_key(
         private_key: hex,
-        cairo_version: int = 1
+        cairo_version: int = 0
 ) -> hex:
-    class_hash = 0x03131fa018d520a037686ce3efddeab8f28895662f019ca3ca18a626650f7d1e
+    # TODO replace class has for cairo 1 when it will be available
+    if cairo_version == 0:
+        class_hash = 0x03131fa018d520a037686ce3efddeab8f28895662f019ca3ca18a626650f7d1e
+    elif cairo_version == 1:
+        class_hash = 0x03131fa018d520a037686ce3efddeab8f28895662f019ca3ca18a626650f7d1e
+    else:
+        raise ValueError(f'Invalid cairo version: {cairo_version}')
+
     key_pair = KeyPair.from_private_key(private_key)
     salt = key_pair.public_key
     account_initialize_call_data = [key_pair.public_key]

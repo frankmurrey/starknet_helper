@@ -12,6 +12,7 @@ class AppConfigSchema(BaseModel):
     eth_mainnet_rpc_url: str = "https://rpc.ankr.com/eth"
     target_eth_mainnet_gas_price: Union[int, float] = 20
     time_to_wait_target_gas_price_sec: Union[int, float] = 360
+    last_wallet_version: str = "0.3.0"
 
     @validator('rpc_url', pre=True)
     def rpc_url_must_be_valid(cls, value):

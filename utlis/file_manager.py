@@ -18,7 +18,7 @@ class FileManager:
         pass
 
     @staticmethod
-    def read_abi_from_file(file_path: str) -> Union[dict, None]:
+    def read_abi_from_file(file_path: str) -> Union[dict, list, None]:
         # TODO: possibly excessive method
 
         filename = os.path.basename(file_path)

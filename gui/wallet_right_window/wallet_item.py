@@ -91,15 +91,17 @@ class WalletItem(customtkinter.CTkFrame):
             pady=pad_y,
         )
 
+        proxy = self.get_short_proxy(wallet_data.proxy)
+        padx = self.get_proxy_field_coords(proxy)
         self.proxy_address_label = customtkinter.CTkLabel(
             self.frame,
-            text=self.get_short_proxy(wallet_data.proxy),
+            text=proxy,
             font=customtkinter.CTkFont(size=12, weight="bold")
         )
         self.proxy_address_label.grid(
             row=0,
             column=3,
-            padx=(30, 0),
+            padx=(padx, 0),
             pady=pad_y,
             sticky="w"
         )
@@ -156,13 +158,42 @@ class WalletItem(customtkinter.CTkFrame):
         else:
             return ""
 
+    @staticmethod
+    def get_proxy_field_coords(proxy_item: str) -> int:
+        if not proxy_item:
+            return 0
+
+        max_len = 20
+        padx_for_max_len = 35
+
+        proxy_len = len(proxy_item)
+        if proxy_len > max_len:
+            padx = (proxy_len - max_len + padx_for_max_len)
+
+        elif proxy_len < max_len * 0.6:
+            padx = (max_len - proxy_len + padx_for_max_len) // 0.6
+
+        elif proxy_len <= max_len * 0.8:
+            padx = (max_len - proxy_len + padx_for_max_len) // 0.85
+
+        elif proxy_len <= max_len * 0.9:
+            padx = (max_len - proxy_len + padx_for_max_len) // 0.9
+
+        else:
+            padx = padx_for_max_len
+
+        return padx
+
     def update_wallet_data(self, wallet_data: WalletData):
         self.wallet_data = wallet_data
 
         self.wallet_name_label.configure(text=wallet_data.name if wallet_data.name is not None else f"Wallet {self.index + 1}")
         self.wallet_address_label.configure(text=self.get_short_address(wallet_data.address))
         self.pair_address_label.configure(text=self.get_short_address(wallet_data.pair_address))
+
+        padx_proxy = self.get_proxy_field_coords(self.get_short_proxy(wallet_data.proxy))
         self.proxy_address_label.configure(text=self.get_short_proxy(wallet_data.proxy))
+        self.proxy_address_label.grid(padx=(padx_proxy, 0))
         self.wallet_type_label.configure(text=f"{wallet_data.type.title()} (Cairo: {wallet_data.cairo_version})")
 
     def edit_wallet_button_clicked(self):

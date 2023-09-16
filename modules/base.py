@@ -267,6 +267,18 @@ class ModuleBase:
             logger.error(f"Error while waiting for txn receipt: {ex}")
             return False
 
+    async def get_account_contract(
+            self,
+            address: int,
+            abi: list,
+            provider: Account,
+    ) -> Contract:
+        return Contract(
+            address=address,
+            abi=abi,
+            provider=provider
+        )
+
     async def deploy_account_argent(self,
                                     private_key: str) -> Union[AccountDeploymentResult, None]:
         key_pair = get_key_pair_from_pk(private_key)

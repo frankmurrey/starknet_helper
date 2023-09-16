@@ -8,15 +8,16 @@ GUI_DIR = os.path.join(MAIN_DIR, 'gui')
 CONTRACTS_DIR = os.path.join(MAIN_DIR, "contracts")
 TOKENS_DIR = os.path.join(CONTRACTS_DIR, "tokens")
 TOKENS_ABI_DIR = os.path.join(TOKENS_DIR, "abis")
+ACCOUNT_DIR = os.path.join(CONTRACTS_DIR, "account")
 
 APP_CONFIG_FILE = os.path.join(MAIN_DIR, "app_config.json")
 STARK_WALLETS_FILE = os.path.join(MAIN_DIR, "stark.txt")
 EVM_ADDRESSES_FILE = os.path.join(MAIN_DIR, "evm_addresses.txt")
 PROXY_FILE = os.path.join(MAIN_DIR, "proxy.txt")
-
 GUI_IMAGES_DIR = os.path.join(GUI_DIR, 'images')
 DARK_MODE_LOGO_IMG = os.path.join(GUI_IMAGES_DIR, 'dark_mode_logo.png')
 LIGHT_MODE_LOGO_IMG = os.path.join(GUI_IMAGES_DIR, 'light_mode_logo.png')
+ACCOUNT_ABI_FILE = os.path.join(ACCOUNT_DIR, "account.abi")
 
 
 class JediSwapDir:

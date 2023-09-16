@@ -35,13 +35,6 @@ class Deploy(ModuleBase):
         self.pk = private_key
         self.key_type = key_type
 
-        if self.key_type == enums.PrivateKeyType.argent:
-            self.get_account = self.get_account_argent
-        elif self.key_type == enums.PrivateKeyType.braavos:
-            self.get_account = self.get_account_braavos
-        else:
-            raise Exception(f"Unknown key type: {self.key_type}")
-
     def get_key_data(
             self,
             key_pair) -> dict:
@@ -58,12 +51,12 @@ class Deploy(ModuleBase):
             ]
 
         elif self.key_type == enums.PrivateKeyType.braavos:
-            class_hash = 0x025ec026985a3bf9d0cc1fe17326b245dfdc3ff89b8fde106542a3ea56c5a918
-            account_initialize_call_data = [key_pair.public_key, 0]
+            class_hash = 0x03131fa018d520a037686ce3efddeab8f28895662f019ca3ca18a626650f7d1e
+            account_initialize_call_data = [key_pair.public_key]
 
             call_data = [
-                0x33434ad846cdd5f23eb73ff09fe6fddd568284a0fb7d1be20ee482f044dabe2,
-                0x79dc0da7c54b95f10aa182ad0a46400db63156920adb65eca2654c0945a463,
+                0x5aa23d5bb71ddaa783da7ea79d405315bafa7cf0387a74f4593578c3e9e6570,
+                0x2dd76e7ad84dbed81c314ffe5e7a7cacfb8f4836f01af4e913f275f89a3de1a,
                 len(account_initialize_call_data),
                 *account_initialize_call_data
             ]
@@ -77,7 +70,9 @@ class Deploy(ModuleBase):
         }
 
     async def send_deploy_txn(self):
+        print(hex(self.account.address))
         key_pair = get_key_pair_from_pk(self.pk)
+        print(key_pair.private_key)
         key_data = self.get_key_data(key_pair=key_pair)
 
         logger.warning(f"Action: Deploy {self.key_type.title()} account")
@@ -92,9 +87,10 @@ class Deploy(ModuleBase):
             contract_address_salt=key_pair.public_key,
             constructor_calldata=key_data["call_data"],
             version=1,
-            max_fee=int(1e15),
+            max_fee=0,
             nonce=nonce,
-            signature=[])
+            signature=[]
+        )
 
         target_gas_price_gwei = self.storage.app_config.target_eth_mainnet_gas_price
         target_gas_price_wei = target_gas_price_gwei * 10 ** 9
@@ -110,7 +106,7 @@ class Deploy(ModuleBase):
             current_log_action.status = err_msg
             return False
 
-        logger.info(f"Gas price is under target value ({target_gas_price_gwei}), now = {gas_price / 10 ** 9} Gwei).")
+        logger.info(f"Gas price is under target value ({target_gas_price_gwei}), now = {gas_price / 10 ** 9} Gwei.")
 
         wallet_eth_balance_wei = await self.get_eth_balance(account=self.account)
         wallet_eth_balance_decimals = wallet_eth_balance_wei / 10 ** 18
@@ -147,7 +143,7 @@ class Deploy(ModuleBase):
                 client=self.client,
                 chain=self.chain_id,
                 constructor_calldata=key_data["call_data"],
-                max_fee=gas_limit
+                max_fee=gas_limit,
             )
 
             txn_hash = deploy_result.hash

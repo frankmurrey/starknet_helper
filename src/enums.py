@@ -17,6 +17,7 @@ class ModuleName(str, Enum):
     JEDI_SWAP = "jediswap"
     MY_SWAP = "myswap"
     DEPLOY = "deploy"
+    UPGRADE = "upgrade"
     DMAIL = 'dmail'
     IDENTITY = 'identity'
     K10SWAP = 'k10swap'

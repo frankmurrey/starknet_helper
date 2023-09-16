@@ -99,7 +99,7 @@ class CTkEntryWithLabel(customtkinter.CTkFrame):
         self.hide_full_text()
 
     def set_text_changed_callback(self, callback: Callable):
-        self.on_text_changed = callback
+        self.entry.bind("<KeyRelease>", lambda event: callback())
 
     def set_focus_in_callback(self, callback: Callable):
         self.on_focus_in = callback

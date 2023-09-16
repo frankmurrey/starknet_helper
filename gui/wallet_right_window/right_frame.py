@@ -127,7 +127,7 @@ class RightFrame(customtkinter.CTkFrame):
             on_wallet_save=self.add_wallet_callback,
         )
         self.add_wallet_window.frame.name_entry.entry.configure(
-            textvariable=tkinter.StringVar(value=f"Wallet {len(self.wallets)}")
+            textvariable=tkinter.StringVar(value=f"Wallet {len(self.wallets) + 1}")
         )
 
         self.add_wallet_window.protocol(

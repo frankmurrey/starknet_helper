@@ -8,17 +8,12 @@ from pydantic import ValidationError
 from src import enums
 from src.schemas.wallet_data import WalletData
 from src.schemas.proxy_data import ProxyData
-from utlis.key_manager.key_manager import get_argent_addr_from_private_key
-from utlis.key_manager.key_manager import get_braavos_addr_from_private_key
-from gui import objects
-from gui import constants
 
+from gui import objects
 from gui.wallet_right_window.wallet_window.empty_wallet_data import EmptyUiWalletData
 from gui.wallet_right_window.wallet_window.private_key_entry import PrivateKeyEntry
 from gui.wallet_right_window.wallet_window.address_entry import AddressEntry
 from gui.wallet_right_window.wallet_window.pair_address_entry import PairAddressEntry
-
-import config
 
 
 class WalletFrame(customtkinter.CTkFrame):
@@ -67,6 +62,13 @@ class WalletFrame(customtkinter.CTkFrame):
         self.address_entry.grid(row=2, column=0, padx=10, pady=0, sticky="w")
         self.private_key_entry.set_focus_in_callback(self.address_entry.show_full_text)
         self.private_key_entry.set_focus_out_callback(self.address_entry.hide_full_text)
+        self.private_key_entry.set_text_changed_callback(
+            lambda: self.address_entry.set_address(
+                self.private_key_entry.private_key,
+                self.private_key_type,
+                self.cairo_version,
+            )
+        )
 
         # PAIR ADDRESS
         self.pair_address_entry = PairAddressEntry(
@@ -163,9 +165,6 @@ class WalletFrame(customtkinter.CTkFrame):
             return
 
     def toggle_cairo_version(self):
-        if not self.__private_key:
-            return
-
         try:
             self.address_entry.set_address(
                 self.private_key_entry.private_key,

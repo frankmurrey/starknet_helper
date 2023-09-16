@@ -56,4 +56,3 @@ class PrivateKeyEntry(objects.CTkEntryWithLabel):
 
         else:
             self.enable_invalid_warning()
-

@@ -96,7 +96,7 @@ class ActionsFrame(customtkinter.CTkFrame):
                 grid=actions_item_grid,
                 repeats=action_data["repeats"],
                 fg_color="grey21",
-                task=action_data["task"],
+                task=action_data["task_config"],
             )
             self.action_items.append(action_item)
 
@@ -138,7 +138,7 @@ class TableTopFrame(customtkinter.CTkFrame):
         )
 
         self.grid_rowconfigure(0, weight=1)
-        self.grid_columnconfigure((0, 1, 2), weight=1, uniform="uniform")
+        self.grid_columnconfigure((0, 1, 2, 3), weight=1, uniform="uniform")
 
         self.action_name_label = customtkinter.CTkLabel(
             self,
@@ -161,7 +161,7 @@ class TableTopFrame(customtkinter.CTkFrame):
         self.action_type_label.grid(
             row=0,
             column=1,
-            padx=40,
+            padx=15,
             pady=0
         )
 
@@ -173,7 +173,19 @@ class TableTopFrame(customtkinter.CTkFrame):
         self.repeats_label.grid(
             row=0,
             column=2,
-            padx=40,
+            padx=15,
+            pady=0
+        )
+
+        self.action_info_label = customtkinter.CTkLabel(
+            self,
+            text="Info",
+            font=customtkinter.CTkFont(size=12, weight="bold")
+        )
+        self.action_info_label.grid(
+            row=0,
+            column=3,
+            padx=(30, 60),
             pady=0
         )
 

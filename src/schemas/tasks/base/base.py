@@ -24,6 +24,10 @@ class TaskBase(BaseModel):
 
     test_mode: Union[bool] = True
 
+    @property
+    def action_info(self):
+        return f""
+
     @validator("max_fee", pre=True)
     def validate_max_fee_pre(cls, value):
 

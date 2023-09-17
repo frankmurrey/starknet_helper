@@ -8,11 +8,15 @@ class SupplyTaskBase(
     TaskBase,
     validation_mixins.MinMaxAmountOutValidationMixin,
 ):
-    coin_to_supply: Union[str]
+    coin_to_supply: str
 
-    use_all_balance: Union[bool] = False
-    send_percent_balance: Union[bool] = False
-    enable_collateral: Union[bool] = False
+    use_all_balance: bool = False
+    send_percent_balance: bool = False
+    enable_collateral: bool = False
 
-    min_amount_out: Union[float]
-    max_amount_out: Union[float]
+    min_amount_out: float
+    max_amount_out: float
+
+    @property
+    def action_info(self):
+        return f"{self.coin_to_supply.upper()}"

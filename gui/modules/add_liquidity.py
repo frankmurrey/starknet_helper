@@ -362,6 +362,3 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
             self.send_percent_balance_x_checkbox.configure(
                 state="normal"
             )
-
-
-

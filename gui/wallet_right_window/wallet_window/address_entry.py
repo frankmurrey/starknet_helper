@@ -1,6 +1,7 @@
 import tkinter
 import tkinter.messagebox
 
+import config
 from src import enums
 from gui import objects
 from utlis.key_manager.key_manager import get_braavos_addr_from_private_key, get_argent_addr_from_private_key
@@ -31,6 +32,9 @@ class AddressEntry(objects.CTkEntryWithLabel):
             private_key_type: enums.PrivateKeyType,
             cairo_version: int,
     ):
+        if len(private_key) != config.STARK_KEY_LENGTH:
+            return
+
         if private_key_type == enums.PrivateKeyType.braavos:
             address = hex(get_braavos_addr_from_private_key(private_key, cairo_version=cairo_version))
         elif private_key_type == enums.PrivateKeyType.argent:

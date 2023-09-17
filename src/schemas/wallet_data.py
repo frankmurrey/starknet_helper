@@ -11,6 +11,7 @@ from src.schemas.proxy_data import ProxyData
 from utlis.key_manager.key_manager import get_argent_addr_from_private_key
 from utlis.key_manager.key_manager import get_braavos_addr_from_private_key
 from utlis.proxy import parse_proxy_data
+import config
 
 
 class WalletData(BaseModel):
@@ -41,6 +42,9 @@ class WalletData(BaseModel):
     def validate_private_key(cls, v):
         if not v:
             raise exceptions.AppValidationError("Private key is required")
+
+        if len(v) != config.STARK_KEY_LENGTH:
+            raise exceptions.AppValidationError("Private key must be 64 characters long")
 
         return v
 

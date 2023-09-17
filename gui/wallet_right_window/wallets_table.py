@@ -103,6 +103,9 @@ class WalletsTable(customtkinter.CTkScrollableFrame):
                 "sticky": "ew",
             }
 
+            if not wallet_data.name:
+                wallet_data.name = f"Wallet {wallet_index + 1}"
+
             wallet_item = WalletItem(
                 master=self.frame,
                 grid=wallet_item_grid,

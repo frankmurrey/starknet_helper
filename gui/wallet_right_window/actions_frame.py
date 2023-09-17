@@ -129,7 +129,13 @@ class ActionsFrame(customtkinter.CTkFrame):
         self.redraw_current_actions_frame()
 
     def push_task_to_queue(self):
-        tasks = [action["task"] for action in self.actions]
+        tasks = []
+        for action in self.actions:
+            repeats = action["repeats"]
+            task = action["task"]
+
+            for _ in range(repeats):
+                tasks.append(task)
 
         self.tasks_executor.push_tasks(
             tasks,

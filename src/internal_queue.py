@@ -15,6 +15,15 @@ class InternalQueue:
     def __init__(self):
         self._queue = mp.Queue()
 
+    def empty(self) -> bool:
+        """
+        Check if the queue is empty.
+
+        :returns: True if the queue is empty, False otherwise.
+        :rtype: bool
+        """
+        return self._queue.empty()
+
     def get_task(self) -> Optional["TaskBase"]:
         """
         Get the next task from the queue if available.

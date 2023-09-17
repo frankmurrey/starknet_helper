@@ -1,3 +1,4 @@
+import time
 import threading as th
 import tkinter.messagebox
 from tkinter import Variable
@@ -20,7 +21,7 @@ class ActionsFrame(customtkinter.CTkFrame):
 
         self.tasks_executor = TasksExecutor()
         self.tasks_executor.run()
-        self.update_tasks_status()
+        self.start_tasks_status_update()
 
         self.grid_rowconfigure((0, 1, 3, 4), weight=1)
         self.grid_columnconfigure(1, weight=0)
@@ -132,7 +133,7 @@ class ActionsFrame(customtkinter.CTkFrame):
         tasks = []
         for action in self.actions:
             repeats = action["repeats"]
-            task = action["task"]
+            task = action["task_config"]
 
             for _ in range(repeats):
                 tasks.append(task)
@@ -145,15 +146,18 @@ class ActionsFrame(customtkinter.CTkFrame):
     def on_start_button_click(self):
         self.push_task_to_queue()
 
-    def update_tasks_status(self):
-        import time
+    def task_update_loop(self):
+        while True:
+            task = self.tasks_executor.completed_tasks_queue.get_task()
 
-        def u():
-            while True:
-                print("Updating tasks status")
-                time.sleep(3)
+            if task is None:
+                time.sleep(0.1)
+                continue
 
-        t = th.Thread(target=u)
+            print("Completed task: ", task.task_id)     # TODO: DODELATE TASKS UPDATE
+
+    def start_tasks_status_update(self):
+        t = th.Thread(target=self.task_update_loop)
         t.start()
 
 

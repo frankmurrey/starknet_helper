@@ -9,6 +9,12 @@ class RemoveLiquidityTaskBase(
     validation_mixins.SlippageValidationMixin,
     validation_mixins.SameCoinValidationMixin
 ):
-    coin_x: Union[str]
-    coin_y: Union[str]
-    slippage: Union[float] = 0.5
+    coin_x: str
+    coin_y: str
+    slippage: float = 0.5
+
+    @property
+    def action_info(self):
+        return f"{self.coin_x.upper()} + {self.coin_y.upper()}"
+
+

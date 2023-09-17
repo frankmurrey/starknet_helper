@@ -14,16 +14,20 @@ class AddLiquidityTaskBase(
     validation_mixins.SlippageValidationMixin,
     validation_mixins.SameCoinValidationMixin
 ):
-    coin_x: Union[str]
-    coin_y: Union[str]
+    coin_x: str
+    coin_y: str
 
-    use_all_balance_x: Union[bool] = False
-    send_percent_balance_x: Union[bool] = False
+    use_all_balance_x: bool = False
+    send_percent_balance_x: bool = False
 
-    min_amount_out_x: Union[float] = 0
-    max_amount_out_x: Union[float] = 0
+    min_amount_out_x: float = 0
+    max_amount_out_x: float = 0
 
-    slippage: Union[float] = 2
+    slippage: float = 2
+
+    @property
+    def action_info(self):
+        return f"{self.coin_x.upper()} + {self.coin_y.upper()}"
 
     @validator("min_amount_out_x", pre=True)
     def validate_min_amount_out_x_pre(cls, value, values):

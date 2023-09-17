@@ -28,6 +28,10 @@ class SwapTaskBase(
 
     slippage: Union[float] = 0.5
 
+    @property
+    def action_info(self):
+        return f"{self.coin_to_swap.upper()} -> {self.coin_to_receive.upper()}"
+
     @validator("coin_to_receive", pre=True)
     def validate_coin_to_receive_pre(cls, value, values):
 

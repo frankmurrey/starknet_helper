@@ -1,7 +1,9 @@
+import threading as th
 import tkinter.messagebox
 from tkinter import Variable
 from typing import List
 
+from src.tasks_executor import TasksExecutor
 from gui.main_window.interactions_top_level_window import InteractionTopLevelWindow
 from gui.main_window.wallet_action_frame import WalletActionFrame
 from gui.modules.frames import FloatSpinbox
@@ -15,6 +17,10 @@ class ActionsFrame(customtkinter.CTkFrame):
             master: any,
             **kwargs):
         super().__init__(master, **kwargs)
+
+        self.tasks_executor = TasksExecutor()
+        self.tasks_executor.run()
+        self.update_tasks_status()
 
         self.grid_rowconfigure((0, 1, 3, 4), weight=1)
         self.grid_columnconfigure(1, weight=0)
@@ -45,7 +51,8 @@ class ActionsFrame(customtkinter.CTkFrame):
             text="Start",
             font=customtkinter.CTkFont(size=12, weight="bold"),
             width=110,
-            height=30
+            height=30,
+            command=self.on_start_button_click
         )
         self.start_button.grid(
             row=3,
@@ -120,6 +127,28 @@ class ActionsFrame(customtkinter.CTkFrame):
         self.actions = []
         self.action_items = []
         self.redraw_current_actions_frame()
+
+    def push_task_to_queue(self):
+        tasks = [action["task"] for action in self.actions]
+
+        self.tasks_executor.push_tasks(
+            tasks,
+            shuffle=bool(self.button_actions_frame.randomize_actions_checkbox.get())
+        )
+
+    def on_start_button_click(self):
+        self.push_task_to_queue()
+
+    def update_tasks_status(self):
+        import time
+
+        def u():
+            while True:
+                print("Updating tasks status")
+                time.sleep(3)
+
+        t = th.Thread(target=u)
+        t.start()
 
 
 class TableTopFrame(customtkinter.CTkFrame):

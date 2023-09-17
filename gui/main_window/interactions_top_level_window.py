@@ -185,7 +185,7 @@ class InteractionTopLevelWindow(customtkinter.CTkToplevel):
 
         self.parent.set_action(
             {
-                "task": config_data,
+                "task_config": config_data,
                 "repeats": repeats
             }
         )

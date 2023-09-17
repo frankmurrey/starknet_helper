@@ -23,6 +23,7 @@ class TasksExecutor:
         self.process: Optional[mp.Process] = None
 
         self.tasks_queue = InternalQueue()
+        self.completed_tasks_queue = InternalQueue()
 
     def process_task(self, task: "TaskBase"):
         """
@@ -30,7 +31,7 @@ class TasksExecutor:
         :param task: task to process
         """
         # module_executor = ModuleExecutor(task)
-        logger.debug(f"Processing task: {task}")    # TODO: DODELATE
+        logger.debug(f"Processing task: {task}")    # TODO: DODELATE TASKS PROCESSING
 
     def push_tasks(self, tasks: List[TaskBase], shuffle: bool = False):
         self.tasks_queue.push_tasks(tasks, shuffle)
@@ -52,6 +53,8 @@ class TasksExecutor:
                 )
 
                 # time.sleep(time_to_sleep) # TODO: Hardcoded time
+
+                self.completed_tasks_queue.add_task(task)
 
                 time.sleep(3)
 

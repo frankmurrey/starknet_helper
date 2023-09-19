@@ -1,9 +1,9 @@
 import random
 import time
 from typing import Union
+from typing import TYPE_CHECKING
 
 from starknet_py.net.account.account import Account
-from starknet_py.net.full_node_client import FullNodeClient
 from starknet_py.net.models import StarknetChainId
 from starknet_py.net.models.transaction import DeployAccount
 from starknet_py.net.account.account_deployment_result import AccountDeploymentResult
@@ -17,14 +17,22 @@ from loguru import logger
 from utlis.key_manager.key_manager import (get_key_pair_from_pk,
                                            get_argent_addr_from_private_key,
                                            get_braavos_addr_from_private_key)
-from src.schemas.tasks.base import TaskBase
-from src.schemas.tasks.base.swap import SwapTaskBase
 from src.schemas.logs import WalletActionSchema
 from src.gecko_pricer import GeckoPricer
 from src.storage import Storage
 from src.storage import ActionStorage
+from src import paths
+from utlis.file_manager import FileManager
 from contracts.tokens.main import Tokens
+from contracts.base import TokenBase
 import config
+
+if TYPE_CHECKING:
+    from src.schemas.tasks.base.swap import SwapTaskBase
+    from src.schemas.tasks.base.add_liquidity import AddLiquidityTaskBase
+    from src.schemas.tasks.base.remove_liquidity import RemoveLiquidityTaskBase
+    from starknet_py.net.full_node_client import FullNodeClient
+    from src.schemas.tasks.base import TaskBase
 
 
 class ModuleBase:
@@ -32,8 +40,8 @@ class ModuleBase:
 
     def __init__(
             self,
-            client: FullNodeClient,
-            task: TaskBase
+            client: 'FullNodeClient',
+            task: 'TaskBase'
     ):
 
         self.client = client
@@ -47,6 +55,51 @@ class ModuleBase:
     def i16(self,
             hex_d: str):
         return int(hex_d, 16)
+
+    @staticmethod
+    def decode_version(version: int) -> str:
+        """
+        Converts a binary version number to a human-readable string.
+
+        Args:
+        version (int): The version number to be converted.
+
+        Returns:
+        str: The human-readable version number.
+        """
+        version_bytes = version.to_bytes(31, byteorder="big")
+
+        char_list = [chr(i) for i in version_bytes]
+
+        version_string = "".join(char_list)
+
+        final_version = version_string.lstrip("\x00")
+
+        return final_version
+
+    async def get_cairo_version_for_txn_execution(
+            self,
+            account: Account,
+    ):
+        try:
+            account_contract = await self.get_account_contract(
+                address=account.address,
+                abi=FileManager.read_abi_from_file(paths.ACCOUNT_ABI_FILE),
+                provider=account,
+            )
+            version = await account_contract.functions['getVersion'].call()
+
+            version_decoded = self.decode_version(version=version.version)
+
+            major, minor, patch = version_decoded.split('.')
+
+            if int(major) > 0 or int(minor) >= 3:
+                return 1
+
+            return 0
+
+        except ClientError:
+            return None
 
     async def get_eth_mainnet_gas_price(self) -> Union[int, None]:
         try:
@@ -129,11 +182,15 @@ class ModuleBase:
                                  contract_address,
                                  abi,
                                  provider):
-        token_contract = self.get_contract(address=contract_address,
-                                           abi=abi,
-                                           provider=provider)
-        decimals = await token_contract.functions['decimals'].call()
-        return decimals.decimals
+        try:
+            token_contract = self.get_contract(address=contract_address,
+                                               abi=abi,
+                                               provider=provider)
+            decimals = await token_contract.functions['decimals'].call()
+            return decimals.decimals
+
+        except ClientError:
+            return None
 
     async def get_tokens_decimals_by_call(self,
                                           token_address: int,
@@ -238,9 +295,10 @@ class ModuleBase:
     async def execute_call_transaction(self,
                                        account: Account,
                                        calls: list,
-                                       max_fee: int) -> tuple:
+                                       max_fee: int,
+                                       cairo_version: int) -> tuple:
         try:
-            resp = await account.execute(calls=calls, max_fee=max_fee)
+            resp = await account.execute(calls=calls, max_fee=max_fee, cairo_version=cairo_version)
             return True, resp
 
         except Exception as ex:
@@ -251,7 +309,7 @@ class ModuleBase:
                                             account: Account,
                                             transaction):
         try:
-            estimate = await account.client.estimate_fee(transaction)
+            estimate = await account.client.estimate_fee(tx=transaction)
             return estimate.overall_fee
         except ClientError:
             return None
@@ -262,7 +320,7 @@ class ModuleBase:
         try:
             return await self.client.wait_for_tx(tx_hash=tx_hash,
                                                  check_interval=5,
-                                                 retries=(time_out_sec // 2) + 1)
+                                                 retries=(time_out_sec // 5) + 1)
         except Exception as ex:
             logger.error(f"Error while waiting for txn receipt: {ex}")
             return False
@@ -394,9 +452,20 @@ class ModuleBase:
 
         logger.info(f"Gas price is under target value ({target_gas_price_gwei}), now = {gas_price / 10 ** 9} Gwei).")
 
-        signed_invoke_transaction = await account.sign_invoke_transaction(calls=calls,
-                                                                          max_fee=0)
+        cairo_version = await self.get_cairo_version_for_txn_execution(account=account)
+        if cairo_version is None:
+            err_msg = "Error while getting Cairo version. Aborting transaction."
+            logger.error(err_msg)
 
+            current_log_action.is_success = False
+            current_log_action.status = err_msg
+            return False
+
+        signed_invoke_transaction = await account.sign_invoke_transaction(calls=calls,
+                                                                          max_fee=0,
+                                                                          cairo_version=cairo_version)
+
+        time.sleep(1)
         estimate_transaction = await self.get_estimated_transaction_fee(account=account,
                                                                         transaction=signed_invoke_transaction)
         if estimate_transaction is None:
@@ -434,7 +503,8 @@ class ModuleBase:
 
         response_data = await self.execute_call_transaction(account=account,
                                                             calls=calls,
-                                                            max_fee=gas_limit)
+                                                            max_fee=gas_limit,
+                                                            cairo_version=cairo_version)
         response_status, response = response_data
         if response_status is False:
             err_msg = f"Error while sending txn, {response}"
@@ -477,22 +547,105 @@ class ModuleBase:
 
 
 class SwapModuleBase(ModuleBase):
-    task: SwapTaskBase
+    task: 'SwapTaskBase'
+
+    def __init__(
+            self,
+            account,
+            task: 'SwapTaskBase'
+    ):
+        super().__init__(client=account.client, task=task)
+        self._account = account
+
+        self.coin_x = self.tokens.get_by_name(self.task.coin_x)
+        self.coin_y = self.tokens.get_by_name(self.task.coin_y)
+
+        self.initial_balance_x_wei = None
+        self.initial_balance_y_wei = None
+
+        self.token_x_decimals = None
+        self.token_y_decimals = None
+
+    async def set_fetched_tokens_data(self):
+        """
+        Fetches initial balances and token decimals for both tokens.
+        :return:
+        """
+        self.initial_balance_x_wei = await self.get_token_balance(token_address=self.coin_x.contract_address,
+                                                                  account=self._account)
+        self.initial_balance_y_wei = await self.get_token_balance(token_address=self.coin_y.contract_address,
+                                                                  account=self._account)
+
+        self.token_x_decimals = await self.get_token_decimals(contract_address=self.coin_x.contract_address,
+                                                              abi=self.coin_x.abi,
+                                                              provider=self._account)
+        self.token_y_decimals = await self.get_token_decimals(contract_address=self.coin_y.contract_address,
+                                                              abi=self.coin_y.abi,
+                                                              provider=self._account)
+
+    def check_local_tokens_data(self) -> bool:
+        if self.token_x_decimals is None or self.token_y_decimals is None:
+            logger.error(f"Token decimals not fetched")
+            return False
+
+    async def calculate_amount_out_from_balance(
+            self,
+            coin_x: TokenBase
+    ) -> Union[int, None]:
+        """
+        Returns random amount out of token x balance.
+        :param coin_x:
+        :return:
+        """
+
+        if self.initial_balance_x_wei == 0:
+            logger.error(f"Wallet {coin_x.symbol.upper()} balance = 0")
+            return None
+
+        wallet_token_x_balance_decimals = self.initial_balance_x_wei / 10 ** self.token_x_decimals
+
+        if self.task.use_all_balance is True:
+            amount_out_wei = self.initial_balance_x_wei
+
+        elif self.task.send_percent_balance is True:
+            percent = random.randint(int(self.task.min_amount_out), int(self.task.max_amount_out)) / 100
+            amount_out_wei = int(self.initial_balance_x_wei * percent)
+
+        elif wallet_token_x_balance_decimals < self.task.min_amount_out:
+            logger.error(f"Wallet {coin_x.symbol.upper()} balance less than min amount out, "
+                         f"balance: {wallet_token_x_balance_decimals}, min amount out: {self.task.min_amount_out}")
+            return None
+
+        elif wallet_token_x_balance_decimals < self.task.max_amount_out:
+            amount_out_wei = self.get_random_amount_out_of_token(min_amount=self.task.min_amount_out,
+                                                                 max_amount=wallet_token_x_balance_decimals,
+                                                                 decimals=self.token_x_decimals)
+
+        else:
+            amount_out_wei = self.get_random_amount_out_of_token(
+                min_amount=self.task.min_amount_out,
+                max_amount=self.task.max_amount_out,
+                decimals=self.token_x_decimals
+            )
+
+        return amount_out_wei
 
     async def send_swap_type_txn(
             self,
             account: Account,
-            txn_payload_data: dict):
+            txn_payload_data: dict,
+            is_reverse: bool = False
+    ):
 
-        self.task: SwapTaskBase
+        self.task: 'SwapTaskBase'
 
         module_name = self.task.module_name.title()
 
         out_decimals = round(txn_payload_data['amount_x_decimals'], 4)
         in_decimals = round(txn_payload_data['amount_y_decimals'], 4)
 
-        coin_x_symbol = self.task.coin_to_swap.upper()
-        coin_y_symbol = self.task.coin_to_receive.upper()
+        coin_x_symbol = self.task.coin_x.upper() if is_reverse is False else self.task.coin_x.upper()
+        coin_y_symbol = self.task.coin_y.upper() if is_reverse is False else self.task.coin_y.upper()
 
         slippage: Union[float, int] = self.task.slippage
 

@@ -76,8 +76,8 @@ class SwapTab:
 
         try:
             config_data: tasks.SwapTaskBase = config_schema(
-                coin_to_swap=self.swap_frame.coin_to_swap_combo.get(),
-                coin_to_receive=self.swap_frame.coin_to_receive_combo.get(),
+                coin_x=self.swap_frame.coin_to_swap_combo.get(),
+                coin_y=self.swap_frame.coin_to_receive_combo.get(),
                 min_amount_out=self.swap_frame.min_amount_entry.get(),
                 max_amount_out=self.swap_frame.max_amount_entry.get(),
                 use_all_balance=self.swap_frame.use_all_balance_checkbox.get(),

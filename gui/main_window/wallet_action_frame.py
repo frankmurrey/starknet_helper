@@ -32,14 +32,14 @@ class WalletActionFrame(customtkinter.CTkFrame):
         )
         self.action_label.grid(row=0, column=1, padx=(0, 0), pady=0, sticky="ew")
 
-        self.repeats_label = customtkinter.CTkLabel(
-            self, text=str(repeats), font=customtkinter.CTkFont(size=12, weight="bold")
-        )
-        self.repeats_label.grid(row=0, column=2, padx=(15, 0), pady=0, sticky="ew")
-
         self.action_info_label = customtkinter.CTkLabel(
             self,
             text=task.action_info,
             font=customtkinter.CTkFont(size=12, weight="bold"),
         )
-        self.action_info_label.grid(row=0, column=3, padx=(0, 0), pady=0)
+        self.action_info_label.grid(row=0, column=2, padx=(15, 0), pady=0)
+
+        self.repeats_label = customtkinter.CTkLabel(
+            self, text=str(repeats), font=customtkinter.CTkFont(size=12, weight="bold")
+        )
+        self.repeats_label.grid(row=0, column=3, padx=(25, 0), pady=0, sticky="ew")

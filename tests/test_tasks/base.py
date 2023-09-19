@@ -190,11 +190,11 @@ class TestAddLiquidityTaskBase(unittest.TestCase):
                 coin_x="A",
                 coin_y="B",
 
-                use_all_balance_x=False,
+                use_all_balance=False,
                 send_percent_balance_x=False,
 
-                min_amount_out_x="not a number",
-                max_amount_out_x=1,
+                min_amount_out="not a number",
+                max_amount_out=1,
             )
 
         self.assertTrue("Min Amount Out X should be a float" in str(context.exception))
@@ -211,11 +211,11 @@ class TestAddLiquidityTaskBase(unittest.TestCase):
                 coin_x="A",
                 coin_y="B",
 
-                use_all_balance_x=False,
+                use_all_balance=False,
                 send_percent_balance_x=False,
 
-                min_amount_out_x=1,
-                max_amount_out_x="not a number",
+                min_amount_out=1,
+                max_amount_out="not a number",
             )
 
         self.assertTrue("Max Amount Out X should be a float" in str(context.exception))
@@ -232,7 +232,7 @@ class TestAddLiquidityTaskBase(unittest.TestCase):
                 coin_x="A",
                 coin_y="B",
 
-                use_all_balance_x=False,
+                use_all_balance=False,
                 send_percent_balance_x=False,
 
                 min_amount_out_x=10,
@@ -253,11 +253,11 @@ class TestAddLiquidityTaskBase(unittest.TestCase):
                 coin_x="A",
                 coin_y="B",
 
-                use_all_balance_x=False,
+                use_all_balance=False,
                 send_percent_balance_x=False,
 
-                min_amount_out_x=-1,
-                max_amount_out_x=1,
+                min_amount_out=-1,
+                max_amount_out=1,
             )
 
         self.assertTrue("Min Amount Out X should be > 0" in str(context.exception))
@@ -273,11 +273,11 @@ class TestAddLiquidityTaskBase(unittest.TestCase):
                 coin_x="A",
                 coin_y="B",
 
-                use_all_balance_x=False,
+                use_all_balance=False,
                 send_percent_balance_x=False,
 
-                min_amount_out_x=1,
-                max_amount_out_x=-1,
+                min_amount_out=1,
+                max_amount_out=-1,
             )
 
         self.assertTrue("Max Amount Out X should be > 0" in str(context.exception))
@@ -294,8 +294,8 @@ class TestSwapTaskBase(unittest.TestCase):
                 max_fee=100,
                 forced_gas_limit=False,
 
-                coin_to_swap="A",
-                coin_to_receive="A",
+                coin_x="A",
+                coin_y="A",
 
                 use_all_balance=False,
                 send_percent_balance=False,

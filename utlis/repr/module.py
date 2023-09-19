@@ -5,6 +5,7 @@ from enum import Enum
 from colorama import Fore, Back, Style
 
 from src.schemas.tasks.base import TaskBase
+from modules.base import ModuleBase
 from utlis.repr.misc import Symbol
 from utlis.repr.misc import AsciiPrints
 from utlis.repr.misc import COLOR_LENGTH
@@ -90,11 +91,14 @@ def print_module_config(task: TaskBase):
 
     repr_strings = []
 
-    max_key_width = max(len(key) for key in task.dict(exclude={"module_name"}).keys())
-    max_value_width = max(len(str(value)) for value in task.dict(exclude={"module_name"}).values())
+    task_dict = task.dict(exclude={"module_name", "module"})
+
+    max_key_width = max(len(key) for key in task_dict.keys())
+    max_value_width = max(len(str(value)) for value in task_dict.values())
     max_width = get_max_width(max_key_width, max_value_width)
 
-    for key, value in task.dict(exclude={"module_name"}).items():
+    for key, value in task_dict.items():
+
         key_width = max_key_width
         value_width = max_value_width
 

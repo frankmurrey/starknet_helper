@@ -1,4 +1,5 @@
 import random
+import time
 from typing import Union
 from typing import TYPE_CHECKING
 
@@ -7,8 +8,9 @@ from starknet_py.net.client_errors import ClientError
 from loguru import logger
 
 from modules.base import SwapModuleBase
-from contracts.tokens.main import Tokens
 from contracts.avnu.main import AvnuContracts
+from contracts.base import TokenBase
+from utlis.get_delay import get_delay
 
 if TYPE_CHECKING:
     from src.schemas.tasks.avnu import AvnuSwapTask
@@ -24,32 +26,36 @@ class AvnuSwap(SwapModuleBase):
     ):
 
         super().__init__(
-            client=account.client,
+            account=account,
             task=task,
         )
 
         self.account = account
         self.task = task
 
-        self.tokens = Tokens()
         self.avnu_contracts = AvnuContracts()
         self.router_contract = self.get_contract(address=self.avnu_contracts.router_address,
                                                  abi=self.avnu_contracts.router_abi,
                                                  provider=account)
 
-        self.coin_x = self.tokens.get_by_name(self.task.coin_to_swap)
-        self.coin_y = self.tokens.get_by_name(self.task.coin_to_receive)
-
     async def get_quotes(
             self,
+            coin_x: TokenBase,
+            coin_y: TokenBase,
             amount_out_wei: int,
-    ):
+    ) -> Union[dict, None]:
 
-        url = "http://starknet.api.avnu.fi/swap/v1/quotes"
+        """
+        Fetches token swap quotes from Avnu API
+        :param coin_x:
+        :param coin_y:
+        :param amount_out_wei:
+        :return:
+        """
 
         payload = {
-            "sellTokenAddress": self.coin_x.contract_address,
-            "buyTokenAddress": self.coin_y.contract_address,
+            "sellTokenAddress": coin_x.contract_address,
+            "buyTokenAddress": coin_y.contract_address,
             "sellAmount": hex(amount_out_wei),
             "takerAddress": hex(self.account.address),
             "size": 3,
@@ -57,56 +63,118 @@ class AvnuSwap(SwapModuleBase):
         }
 
         try:
-            response = await self.account.client._client._make_request(session=self.account.client._client.session,
-                                                                       address=url,
-                                                                       http_method=HttpMethod.GET,
-                                                                       payload=None,
-                                                                       params=payload)
+            response = await self.account.client._client._make_request(
+                session=self.account.client._client.session,
+                address="https://starknet.api.avnu.fi/swap/v1/quotes",
+                http_method=HttpMethod.GET,
+                payload=None,
+                params=payload
+            )
 
             return response[0]
+
         except ClientError:
             logger.error(f"Failed to get quotes")
             return None
 
-    async def get_amount_out_from_balance(self):
-        wallet_token_balance_wei = await self.get_token_balance(token_address=self.coin_x.contract_address,
-                                                                account=self.account)
+    async def build_call_data(
+            self,
+            quote_id: str,
+            slippage: float,
+            taker_address: str,
+    ):
+        """
+        Builds call data for swap type transaction using Avnu API
+        :param quote_id:
+        :param slippage:
+        :param taker_address:
+        :return:
+        """
 
-        if wallet_token_balance_wei == 0:
-            logger.error(f"Wallet {self.coin_x.symbol.upper()} balance = 0")
-            return None
-
-        token_decimals = await self.get_token_decimals(contract_address=self.coin_x.contract_address,
-                                                       abi=self.coin_x.abi,
-                                                       provider=self.account)
-
-        wallet_token_balance_decimals = wallet_token_balance_wei / 10 ** token_decimals
-
-        if self.task.use_all_balance is True:
-            amount_out_wei = wallet_token_balance_wei
-
-        elif self.task.send_percent_balance is True:
-            percent = random.randint(int(self.task.min_amount_out), int(self.task.max_amount_out)) / 100
-            amount_out_wei = int(wallet_token_balance_wei * percent)
-
-        elif wallet_token_balance_decimals < self.task.max_amount_out:
-            amount_out_wei = self.get_random_amount_out_of_token(min_amount=self.task.min_amount_out,
-                                                                 max_amount=wallet_token_balance_decimals,
-                                                                 decimals=token_decimals)
-
-        else:
-            amount_out_wei = self.get_random_amount_out_of_token(
-                min_amount=self.task.min_amount_out,
-                max_amount=self.task.max_amount_out,
-                decimals=token_decimals
+        payload = {
+            "quoteId": quote_id,
+            "slippage": slippage,
+            "takerAddress": taker_address
+        }
+        try:
+            response = await self.account.client._client._make_request(
+                session=self.account.client._client.session,
+                address="https://starknet.api.avnu.fi/swap/v1/build",
+                http_method=HttpMethod.POST,
+                payload=payload,
+                params=payload
             )
 
-        return amount_out_wei
+            return response['calldata']
+
+        except ClientError:
+            logger.error(f"Failed to get call data")
+            return None
 
     async def build_txn_payload_data(self) -> Union[dict, None]:
-        amount_out_wei = await self.get_amount_out_from_balance()
+        """
+        Builds payload data for swap type transaction
+        :return:
+        """
+        amount_out_wei = await self.calculate_amount_out_from_balance(
+            coin_x=self.coin_x,
+        )
 
-        quotes = await self.get_quotes(amount_out_wei=amount_out_wei)
+        quotes = await self.get_quotes(
+            amount_out_wei=amount_out_wei,
+            coin_x=self.coin_x,
+            coin_y=self.coin_y,
+        )
+        if quotes is None:
+            return None
+
+        call_data = await self.build_call_data(
+            quote_id=quotes['quoteId'],
+            slippage=int(quotes['routes'][0]['percent']),
+            taker_address=hex(self.account.address)
+        )
+        call_data_decoded = [self.i16(x) for x in call_data]
+
+        amount_in_wei = self.i16(quotes['buyAmount'])
+
+        exchange_address = quotes['routes'][0]['address']
+
+        approve_call = self.build_token_approve_call(token_addr=self.coin_x.contract_address,
+                                                     spender=hex(self.router_contract.address),
+                                                     amount_wei=int(amount_out_wei))
+
+        swap_call = self.build_call(to_addr=self.router_contract.address,
+                                    func_name='multi_route_swap',
+                                    call_data=call_data_decoded)
+
+        return {
+            'calls': [approve_call, swap_call],
+            'amount_x_decimals': amount_out_wei / 10 ** self.token_x_decimals,
+            'amount_y_decimals': amount_in_wei / 10 ** self.token_y_decimals,
+        }
+
+    async def build_reverse_txn_payload_data(self) -> Union[dict, None]:
+        """
+        Builds payload data for reverse swap type transaction, if reverse action is enabled in task
+        :return:
+        """
+        actual_wallet_y_balance_wei = await self.get_token_balance(token_address=self.coin_y.contract_address,
+                                                                   account=self.account)
+
+        if actual_wallet_y_balance_wei == 0:
+            logger.error(f"Wallet {self.coin_y.symbol.upper()} balance = 0")
+            return None
+
+        amount_out_wei = actual_wallet_y_balance_wei - self.initial_balance_y_wei
+        if amount_out_wei <= 0:
+            logger.error(f"Wallet {self.coin_y.symbol.upper()} balance = 0")
+            return None
+
+        quotes = await self.get_quotes(
+            amount_out_wei=amount_out_wei,
+            coin_x=self.coin_y,
+            coin_y=self.coin_x,
+        )
         if quotes is None:
             return None
 
@@ -115,26 +183,16 @@ class AvnuSwap(SwapModuleBase):
 
         exchange_address = quotes['routes'][0]['address']
 
-        token_x_decimals = await self.get_token_decimals(contract_address=self.coin_x.contract_address,
-                                                         abi=self.coin_x.abi,
-                                                         provider=self.account)
-        amount_x_decimals = amount_out_wei / 10 ** token_x_decimals
-
-        token_y_decimals = await self.get_token_decimals(contract_address=self.coin_y.contract_address,
-                                                         abi=self.coin_y.abi,
-                                                         provider=self.account)
-        amount_y_decimals = amount_in_wei / 10 ** token_y_decimals
-
-        approve_call = self.build_token_approve_call(token_addr=self.coin_x.contract_address,
+        approve_call = self.build_token_approve_call(token_addr=self.coin_y.contract_address,
                                                      spender=hex(self.router_contract.address),
                                                      amount_wei=int(amount_out_wei))
 
         swap_call = self.build_call(to_addr=self.router_contract.address,
                                     func_name='multi_route_swap',
-                                    call_data=[self.i16(self.coin_x.contract_address),
+                                    call_data=[self.i16(self.coin_y.contract_address),
                                                amount_out_wei,
                                                0,
-                                               self.i16(self.coin_y.contract_address),
+                                               self.i16(self.coin_x.contract_address),
                                                int(amount_in_wei),
                                                0,
                                                int(amount_in_wei_with_slippage),
@@ -143,21 +201,31 @@ class AvnuSwap(SwapModuleBase):
                                                0,
                                                0,
                                                1,
-                                               self.i16(self.coin_x.contract_address),
                                                self.i16(self.coin_y.contract_address),
+                                               self.i16(self.coin_x.contract_address),
                                                self.i16(exchange_address),
                                                100
-                                               ])
+                                               ]
+                                    )
 
         calls = [approve_call, swap_call]
 
         return {
             'calls': calls,
-            'amount_x_decimals': amount_x_decimals,
-            'amount_y_decimals': amount_y_decimals,
+            'amount_x_decimals': amount_out_wei / 10 ** self.token_y_decimals,
+            'amount_y_decimals': amount_out_wei / 10 ** self.token_x_decimals,
         }
 
     async def send_txn(self):
+        """
+        Sends swap type transaction, if reverse action is enabled in task, sends reverse swap type transaction
+        :return:
+        """
+        await self.set_fetched_tokens_data()
+
+        if self.check_local_tokens_data() is False:
+            return False
+
         txn_payload_data = await self.build_txn_payload_data()
         if txn_payload_data is None:
             return False
@@ -166,5 +234,25 @@ class AvnuSwap(SwapModuleBase):
             account=self.account,
             txn_payload_data=txn_payload_data
         )
+        if txn_status is False:
+            return False
 
-        return txn_status
+        if self.task.reverse_action is True:
+            delay = get_delay(self.task.min_delay_sec, self.task.max_delay_sec)
+            logger.info(f"Waiting {delay} seconds before reverse action")
+            time.sleep(delay)
+
+            reverse_txn_payload_data = await self.build_reverse_txn_payload_data()
+            if reverse_txn_payload_data is None:
+                return False
+
+            reverse_txn_status = await self.send_swap_type_txn(
+                account=self.account,
+                txn_payload_data=reverse_txn_payload_data,
+                is_reverse=True
+            )
+
+            if reverse_txn_status is False:
+                return False
+
+            return reverse_txn_status

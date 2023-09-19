@@ -1,5 +1,3 @@
-from uuid import uuid4
-from uuid import UUID
 from typing import Union, Callable, Optional
 
 from pydantic import BaseModel
@@ -10,24 +8,23 @@ from src import enums
 
 
 class TaskBase(BaseModel):
-    task_id: UUID = uuid4()
-
     module_type: enums.ModuleType
     module_name: enums.ModuleName
     module: Optional[Callable]
 
-    max_fee: Union[int]
-    forced_gas_limit: Union[bool] = False
+    max_fee: int
+    forced_gas_limit: bool = False
 
     # GLOBALS
-    # TODO: add shuffle wallets
-    wait_for_receipt: Union[bool] = False
-    txn_wait_timeout_sec: Union[float] = 60
+    wait_for_receipt: bool = False
+    txn_wait_timeout_sec: int = 60
 
-    min_delay_sec: Union[int] = 40
-    max_delay_sec: Union[int] = 80
+    reverse_action: bool = False
 
-    test_mode: Union[bool] = True
+    min_delay_sec: float = 40
+    max_delay_sec: float = 80
+
+    test_mode: bool = True
 
     @property
     def action_info(self):
@@ -44,7 +41,7 @@ class TaskBase(BaseModel):
     @validator("txn_wait_timeout_sec", pre=True)
     def validate_txn_wait_timeout_sec_pre(cls, value, values):
 
-        if values["wait_for_receipt"]:
+        if not values["wait_for_receipt"]:
             return 0
 
         value = validation.get_converted_to_float(value, "Txn Wait Timeout")
@@ -55,7 +52,7 @@ class TaskBase(BaseModel):
     @validator("min_delay_sec", pre=True)
     def validate_min_delay_sec_pre(cls, value):
 
-        value = validation.get_converted_to_int(value, "Min Delay")
+        value = validation.get_converted_to_float(value, "Min Delay")
         value = validation.get_positive(value, "Min Delay")
 
         return value

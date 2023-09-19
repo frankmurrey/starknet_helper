@@ -1,5 +1,5 @@
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 
 from loguru import logger
 from starknet_py.net.client_errors import ClientError
@@ -9,7 +9,6 @@ from starknet_py.net.account.account import Account
 from modules.sithswap.base import SithBase
 from modules.sithswap.math import calc_output_burn_liquidity
 from contracts.tokens.main import Tokens
-from contracts.sithswap.main import SithSwapContracts
 
 
 if TYPE_CHECKING:
@@ -32,34 +31,15 @@ class SithSwapAddLiquidity(SithBase):
         self.task = task
         self.account: Account = account
 
-        self.tokens = Tokens()
-        self.sith_swap_contracts = SithSwapContracts()
-
-        self.router_contract = self.get_contract(address=self.sith_swap_contracts.router_address,
-                                                 abi=self.sith_swap_contracts.router_abi,
-                                                 provider=account)
-
-        self.coin_x = self.tokens.get_by_name(self.task.coin_x)
-        self.coin_y = self.tokens.get_by_name(self.task.coin_y)
-
-    async def get_amounts_out_data(self):
-        amount_out_x_wei = await self.get_amount_out_from_balance(
-            coin_x=self.coin_x,
-            use_all_balance=self.task.use_all_balance_x,
-            send_percent_balance=self.task.send_percent_balance_x,
-            min_amount_out=self.task.min_amount_out_x,
-            max_amount_out=self.task.max_amount_out_x
-        )
+    async def get_amounts_out_data(self) -> Union[dict, None]:
+        """
+        Get amounts out data for the add liquidity transaction.
+        :return:
+        """
+        amount_out_x_wei = await self.calculate_amount_out_from_balance(coin_x=self.coin_x)
         if amount_out_x_wei is None:
             logger.error(f"Can't get amount out for {self.coin_x.symbol.upper()}")
             return None
-
-        token_x_decimals = await self.get_token_decimals(
-            contract_address=self.coin_x.contract_address,
-            abi=self.coin_x.abi,
-            provider=self.account
-        )
-        amount_out_x_decimals = amount_out_x_wei / 10 ** token_x_decimals
 
         amount_out_y_data: dict = await self.get_amount_in_and_pool_type(
             amount_in_wei=amount_out_x_wei,
@@ -75,14 +55,6 @@ class SithSwapAddLiquidity(SithBase):
         amount_out_y_wei = amount_out_y_data['amount_in_wei']
         stable = amount_out_y_data['stable']
 
-        token_y_decimals = await self.get_token_decimals(
-            contract_address=self.coin_y.contract_address,
-            abi=self.coin_y.abi,
-            provider=self.account
-        )
-
-        amount_out_y_decimals = amount_out_y_wei / 10 ** token_y_decimals
-
         pool_addr = await self.get_pool_for_pair(
             stable=stable,
             coin_x_address=self.coin_x.contract_address,
@@ -96,8 +68,8 @@ class SithSwapAddLiquidity(SithBase):
         return {
             self.i16(self.coin_x.contract_address): amount_out_x_wei,
             self.i16(self.coin_y.contract_address): amount_out_y_wei,
-            'amount_x_decimals': amount_out_x_decimals,
-            'amount_y_decimals': amount_out_y_decimals,
+            'amount_x_decimals': amount_out_x_wei / 10 ** self.coin_x.decimals,
+            'amount_y_decimals': amount_out_y_wei / 10 ** self.coin_y.decimals,
             'stable': stable,
             'pool_addr': pool_addr
         }
@@ -106,6 +78,11 @@ class SithSwapAddLiquidity(SithBase):
             self,
             amounts_out_data: dict
     ):
+        """
+        Build the transaction payload data for the add liquidity transaction.
+        :param amounts_out_data:
+        :return:
+        """
         sorted_pair: list = await self.get_sorted_tokens(
             pool_addr=amounts_out_data['pool_addr'],
             pool_abi=self.sith_swap_contracts.pool_abi)
@@ -195,19 +172,14 @@ class SithSwapRemoveLiquidity(SithBase):
         self.task = task
         self.account: Account = account
 
-        self.tokens = Tokens()
-        self.sith_swap_contracts = SithSwapContracts()
-
-        self.router_contract = self.get_contract(address=self.sith_swap_contracts.router_address,
-                                                 abi=self.sith_swap_contracts.router_abi,
-                                                 provider=account)
-
-        self.coin_x = self.tokens.get_by_name(self.task.coin_x)
-        self.coin_y = self.tokens.get_by_name(self.task.coin_y)
-
     async def get_lp_supply(
             self,
             lp_addr: int):
+        """
+        Get LP token supply.
+        :param lp_addr:
+        :return:
+        """
         try:
             lp_contract = self.get_contract(address=lp_addr,
                                             abi=self.sith_swap_contracts.pool_abi,
@@ -220,6 +192,10 @@ class SithSwapRemoveLiquidity(SithBase):
             return None
 
     async def build_txn_payload_data(self):
+        """
+        Build the transaction payload data for the remove liquidity transaction.
+        :return:
+        """
         stable = self.is_pool_stable(
             coin_x_symbol=self.coin_x.symbol,
             coin_y_symbol=self.coin_y.symbol

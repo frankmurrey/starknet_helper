@@ -206,7 +206,7 @@ class TableTopFrame(customtkinter.CTkFrame):
 
         self.repeats_label = customtkinter.CTkLabel(
             self,
-            text="Repeats",
+            text="Info",
             font=customtkinter.CTkFont(size=12, weight="bold")
         )
         self.repeats_label.grid(
@@ -218,13 +218,13 @@ class TableTopFrame(customtkinter.CTkFrame):
 
         self.action_info_label = customtkinter.CTkLabel(
             self,
-            text="Info",
+            text="Repeats",
             font=customtkinter.CTkFont(size=12, weight="bold")
         )
         self.action_info_label.grid(
             row=0,
             column=3,
-            padx=(30, 60),
+            padx=30,
             pady=0
         )
 

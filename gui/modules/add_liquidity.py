@@ -72,10 +72,10 @@ class AddLiquidityTab:
             config_data: AddLiquidityTaskBase = config_schema(
                 coin_x=self.liquidity_frame.coin_x_combobox.get(),
                 coin_y=self.liquidity_frame.coin_y_combobox.get(),
-                use_all_balance_x=self.liquidity_frame.use_all_balance_x_checkbox.get(),
-                send_percent_balance_x=self.liquidity_frame.send_percent_balance_x_checkbox.get(),
-                min_amount_out_x=self.liquidity_frame.min_amount_out_x_entry.get(),
-                max_amount_out_x=self.liquidity_frame.max_amount_out_x_entry.get(),
+                use_all_balance=self.liquidity_frame.use_all_balance_x_checkbox.get(),
+                send_percent_balance=self.liquidity_frame.send_percent_balance_x_checkbox.get(),
+                min_amount_out=self.liquidity_frame.min_amount_out_x_entry.get(),
+                max_amount_out=self.liquidity_frame.max_amount_out_x_entry.get(),
                 slippage=self.liquidity_frame.slippage_entry.get(),
                 max_fee=self.txn_settings_frame.max_fee_entry.get(),
                 forced_gas_limit=self.txn_settings_frame.forced_gas_limit_check_box.get()

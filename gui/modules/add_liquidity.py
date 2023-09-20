@@ -24,6 +24,8 @@ class AddLiquidityTab:
         self.tabview = tabview
         self.tab_name = tab_name
 
+        self.tabview.tab(tab_name).grid_columnconfigure(0, weight=1)
+
         liquidity_frame_grid = {
             "row": 0,
             "column": 0,
@@ -179,7 +181,7 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
             column=1,
             padx=20,
             pady=(0, 0),
-            sticky="e"
+            sticky="w"
         )
 
         self.min_amount_out_x_label = customtkinter.CTkLabel(
@@ -227,7 +229,7 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
             column=1,
             padx=20,
             pady=(0, 20),
-            sticky="e"
+            sticky="w"
         )
 
         self.use_all_balance_x_checkbox = customtkinter.CTkCheckBox(

@@ -17,7 +17,8 @@ class TasksExecutor:
 
     def __new__(cls, *args, **kwargs):
         if cls.__instance is None:
-            cls.__instance = object.__new__(cls)
+            cls.__instance = super(TasksExecutor, cls).__new__(cls, *args, **kwargs)
+
         return cls.__instance
 
     def __init__(
@@ -53,6 +54,12 @@ class TasksExecutor:
     def pseudo_completed_callback(self, *args, **kwargs):
         pass
 
+    def on_task_completed(self, callback: Callable[[TaskBase, WalletData], None]):
+        self._on_task_completed = callback
+
+    def on_wallet_completed(self, callback: Callable[[WalletData], None]):
+        self._on_wallet_completed = callback
+
     def process_task(self, task: "TaskBase", wallet: "WalletData", ):
         """
         Process a task, executing on task receiving
@@ -71,26 +78,35 @@ class TasksExecutor:
 
         while self.running:
             try:
-                logger.debug("Waiting for wallets")
-                self.wallets_to_process = self.wallets_queue.get()
+                try:
+                    self.wallets_to_process = self.wallets_queue.get_nowait()
+                except queue.Empty:
+                    time.sleep(0.1)
 
-                logger.debug("Waiting for tasks")
-                self.tasks_to_process = self.tasks_queue.get()
+                try:
+                    self.tasks_to_process = self.tasks_queue.get_nowait()
+                except queue.Empty:
+                    time.sleep(0.1)
 
-                if not len(self.tasks_to_process) or not len(self.wallets_to_process):
-                    time.sleep(1)
+                if self.is_killed(clear=True):
+                    break
+
+                if self.is_stopped(clear=True):
+                    break
+
+                if not len(self.wallets_to_process) or not len(self.tasks_to_process):
                     continue
 
-                logger.debug("Processing tasks")
-
                 for wallet in self.wallets_to_process:
-                    for task in self.tasks_to_process:
+                    logger.debug(f"Processing wallet: {wallet.name}")
 
-                        if self.kill_event.wait(0.1):
-                            self.running = False
+                    for task in self.tasks_to_process:
+                        logger.debug(f"Processing task: {task.task_id}")
+
+                        if self.is_killed():
                             break
 
-                        if self.stop_event.wait(0.1):
+                        if self.is_stopped():
                             break
 
                         self.process_task(
@@ -99,16 +115,12 @@ class TasksExecutor:
                         )
                         self.completed_tasks_queue.put_nowait((task, wallet))
 
-                        if self.kill_event.wait(0.1):
-                            self.running = False
-                            break
-
                         time_to_sleep = random.randint(
                             task.min_delay_sec,
                             task.max_delay_sec
                         )
 
-                        time.sleep(time_to_sleep)
+                        self.sleep(time_to_sleep)
 
                     self.completed_wallets_queue.put_nowait(wallet)
 
@@ -116,7 +128,8 @@ class TasksExecutor:
                 self.tasks_to_process = []
 
             except KeyboardInterrupt:
-                self.kill()
+                self.running = False
+                break
 
             except Exception as ex:
                 logger.error(ex)
@@ -124,6 +137,43 @@ class TasksExecutor:
 
         self.wallets_to_process = []
         self.tasks_to_process = []
+
+    def sleep(self, secs: float):
+        """
+        Sleep for some time
+        Args:
+            secs: time to sleep
+        """
+        wakeup_time = time.time() + secs
+
+        while time.time() < wakeup_time:
+            if self.is_killed():
+                break
+
+            if self.is_stopped():
+                break
+
+            time.sleep(0.1)
+
+    def is_killed(self, clear: bool = False):
+        if self.kill_event.is_set():
+            if clear:
+                self.kill_event.clear()
+            self.running = False
+            self.tasks_to_process = []
+            self.wallets_to_process = []
+            return True
+        return False
+
+    def is_stopped(self, clear: bool = False):
+        if self.stop_event.is_set():
+            if clear:
+                self.stop_event.clear()
+            self.running = False
+            self.tasks_to_process = []
+            self.wallets_to_process = []
+            return True
+        return False
 
     def listen_for_completed_items(self):
         """
@@ -184,6 +234,7 @@ class TasksExecutor:
 
         _on_task_completed = self._on_task_completed
         _on_wallet_completed = self._on_wallet_completed
+
         self._on_task_completed = self.pseudo_completed_callback
         self._on_wallet_completed = self.pseudo_completed_callback
 
@@ -200,10 +251,21 @@ class TasksExecutor:
         """
         Kill tasks executor
         """
-        logger.debug("Stopping tasks executor")
+        logger.debug("Killing tasks executor")
 
         self.wallets_to_process = []
         self.tasks_to_process = []
 
         self.running = False
         self.kill_event.set()
+
+
+tasks_executor = TasksExecutor()
+
+
+if __name__ == '__main__':
+    tasks_executor.run()
+
+    time.sleep(5)
+
+    tasks_executor.kill()

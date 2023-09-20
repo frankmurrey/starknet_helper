@@ -23,7 +23,8 @@ class RemoveLiquidityTab:
             tab_name
     ):
         self.tabview = tabview
-        self.tab_name = tab_name
+
+        self.tabview.tab(tab_name).grid_columnconfigure(0, weight=1)
 
         liquidity_frame_grid = {
             "row": 0,
@@ -161,7 +162,7 @@ class RemoveLiquidityFrame(customtkinter.CTkFrame):
         self.coin_y_label.grid(
             row=2,
             column=1,
-            padx=20,
+            padx=(20, 20),
             pady=(10, 0),
             sticky="w"
         )
@@ -176,7 +177,7 @@ class RemoveLiquidityFrame(customtkinter.CTkFrame):
             column=1,
             padx=20,
             pady=(0, 0),
-            sticky="e"
+            sticky="w"
         )
 
         self.slippage_label = customtkinter.CTkLabel(

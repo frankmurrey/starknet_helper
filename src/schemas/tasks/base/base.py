@@ -2,6 +2,7 @@ from typing import Callable, Optional
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel
+from pydantic import Field
 from pydantic import validator
 
 from utlis import validation
@@ -13,7 +14,7 @@ class TaskBase(BaseModel):
     module_name: enums.ModuleName
     module: Optional[Callable]
 
-    task_id: UUID = uuid4()
+    task_id: UUID = Field(default_factory=uuid4)
 
     max_fee: int
     forced_gas_limit: bool = False
@@ -24,8 +25,8 @@ class TaskBase(BaseModel):
 
     reverse_action: bool = False
 
-    min_delay_sec: float = 40
-    max_delay_sec: float = 80
+    min_delay_sec: float = 1
+    max_delay_sec: float = 2
 
     test_mode: bool = True
 

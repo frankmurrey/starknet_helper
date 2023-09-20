@@ -1,10 +1,13 @@
-import time
-import threading as th
 import tkinter.messagebox
 from tkinter import Variable
 from typing import List
 
+from loguru import logger
+
+from src.schemas.tasks import TaskBase
+from src.schemas.wallet_data import WalletData
 from src.tasks_executor import TasksExecutor
+from src.tasks_executor import tasks_executor
 from gui.main_window.interactions_top_level_window import InteractionTopLevelWindow
 from gui.main_window.wallet_action_frame import WalletActionFrame
 from gui.modules.frames import FloatSpinbox
@@ -19,9 +22,13 @@ class ActionsFrame(customtkinter.CTkFrame):
             **kwargs):
         super().__init__(master, **kwargs)
 
-        self.tasks_executor = TasksExecutor()
-        self.tasks_executor.run()
-        self.start_tasks_status_update()
+        # self.tasks_executor = TasksExecutor(
+        #     on_task_completed=self.on_task_completed,
+        #     on_wallet_completed=self.on_wallet_completed
+        # )
+        # self.tasks_executor.run()
+        tasks_executor.on_task_completed(self.on_task_completed)
+        tasks_executor.on_wallet_completed(self.on_wallet_completed)
 
         self.grid_rowconfigure((0, 1, 3, 4), weight=1)
         self.grid_columnconfigure(1, weight=0)
@@ -62,6 +69,19 @@ class ActionsFrame(customtkinter.CTkFrame):
             pady=5,
             sticky="w"
         )
+
+
+    @property
+    def tasks(self):
+        tasks = []
+        for action in self.actions:
+            repeats = action["repeats"]
+            task = action["task_config"]
+
+            for _ in range(repeats):
+                tasks.append(task)
+
+        return tasks
 
     def set_action(
             self,
@@ -129,38 +149,23 @@ class ActionsFrame(customtkinter.CTkFrame):
         self.action_items = []
         self.redraw_current_actions_frame()
 
-    def push_task_to_queue(self):
-        tasks = []
-        for action in self.actions:
-            repeats = action["repeats"]
-            task = action["task_config"]
+    def on_task_completed(self, completed_task: "TaskBase", current_wallet: "WalletData"):
+        logger.debug(f"Completed task: {completed_task.task_id} with wallet: {current_wallet.name}")
 
-            for _ in range(repeats):
-                tasks.append(task)
-
-        self.tasks_executor.push_tasks(
-            tasks,
-            shuffle=bool(self.button_actions_frame.randomize_actions_checkbox.get())
-        )
+    def on_wallet_completed(self, completed_wallet: "WalletData"):
+        logger.debug(f"Completed wallet: {completed_wallet.name}")
 
     def on_start_button_click(self):
         wallets = self.master.wallets_table.selected_wallets
+        tasks_executor.push_wallets(
+            wallets=wallets
+            # TODO: Shuffle wallets
+        )
 
-        # self.push_task_to_queue()
-
-    def task_update_loop(self):
-        while True:
-            task = self.tasks_executor.completed_tasks_queue.get_task()
-
-            if task is None:
-                time.sleep(0.1)
-                continue
-
-            print("Completed task: ", task.task_id)     # TODO: DODELATE TASKS UPDATE
-
-    def start_tasks_status_update(self):
-        t = th.Thread(target=self.task_update_loop)
-        t.start()
+        tasks_executor.push_tasks(
+            tasks=self.tasks,
+            shuffle=bool(self.button_actions_frame.randomize_actions_checkbox.get())
+        )
 
 
 class TableTopFrame(customtkinter.CTkFrame):

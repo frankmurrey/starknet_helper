@@ -10,10 +10,10 @@ class TxnSettingFrame(customtkinter.CTkFrame):
     ):
         super().__init__(master)
 
-        self.frame = customtkinter.CTkFrame(master)
-        self.frame.grid(**grid)
-        self.frame.grid_columnconfigure((0, 1), weight=1, uniform="a")
-        self.frame.grid_rowconfigure((0, 1, 2, 3, 4), weight=1)
+        self.frame = customtkinter.CTkFrame(master, width=100)
+        self.frame.grid(**grid,)
+        self.frame.grid_columnconfigure(0, weight=1)
+        # self.frame.grid_rowconfigure((0, 1, 2, 3, 4), weight=1)
 
         self.max_fee_label = customtkinter.CTkLabel(
             self.frame,

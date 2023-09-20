@@ -145,7 +145,7 @@ class SidebarFrame(customtkinter.CTkFrame):
     def tools_button_event(self):
         if self.tools_window is None or not self.tools_window.winfo_exists():
             self.tools_window = ToolsWindow(self)
-            self.tools_window.geometry("450x900+1505+100")
+            self.tools_window.geometry("450x900+1305+100")
             self.tools_window.resizable(False, False)
         else:
             self.tools_window.focus()
@@ -153,7 +153,7 @@ class SidebarFrame(customtkinter.CTkFrame):
     def settings_button_event(self):
         if self.settings_window is None or not self.settings_window.winfo_exists():
             self.settings_window = SettingsWindow(self)
-            self.settings_window.geometry("450x900+1505+100")
+            self.settings_window.geometry("450x900+1305+100")
             self.settings_window.resizable(False, False)
         else:
             self.settings_window.focus()

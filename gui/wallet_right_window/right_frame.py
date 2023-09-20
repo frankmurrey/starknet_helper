@@ -11,6 +11,7 @@ from src.schemas.wallet_data import WalletData
 from src.wallet_manager import WalletManager
 from utlis.file_manager import FileManager
 from src import paths
+from src.storage import Storage
 
 
 class RightFrame(customtkinter.CTkFrame):
@@ -74,6 +75,7 @@ class RightFrame(customtkinter.CTkFrame):
         ]
 
     def set_wallets(self, wallets: List[WalletData]):
+
         if not len(self.wallets):
             self.wallets_table.set_wallets(wallets)
             return
@@ -104,6 +106,8 @@ class RightFrame(customtkinter.CTkFrame):
         self.set_wallets(wallets)
 
     def remove_all_wallets(self):
+        Storage().clear_wallets_data()
+
         if not self.wallets:
             return
 

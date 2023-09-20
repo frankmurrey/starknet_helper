@@ -60,7 +60,15 @@ class RightFrame(customtkinter.CTkFrame):
             height=30,
             command=self.remove_all_wallets,
         )
+
         self.remove_button.grid(row=0, column=2, padx=0, pady=10, sticky="wn")
+
+        self.selected_wallets_label = customtkinter.CTkLabel(
+            self.button_frame,
+            text="Selected: 0",
+            font=customtkinter.CTkFont(size=12, weight="bold"),
+        )
+        self.selected_wallets_label.grid(row=0, column=3, padx=20, pady=10, sticky="wn")
 
         self.actions_frame = ActionsFrame(self)
         self.actions_frame.grid(row=9, column=0, padx=20, pady=10, sticky="nsew")
@@ -106,7 +114,6 @@ class RightFrame(customtkinter.CTkFrame):
         self.set_wallets(wallets)
 
     def remove_all_wallets(self):
-        Storage().clear_wallets_data()
 
         if not self.wallets:
             return
@@ -121,6 +128,7 @@ class RightFrame(customtkinter.CTkFrame):
             return
 
         self.wallets_table.remove_all_wallets()
+        self.wallets_table.update_selected_wallets_labels()
 
     def add_wallet_button_clicked(self):
         if self.add_wallet_window is not None:

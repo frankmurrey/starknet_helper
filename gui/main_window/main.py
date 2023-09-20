@@ -1,5 +1,8 @@
 import customtkinter
 
+from src.tasks_executor import TasksExecutor
+from src.tasks_executor import tasks_executor
+
 from gui.main_window.frames import SidebarFrame
 from gui.wallet_right_window.right_frame import RightFrame
 
@@ -26,6 +29,10 @@ class MainWindow(customtkinter.CTk):
 
         self.right_frame = RightFrame(self)
 
+        tasks_executor.run()
+        self.protocol("WM_DELETE_WINDOW", self.on_closing)
 
-
-
+    def on_closing(self):
+        tasks_executor.kill()
+        self.destroy()
+        self.quit()

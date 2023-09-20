@@ -5,7 +5,6 @@ from tkinter import Variable
 from typing import List
 
 from src.tasks_executor import TasksExecutor
-from src.storage import Storage
 from gui.main_window.interactions_top_level_window import InteractionTopLevelWindow
 from gui.main_window.wallet_action_frame import WalletActionFrame
 from gui.modules.frames import FloatSpinbox
@@ -145,9 +144,9 @@ class ActionsFrame(customtkinter.CTkFrame):
         )
 
     def on_start_button_click(self):
-        # wallets = Storage().wallets_data
+        wallets = self.master.wallets_table.selected_wallets
 
-        self.push_task_to_queue()
+        # self.push_task_to_queue()
 
     def task_update_loop(self):
         while True:
@@ -359,7 +358,7 @@ class ButtonActionsFrame(customtkinter.CTkFrame):
     def add_action_button_event(self):
         if self.actions_top_level_window is None or not self.actions_top_level_window.winfo_exists():
             self.actions_top_level_window = InteractionTopLevelWindow(parent=self.master)
-            self.actions_top_level_window.geometry("500x900+1505+100")
+            self.actions_top_level_window.geometry("500x900+1305+100")
             self.actions_top_level_window.resizable(False, False)
         else:
             self.actions_top_level_window.focus()

@@ -80,7 +80,7 @@ class WalletGeneratorFrame(customtkinter.CTkFrame):
 
         self.generate_button = customtkinter.CTkButton(
             master=self,
-            text="Generate",
+            text="Save to file",
             font=customtkinter.CTkFont(size=12, weight="bold"),
             command=self.generate_button_event,
         )
@@ -114,7 +114,7 @@ class KeyExtractorFrame(customtkinter.CTkFrame):
 
         self.label = customtkinter.CTkLabel(
             master=self,
-            text="Extract keys from mnemonic:",
+            text="Convert mnemonics to private keys:",
             font=customtkinter.CTkFont(size=15, weight="bold"),
         )
         self.label.grid(row=0, column=0, sticky="wn", pady=(10, 15), padx=15)
@@ -162,7 +162,7 @@ class KeyExtractorFrame(customtkinter.CTkFrame):
 
         self.extract_button = customtkinter.CTkButton(
             master=self,
-            text="Extract",
+            text="Save to file",
             font=customtkinter.CTkFont(size=12, weight="bold"),
             command=self.extract_button_event,
         )

@@ -8,6 +8,7 @@ class WalletsTableTop(customtkinter.CTkFrame):
                  wallet_items: list):
         super().__init__(master)
 
+        self.master = master
         self.wallet_items = wallet_items
         self.frame = customtkinter.CTkFrame(master)
         self.frame.grid(**grid)
@@ -113,3 +114,5 @@ class WalletsTableTop(customtkinter.CTkFrame):
         else:
             for wallet in self.wallet_items:
                 wallet.chose_checkbox.deselect()
+
+        self.master.wallets_table.update_selected_wallets_labels()

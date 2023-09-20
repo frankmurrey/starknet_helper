@@ -15,7 +15,7 @@ class MainWindow(customtkinter.CTk):
         self.resizable(False, False)
         self.title("StarkNet Helper by @frankmurrey")
 
-        self.geometry(f"{1400}x{900}+100+100")
+        self.geometry(f"{1200}x{900}+100+100")
 
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=0)

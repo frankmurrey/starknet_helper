@@ -41,7 +41,8 @@ class WalletItem(customtkinter.CTkFrame):
             checkbox_width=20,
             checkbox_height=20,
             onvalue=True,
-            offvalue=False
+            offvalue=False,
+            command=self.select_checkbox_event
         )
         self.chose_checkbox.grid(
             row=0,
@@ -138,6 +139,9 @@ class WalletItem(customtkinter.CTkFrame):
 
         # EDIT WALLET
         self.edit_window = None
+
+    def select_checkbox_event(self):
+        self.master.update_selected_wallets_labels()
 
     @property
     def is_chosen(self):

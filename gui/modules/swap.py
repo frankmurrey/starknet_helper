@@ -13,14 +13,12 @@ from src import enums
 from src.schemas import tasks
 
 
-class ASD:
-    pass
-
-
 class SwapTab:
     def __init__(self, tabview, tab_name):
         self.tabview = tabview
         self.tab_name = tab_name
+
+        self.tabview.tab(tab_name).grid_columnconfigure(0, weight=1)
 
         swap_frame_grid = {
             "row": 0,
@@ -67,8 +65,6 @@ class SwapTab:
             return None
 
     def build_config_data(self):
-        # TODO: add validation for all fields
-        # TODO: add
         config_schema = self.get_config_schema()
         if config_schema is None:
             logger.error("No config schema found")
@@ -82,6 +78,7 @@ class SwapTab:
                 max_amount_out=self.swap_frame.max_amount_entry.get(),
                 use_all_balance=self.swap_frame.use_all_balance_checkbox.get(),
                 send_percent_balance=self.swap_frame.send_percent_balance_checkbox.get(),
+                reverse_action=self.swap_frame.reverse_action_checkbox.get(),
                 slippage=self.swap_frame.slippage_entry.get(),
                 max_price_difference_percent=self.swap_frame.max_price_difference_percent_entry.get(),
                 compare_with_cg_price=self.swap_frame.compare_with_cg_price_checkbox.get(),
@@ -144,17 +141,29 @@ class SwapFrame(customtkinter.CTkFrame):
         )
         self.coin_to_receive_combo.grid(row=3, column=1, padx=20, pady=0, sticky="w")
 
+        self.reverse_action_checkbox = customtkinter.CTkCheckBox(
+            self.frame,
+            text="Make reverse swap",
+            onvalue=True,
+            offvalue=False,
+            checkbox_width=18,
+            checkbox_height=18,
+        )
+        self.reverse_action_checkbox.grid(
+            row=4, column=0, padx=20, pady=(10, 0), sticky="w"
+        )
+
         self.min_amount_label = customtkinter.CTkLabel(self.frame, text="Min amount:")
-        self.min_amount_label.grid(row=4, column=0, padx=20, pady=(10, 0), sticky="w")
+        self.min_amount_label.grid(row=5, column=0, padx=20, pady=(10, 0), sticky="w")
 
         self.min_amount_entry = customtkinter.CTkEntry(self.frame, width=120)
-        self.min_amount_entry.grid(row=5, column=0, padx=20, pady=0, sticky="w")
+        self.min_amount_entry.grid(row=6, column=0, padx=20, pady=0, sticky="w")
 
         self.max_amount_label = customtkinter.CTkLabel(self.frame, text="Max amount:")
-        self.max_amount_label.grid(row=4, column=1, padx=20, pady=(10, 0), sticky="w")
+        self.max_amount_label.grid(row=5, column=1, padx=20, pady=(10, 0), sticky="w")
 
         self.max_amount_entry = customtkinter.CTkEntry(self.frame, width=120)
-        self.max_amount_entry.grid(row=5, column=1, padx=20, pady=0, sticky="w")
+        self.max_amount_entry.grid(row=6, column=1, padx=20, pady=0, sticky="w")
 
         self.use_all_balance_checkbox = customtkinter.CTkCheckBox(
             self.frame,
@@ -166,7 +175,7 @@ class SwapFrame(customtkinter.CTkFrame):
             command=self.use_all_balance_checkbox_event,
         )
         self.use_all_balance_checkbox.grid(
-            row=6, column=0, padx=20, pady=(10, 0), sticky="w"
+            row=7, column=0, padx=20, pady=(10, 0), sticky="w"
         )
 
         self.send_percent_balance_checkbox = customtkinter.CTkCheckBox(
@@ -178,29 +187,29 @@ class SwapFrame(customtkinter.CTkFrame):
             checkbox_height=18,
         )
         self.send_percent_balance_checkbox.grid(
-            row=7, column=0, padx=20, pady=(5, 0), sticky="w"
+            row=8, column=0, padx=20, pady=(5, 0), sticky="w"
         )
 
         self.slippage_label = customtkinter.CTkLabel(self.frame, text="Slippage (%):")
-        self.slippage_label.grid(row=8, column=1, padx=20, pady=(10, 0), sticky="w")
+        self.slippage_label.grid(row=9, column=1, padx=20, pady=(10, 0), sticky="w")
 
         self.slippage_entry = customtkinter.CTkEntry(
             self.frame, width=70, textvariable=Variable(value=2)
         )
-        self.slippage_entry.grid(row=9, column=1, padx=20, pady=0, sticky="w")
+        self.slippage_entry.grid(row=10, column=1, padx=20, pady=0, sticky="w")
 
         self.max_price_difference_percent_label = customtkinter.CTkLabel(
             self.frame, text="Max price difference (%):"
         )
         self.max_price_difference_percent_label.grid(
-            row=8, column=0, padx=20, pady=(10, 0), sticky="w"
+            row=9, column=0, padx=20, pady=(10, 0), sticky="w"
         )
 
         self.max_price_difference_percent_entry = customtkinter.CTkEntry(
             self.frame, width=120, textvariable=Variable(value=2)
         )
         self.max_price_difference_percent_entry.grid(
-            row=9, column=0, padx=20, pady=0, sticky="w"
+            row=10, column=0, padx=20, pady=0, sticky="w"
         )
 
         self.compare_with_cg_price_checkbox = customtkinter.CTkCheckBox(
@@ -213,7 +222,7 @@ class SwapFrame(customtkinter.CTkFrame):
             command=self.compare_with_cg_price_checkbox_event,
         )
         self.compare_with_cg_price_checkbox.grid(
-            row=10, column=0, padx=20, pady=10, sticky="w"
+            row=11, column=0, padx=20, pady=10, sticky="w"
         )
         self.compare_with_cg_price_checkbox.select()
 

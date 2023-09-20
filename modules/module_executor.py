@@ -219,6 +219,15 @@ class ModuleExecutor:
             )
             execution_status = await module.send_txn()
 
+        elif self.module_name == enums.ModuleName.TRANSFER:
+            module = self.task.module(
+                account=account,
+                task=self.task,
+                wallet_data=wallet_data
+            )
+
+            execution_status = await module.send_txn()
+
         else:
             module = self.task.module(account=account, task=self.task)
             execution_status = await module.send_txn()

@@ -1,4 +1,5 @@
-from typing import Union, Callable, Optional
+from typing import Callable, Optional
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel
 from pydantic import validator
@@ -11,6 +12,8 @@ class TaskBase(BaseModel):
     module_type: enums.ModuleType
     module_name: enums.ModuleName
     module: Optional[Callable]
+
+    task_id: UUID = uuid4()
 
     max_fee: int
     forced_gas_limit: bool = False

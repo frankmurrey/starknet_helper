@@ -16,17 +16,20 @@ class Storage:
 
         def __init__(self):
             self.__app_config: AppConfigSchema = self.__load_app_config()
+            self.__wallets_data = []
 
         def set_wallets_data(self, value):
             self.__wallets_data = value
 
+        def add_wallet_data(self, value):
+            self.__wallets_data.append(value)
+
+        def clear_wallets_data(self):
+            self.__wallets_data.clear()
+
         @property
         def wallets_data(self):
             return self.__wallets_data
-
-        @property
-        def wallet_balances(self) -> List:
-            return self.__wallet_balances
 
         @property
         def app_config(self) -> AppConfigSchema:
@@ -39,12 +42,6 @@ class Storage:
             except Exception as e:
                 logger.error(f"Error while loading app config: {e}")
                 logger.exception(e)
-
-        def append_wallet_balance(self, value):
-            self.__wallet_balances.append(value)
-
-        def reset_wallet_balances(self):
-            self.__wallet_balances = []
 
         def update_app_config(self, config: AppConfigSchema):
             self.__app_config = config

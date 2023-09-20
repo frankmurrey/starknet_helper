@@ -13,24 +13,27 @@ class SwapTaskBase(
     validation_mixins.SlippageValidationMixin,
     validation_mixins.MinMaxAmountOutValidationMixin,
 ):
-    coin_x: Union[str]
-    coin_y: Union[str]
+    coin_x: str
+    coin_y: str
 
-    use_all_balance: Union[bool] = False
-    send_percent_balance: Union[bool] = False
+    use_all_balance: bool = False
+    send_percent_balance: bool = False
 
-    compare_with_cg_price: Union[bool] = True
+    compare_with_cg_price: bool = True
 
-    min_amount_out: Union[float]
-    max_amount_out: Union[float]
+    min_amount_out: float
+    max_amount_out: float
 
-    max_price_difference_percent: Union[float] = 2
+    max_price_difference_percent: float = 2
 
-    slippage: Union[float] = 0.5
+    slippage: float = 0.5
 
     @property
     def action_info(self):
-        return f"{self.coin_x.upper()} -> {self.coin_y.upper()}"
+        if self.reverse_action:
+            return f"{self.coin_x.upper()} <-> {self.coin_y.upper()}"
+        else:
+            return f"{self.coin_x.upper()} -> {self.coin_y.upper()}"
 
     @validator("coin_y", pre=True)
     def validate_coin_to_receive_pre(cls, value, values):

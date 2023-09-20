@@ -8,6 +8,7 @@ from loguru import logger
 from modules.module_executor import ModuleExecutor
 from src.schemas.tasks.base.base import TaskBase
 from src.internal_queue import InternalQueue
+from src.schemas.wallet_data import WalletData
 
 
 class TasksExecutor:
@@ -24,6 +25,7 @@ class TasksExecutor:
 
         self.tasks_queue = InternalQueue()
         self.completed_tasks_queue = InternalQueue()
+        # TODO - tasks batched, wallet after wallet
 
     def process_task(self, task: "TaskBase"):
         """

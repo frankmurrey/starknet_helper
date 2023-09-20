@@ -5,6 +5,7 @@ from tkinter import Variable
 from typing import List
 
 from src.tasks_executor import TasksExecutor
+from src.storage import Storage
 from gui.main_window.interactions_top_level_window import InteractionTopLevelWindow
 from gui.main_window.wallet_action_frame import WalletActionFrame
 from gui.modules.frames import FloatSpinbox
@@ -144,6 +145,8 @@ class ActionsFrame(customtkinter.CTkFrame):
         )
 
     def on_start_button_click(self):
+        # wallets = Storage().wallets_data
+
         self.push_task_to_queue()
 
     def task_update_loop(self):

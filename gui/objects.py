@@ -106,3 +106,16 @@ class CTkEntryWithLabel(customtkinter.CTkFrame):
 
     def set_focus_out_callback(self, callback: Callable):
         self.on_focus_out = callback
+
+
+class CTkCustomTextBox(customtkinter.CTkTextbox):
+    def __init__(
+            self,
+            master,
+            grid: dict,
+            text: str,
+            font: tuple = ("Consolas", 14),
+    ):
+        super().__init__(master=master, font=font, fg_color='gray14')
+        self.grid(**grid)
+        self.insert("1.0", text)

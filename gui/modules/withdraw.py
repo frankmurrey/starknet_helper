@@ -15,7 +15,7 @@ class WithdrawLendingTab:
     ):
         self.tabview = tabview
 
-        self.tab_name = tab_name
+        self.tabview.tab(tab_name).grid_columnconfigure(0, weight=1)
 
         withdraw_frame_grid = {
             "row": 0,

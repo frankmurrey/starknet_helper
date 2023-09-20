@@ -17,7 +17,8 @@ class SupplyLendingTab:
             tab_name
     ):
         self.tabview = tabview
-        self.tab_name = tab_name
+
+        self.tabview.tab(tab_name).grid_columnconfigure(0, weight=1)
 
         supply_frame_grid = {
             "row": 0,
@@ -127,7 +128,7 @@ class SupplyLending(customtkinter.CTkFrame):
 
         self.min_amount_out = customtkinter.CTkLabel(
             master=self,
-            text="Min Amount Out"
+            text="Min amount out:"
         )
         self.min_amount_out.grid(
             row=4,
@@ -151,7 +152,7 @@ class SupplyLending(customtkinter.CTkFrame):
 
         self.max_amount_out = customtkinter.CTkLabel(
             master=self,
-            text="Max Amount Out"
+            text="Max amount out:"
         )
         self.max_amount_out.grid(
             row=4,
@@ -168,7 +169,7 @@ class SupplyLending(customtkinter.CTkFrame):
         self.max_amount_out_entry.grid(
             row=5,
             column=1,
-            sticky="e",
+            sticky="w",
             padx=20,
             pady=(0, 0)
         )

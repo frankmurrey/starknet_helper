@@ -10,6 +10,7 @@ from gui.modules.withdraw import WithdrawLendingTab
 from gui.modules.stark_id import StarkIdMintTab
 from gui.modules.dmail import DmailSendMailTab
 from gui.modules.deploy import DeployTab
+from gui.modules.transfer import TransferTab
 
 import customtkinter
 
@@ -48,6 +49,7 @@ class InteractionTopLevelWindow(customtkinter.CTkToplevel):
             sticky="nsew"
         )
         self.tabview.grid_columnconfigure(0, weight=1)
+        self.tabview.grid_rowconfigure(0, weight=1)
 
         self.set_default_tab()
 
@@ -144,6 +146,14 @@ class InteractionTopLevelWindow(customtkinter.CTkToplevel):
             self.chose_module_frame.float_spinbox.max_value = 1
             self.chose_module_frame.float_spinbox.entry.configure(textvariable=Variable(value=1))
 
+        elif tab_name == "Transfer":
+            self.current_tab = TransferTab(
+                self.tabview,
+                tab_name
+            )
+            self.current_tab_name = tab_name
+            self.chose_module_frame.float_spinbox.max_value = 100
+
     def set_default_tab(self):
         tab_name = self.chose_module_frame.modules_option_menu.get()
         self.tabview.add(tab_name.title())
@@ -223,12 +233,13 @@ class ChoseModuleFrame(customtkinter.CTkFrame):
             values=[
                 'Deploy',
                 'Swap',
+                'Transfer',
                 "Add Liquidity",
                 "Remove Liquidity",
                 "Supply Lending",
                 "Withdraw Lending",
                 "Stark ID Mint",
-                "Dmail Send Mail"
+                "Dmail Send Mail",
             ],
             command=master.set_new_tab
         )

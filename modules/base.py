@@ -29,8 +29,6 @@ import config
 
 if TYPE_CHECKING:
     from src.schemas.tasks.base.swap import SwapTaskBase
-    from src.schemas.tasks.base.add_liquidity import AddLiquidityTaskBase
-    from src.schemas.tasks.base.remove_liquidity import RemoveLiquidityTaskBase
     from starknet_py.net.full_node_client import FullNodeClient
     from src.schemas.tasks.base import TaskBase
 

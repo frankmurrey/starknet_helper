@@ -5,6 +5,7 @@ import customtkinter
 from gui.wallet_right_window.wallet_item import WalletItem
 from gui.wallet_right_window.frames import WalletsTableTop
 from src.schemas.wallet_data import WalletData
+from src.storage import Storage
 
 
 class WalletsTable(customtkinter.CTkScrollableFrame):
@@ -86,6 +87,7 @@ class WalletsTable(customtkinter.CTkScrollableFrame):
         Returns:
 
         """
+        Storage().set_wallets_data(wallets)
 
         self.destroy_no_wallets_label()
         self.remove_all_wallets(show_no_wallets=False)

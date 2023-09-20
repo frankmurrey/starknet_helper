@@ -11,13 +11,12 @@ class ModuleType(str, Enum):
     LIQUIDITY_REMOVE = "liq_remove"
     SEND_MAIL = 'send_mail'
     TEST = 'test'
+    SEND = 'send'
 
 
 class ModuleName(str, Enum):
     JEDI_SWAP = "jediswap"
     MY_SWAP = "myswap"
-    DEPLOY = "deploy"
-    UPGRADE = "upgrade"
     DMAIL = 'dmail'
     IDENTITY = 'identity'
     K10SWAP = 'k10swap'
@@ -25,6 +24,9 @@ class ModuleName(str, Enum):
     AVNU = 'avnu'
     ZKLEND = 'zklend'
     TEST = 'test'
+    DEPLOY = "deploy"
+    UPGRADE = "upgrade"
+    TRANSFER = "transfer"
 
 
 class PrivateKeyType(str, Enum):

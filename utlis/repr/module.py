@@ -2,10 +2,10 @@ import config
 
 from enum import Enum
 
-from colorama import Fore, Back, Style
+from colorama import Fore, Style
 
 from src.schemas.tasks.base import TaskBase
-from modules.base import ModuleBase
+from src.schemas.tasks.jediswap import JediSwapTask
 from utlis.repr.misc import Symbol
 from utlis.repr.misc import AsciiPrints
 from utlis.repr.misc import COLOR_LENGTH
@@ -87,47 +87,73 @@ def get_max_width(max_key_width: int, max_value_width: int) -> int:
     return 2 + max_key_width + 5 + max_value_width + 2
 
 
+def format_key(key: str, max_key_width: int) -> str:
+    key = key.title().replace("_", " ")
+    key = f"{Colors.CONFIG_KEY_COLOR}{key}{Fore.RESET}"
+    key_width = max_key_width + 2 * COLOR_LENGTH
+
+    return f" {key:>{key_width + 1}} "
+
+
+def format_value(value, max_value_width: int) -> str:
+    value_width = max_value_width
+
+    if issubclass(value.__class__, Enum):
+        value = str(value.value).upper()
+
+    if isinstance(value, bool):
+        value_width = value_width + 2 * COLOR_LENGTH
+        value = (f"{Fore.GREEN}+" if value else f"{Fore.RED}-") + Fore.RESET
+
+    else:
+        value_width += 2 * COLOR_LENGTH
+        value = f"{Colors.CONFIG_VALUE_COLOR}{value}{Fore.RESET}"
+
+    return f" {value:<{value_width + 1}} "
+
+
 def print_module_config(task: TaskBase):
 
     repr_strings = []
 
-    task_dict = task.dict(exclude={"module_name", "module"})
+    task_dict = task.dict(exclude={"module_name", "module", "task_id"})
 
     max_key_width = max(len(key) for key in task_dict.keys())
     max_value_width = max(len(str(value)) for value in task_dict.values())
     max_width = get_max_width(max_key_width, max_value_width)
+    module_type = task_dict.pop("module_type")
+
+    repr_string = Colors.BORDER
+    repr_string += Symbol.left
+    repr_string += Fore.RESET
+
+    repr_string += format_key("module_type", max_key_width)
+
+    repr_string += Colors.BORDER
+    repr_string += Symbol.center
+    repr_string += Fore.RESET
+
+    repr_string += format_value(module_type, max_value_width)
+
+    repr_string += Colors.BORDER
+    repr_string += Symbol.right
+    repr_string += Fore.RESET
+
+    repr_strings.append(repr_string)
 
     for key, value in task_dict.items():
-
-        key_width = max_key_width
-        value_width = max_value_width
-
-        key = key.title().replace("_", " ")
-        key = f"{Colors.CONFIG_KEY_COLOR}{key}{Fore.RESET}"
-        key_width = key_width + 2 * COLOR_LENGTH
-
-        if issubclass(value.__class__, Enum):
-            value = str(value.value).upper()
-
-        if isinstance(value, bool):
-            value_width = value_width + 2 * COLOR_LENGTH
-            value = (f"{Fore.GREEN}+" if value else f"{Fore.RED}-") + Fore.RESET
-
-        else:
-            value_width += 2 * COLOR_LENGTH
-            value = f"{Colors.CONFIG_VALUE_COLOR}{value}{Fore.RESET}"
 
         repr_string = Colors.BORDER
         repr_string += Symbol.left
         repr_string += Fore.RESET
 
-        repr_string += f" {key:>{key_width + 1}} "
+        repr_string += format_key(key, max_key_width)
 
         repr_string += Colors.BORDER
         repr_string += Symbol.center
         repr_string += Fore.RESET
 
-        repr_string += f" {value:<{value_width + 1}} "
+        repr_string += format_value(value, max_value_width)
 
         repr_string += Colors.BORDER
         repr_string += Symbol.right
@@ -147,3 +173,20 @@ def print_module_config(task: TaskBase):
     print(*repr_strings, sep="\n")
     print(f"{Fore.LIGHTMAGENTA_EX}Made by Frank Murrey - https://github.com/frankmurrey{Fore.RESET}")
     print(f"{Fore.LIGHTMAGENTA_EX}Starting in {config.DEFAULT_DELAY_SEC} sec...{Fore.RESET}\n")
+
+
+if __name__ == '__main__':
+    task = JediSwapTask(
+        coin_x='usdt',
+        coin_y='eth',
+        min_amount_out=0.1,
+        max_amount_out=0.1,
+        slippage=2,
+        test_mode=True,
+        max_fee=6000000,
+        wait_for_receipt=True,
+        txn_wait_timeout_sec=120,
+        reverse_action=True,
+
+    )
+    print_module_config(task)

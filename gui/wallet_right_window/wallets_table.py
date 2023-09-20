@@ -5,24 +5,22 @@ import customtkinter
 from gui.wallet_right_window.wallet_item import WalletItem
 from gui.wallet_right_window.frames import WalletsTableTop
 from src.schemas.wallet_data import WalletData
-from src.storage import Storage
 
 
 class WalletsTable(customtkinter.CTkScrollableFrame):
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
-
-        self.frame = customtkinter.CTkScrollableFrame(master, width=1100)
-        self.frame.grid(row=1, column=0, padx=20, pady=0, sticky="nsew", rowspan=7)
+        self.master = master
+        self.grid(row=1, column=0, padx=20, pady=0, sticky="nsew", rowspan=7)
 
         self.no_wallets_label = customtkinter.CTkLabel(
-            self.frame,
+            self,
             text="No wallets",
             font=customtkinter.CTkFont(size=20, weight="bold"),
         )
         self.no_wallets_label.grid(row=0, column=0, padx=20, pady=20, sticky="ns")
 
-        self.frame.grid_columnconfigure(0, weight=1)
+        self.grid_columnconfigure(0, weight=1)
 
         self.wallets_items: List[WalletItem] = []
 
@@ -34,6 +32,13 @@ class WalletsTable(customtkinter.CTkScrollableFrame):
     @property
     def wallets(self):
         return [wallet_item.wallet_data for wallet_item in self.wallets_items]
+
+    @property
+    def selected_wallets(self):
+        return [wallet_item.wallet_data for wallet_item in self.wallets_items if wallet_item.is_chosen]
+
+    def update_selected_wallets_labels(self):
+        self.master.selected_wallets_label.configure(text=f"Selected: {len(self.selected_wallets)}")
 
     def remove_all_wallets(self, show_no_wallets: bool = True):
         if not len(self.wallets):
@@ -49,9 +54,10 @@ class WalletsTable(customtkinter.CTkScrollableFrame):
         if show_no_wallets:
             self.show_no_wallets_label()
 
+
     def show_no_wallets_label(self):
         self.no_wallets_label = customtkinter.CTkLabel(
-            self.frame,
+            self,
             text="No wallets, why delete me?",
             font=customtkinter.CTkFont(size=20, weight="bold"),
             corner_radius=10,
@@ -87,7 +93,6 @@ class WalletsTable(customtkinter.CTkScrollableFrame):
         Returns:
 
         """
-        Storage().set_wallets_data(wallets)
 
         self.destroy_no_wallets_label()
         self.remove_all_wallets(show_no_wallets=False)
@@ -109,7 +114,7 @@ class WalletsTable(customtkinter.CTkScrollableFrame):
                 wallet_data.name = f"Wallet {wallet_index + 1}"
 
             wallet_item = WalletItem(
-                master=self.frame,
+                master=self,
                 grid=wallet_item_grid,
                 wallet_data=wallet_data,
                 index=wallet_index,

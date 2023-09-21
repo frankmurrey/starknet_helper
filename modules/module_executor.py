@@ -1,7 +1,6 @@
 import time
-import random
-from datetime import timedelta, datetime
-from typing import List, Union, Optional
+from datetime import datetime
+from typing import Union, Optional
 
 import aiohttp.typedefs
 from loguru import logger
@@ -18,9 +17,8 @@ from src.action_logger import ActionLogger
 from src.proxy_manager import ProxyManager
 from src.custom_client_session import CustomSession
 
-from utlis.key_manager.key_manager import get_key_pair_from_pk
-from utlis.xlsx import write_balance_data_to_xlsx
-from utlis.repr.module import print_module_config
+from utils.key_manager.key_manager import get_key_pair_from_pk
+from utils.repr.module import print_module_config
 
 from src import enums
 import config as cfg
@@ -31,7 +29,7 @@ class ModuleExecutor:
     Module executor for modules in a modules directory
     """
 
-    def __init__(self, task: tasks.TaskBase):
+    def __init__(self, task: tasks.TaskBase, wallet: WalletData):
         self.task = task
         self.module_name = task.module_name
         self.module_type = task.module_type
@@ -40,96 +38,28 @@ class ModuleExecutor:
 
         self.app_config = self.storage.app_config
 
-        self.wallets: List[WalletData] = []
+        self.wallet_data = wallet
 
-    def get_delay_sec(self, execution_status: bool) -> int:
-        """
-        Get the delay in seconds based on the execution status.
-
-        Args:
-            execution_status (bool): The execution status of the function.
-
-        Returns:
-            int: The delay in seconds.
-
-        """
-        if execution_status is True:
-            return random.randint(
-                int(self.task.min_delay_sec), int(self.task.max_delay_sec)
-            )
-
-        return cfg.DEFAULT_DELAY_SEC
-
-    def blur_private_key(self, private_key: str) -> str:
-        """
-        This function takes a private key as input and blurs it by replacing a portion of the key with asterisks.
-
-        Parameters:
-        - private_key (str): The private key that needs to be blurred.
-
-        Returns:
-        - blurred_private_key (str): The blurred version of the private key.
-        """
-        length = len(private_key)
-        start_index = length // 10
-        end_index = length - start_index
-        blurred_private_key = (
-            private_key[:start_index]
-            + "*" * (end_index - start_index)
-            + private_key[end_index + 4 :]
-        )
-
-        return blurred_private_key
-
-    async def start(self):
+    async def start(self) -> bool:
         print_module_config(task=self.task)
         time.sleep(cfg.DEFAULT_DELAY_SEC)
 
         if not self.app_config.rpc_url:
             logger.error("Please, set RPC URL in tools window or app_config.json file")
-            return
+            return False
 
-        wallets = self.wallets.copy()
-        if self.app_config.shuffle_wallets:
-            random.shuffle(wallets)
+        execute_status: bool = await self.execute_module(
+            wallet_data=self.wallet_data, base_url=self.app_config.rpc_url
+        )
 
-        if self.task.test_mode:
-            wallets = wallets[:3]
-            logger.warning(
-                f"Test mode enabled. Working only with {len(wallets)} wallets\n"
-            )
-
-        wallets_amount = len(wallets)
-        for index, wallet_data in enumerate(wallets):
-            wallet_data: WalletData
-
-            logger.info(f"[{index + 1}] - {wallet_data.address}")
-            logger.info(f"PK - {self.blur_private_key(wallet_data.private_key)}")
-
-            execute_status: bool = await self.execute_module(
-                wallet_data=wallet_data, base_url=self.app_config.rpc_url
-            )
-
-            if index == wallets_amount - 1:
-                logger.info(f"Process is finished\n")
-                break
-
-            time_delay_sec = self.get_delay_sec(execution_status=execute_status)
-
-            delta = timedelta(seconds=time_delay_sec)
-            result_datetime = datetime.now() + delta
-
-            logger.info(
-                f"Waiting {time_delay_sec} seconds, next wallet {result_datetime}\n"
-            )
-            time.sleep(time_delay_sec)
+        return execute_status
 
     async def execute_module(
             self,
             wallet_data: WalletData,
             base_url: str
     ) -> Union[bool, None]:
-        execution_status = None
+
         proxy_data = wallet_data.proxy
         proxy_manager = ProxyManager(proxy_data=proxy_data)
         proxies = proxy_manager.get_proxy()

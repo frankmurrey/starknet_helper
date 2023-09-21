@@ -10,7 +10,7 @@ from loguru import logger
 from modules.base import SwapModuleBase
 from contracts.avnu.main import AvnuContracts
 from contracts.base import TokenBase
-from utlis.get_delay import get_delay
+from utils.get_delay import get_delay
 
 if TYPE_CHECKING:
     from src.schemas.tasks.avnu import AvnuSwapTask

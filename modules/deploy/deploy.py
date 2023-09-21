@@ -8,7 +8,7 @@ from modules.base import ModuleBase
 from src.schemas.logs import WalletActionSchema
 from src import enums
 from src.storage import ActionStorage
-from utlis.key_manager.key_manager import get_key_pair_from_pk
+from utils.key_manager.key_manager import get_key_pair_from_pk
 
 if TYPE_CHECKING:
     from src.schemas.tasks.deploy import DeployTask

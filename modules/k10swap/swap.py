@@ -8,7 +8,7 @@ from loguru import logger
 
 from contracts.k10swap.main import K10SwapContracts
 from modules.base import SwapModuleBase
-from utlis.get_delay import get_delay
+from utils.get_delay import get_delay
 
 
 if TYPE_CHECKING:

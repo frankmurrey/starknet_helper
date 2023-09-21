@@ -9,7 +9,7 @@ from contracts.tokens.main import Tokens
 from contracts.sithswap.main import SithSwapContracts
 from modules.base import SwapModuleBase
 from modules.sithswap.base import SithBase
-from utlis.get_delay import get_delay
+from utils.get_delay import get_delay
 
 if TYPE_CHECKING:
     from src.schemas.tasks.sithswap import SithSwapTask

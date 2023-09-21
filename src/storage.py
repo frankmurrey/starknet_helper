@@ -6,7 +6,7 @@ from loguru import logger
 from src import paths
 from src.schemas.app_config import AppConfigSchema
 from src.schemas.logs import WalletActionSchema
-from utlis.file_manager import FileManager
+from utils.file_manager import FileManager
 
 
 class Storage:

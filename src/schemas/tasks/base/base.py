@@ -5,11 +5,14 @@ from pydantic import BaseModel
 from pydantic import Field
 from pydantic import validator
 
-from utlis import validation
+from utils import validation
 from src import enums
 
 
 class TaskBase(BaseModel):
+    class Config:
+        extra = "allow"
+
     module_type: enums.ModuleType
     module_name: enums.ModuleName
     module: Optional[Callable]

@@ -12,7 +12,7 @@ import config
 from modules.module_executor import ModuleExecutor
 from src.schemas.tasks.base.base import TaskBase
 from src.schemas.wallet_data import WalletData
-from utils.repr.private_key import blur_private_key
+from utils.repr.misc import print_wallet_execution
 
 
 class TasksExecutor:
@@ -102,9 +102,9 @@ class TasksExecutor:
                     continue
 
                 for wallet_index, wallet in enumerate(self.wallets_to_process):
-                    wallet: "WalletData"
-                    logger.info(f"[{wallet_index + 1}] {wallet.name} - {wallet.address}")
-                    logger.info(f"PK - {blur_private_key(wallet.private_key)}")
+                    print_wallet_execution(wallet, wallet_index)
+
+                    self.sleep(0.1)
 
                     for task in self.tasks_to_process:
                         logger.debug(f"Processing task: {task.task_id}")

@@ -7,19 +7,9 @@ from colorama import Fore, Style
 from src.schemas.tasks.base import TaskBase
 from src.schemas.tasks.jediswap import JediSwapTask
 from utils.repr.misc import Symbol
-from utils.repr.misc import AsciiPrints
+from utils.repr.misc import Colors
 from utils.repr.misc import COLOR_LENGTH
 from utils.repr.misc import MODULE_NAME_MAX_LENGTH
-
-
-class Colors:
-    BORDER = Fore.LIGHTBLUE_EX
-
-    MODULE_NAME = Fore.LIGHTMAGENTA_EX
-    MODULE_HEADER_TEXT = Fore.LIGHTCYAN_EX
-
-    CONFIG_KEY_COLOR = Fore.LIGHTMAGENTA_EX
-    CONFIG_VALUE_COLOR = Fore.LIGHTCYAN_EX
 
 
 def get_border_top(width: int) -> str:

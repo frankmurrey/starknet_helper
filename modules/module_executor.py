@@ -139,8 +139,6 @@ class ModuleExecutor:
         )
 
         if self.module_name == enums.ModuleName.DEPLOY:
-            assert isinstance(self.task, tasks.DeployTask)
-
             module = self.task.module(
                 private_key=wallet_data.private_key,
                 account=account,

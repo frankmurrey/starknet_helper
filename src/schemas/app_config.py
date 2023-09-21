@@ -12,6 +12,7 @@ class AppConfigSchema(BaseModel):
     eth_mainnet_rpc_url: str = "https://rpc.ankr.com/eth"
     target_eth_mainnet_gas_price: Union[int, float] = 20
     time_to_wait_target_gas_price_sec: Union[int, float] = 360
+    wallets_amount_to_execute_in_test_mode: int = 3
     last_wallet_version: str = "0.3.0"
 
     @validator('rpc_url', pre=True)
@@ -39,6 +40,13 @@ class AppConfigSchema(BaseModel):
     def time_to_wait_target_gas_price_sec_must_be_valid(cls, value):
         value = validation.get_converted_to_int(value, "Time to wait")
         value = validation.get_positive(value, "Time to wait", include_zero=True)
+
+        return value
+
+    @validator('wallets_amount_to_execute_in_test_mode', pre=True)
+    def wallets_amount_to_execute_in_test_mode_must_be_valid(cls, value):
+        value = validation.get_converted_to_int(value, "Wallets amount")
+        value = validation.get_positive(value, "Wallets amount", include_zero=False)
 
         return value
 

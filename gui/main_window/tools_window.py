@@ -8,8 +8,8 @@ from loguru import logger
 
 import config
 from gui.main_window.interactions_top_level_window import FloatSpinbox
-from utlis.key_manager.generator.generator import Generator
-from utlis.xlsx import write_generated_wallets_to_xlsx
+from utils.key_manager.generator.generator import Generator
+from utils.xlsx import write_generated_wallets_to_xlsx
 
 from src import enums
 

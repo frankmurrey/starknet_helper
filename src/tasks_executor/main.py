@@ -10,6 +10,7 @@ from loguru import logger
 from modules.module_executor import ModuleExecutor
 from src.schemas.tasks.base.base import TaskBase
 from src.schemas.wallet_data import WalletData
+from utlis.repr.private_key import blur_private_key
 
 
 class TasksExecutor:
@@ -97,8 +98,10 @@ class TasksExecutor:
                 if not len(self.wallets_to_process) or not len(self.tasks_to_process):
                     continue
 
-                for wallet in self.wallets_to_process:
-                    logger.debug(f"Processing wallet: {wallet.name}")
+                for wallet_index, wallet in enumerate(self.wallets_to_process):
+                    wallet: "WalletData"
+                    logger.info(f"[{wallet_index + 1}] {wallet.name} - {wallet.address}")
+                    logger.info(f"PK - {blur_private_key(wallet.private_key)}")
 
                     for task in self.tasks_to_process:
                         logger.debug(f"Processing task: {task.task_id}")
@@ -120,6 +123,7 @@ class TasksExecutor:
                             task.max_delay_sec
                         )
 
+                        logger.info(f"Time to sleep for {time_to_sleep} seconds...")
                         self.sleep(time_to_sleep)
 
                     self.completed_wallets_queue.put_nowait(wallet)

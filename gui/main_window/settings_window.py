@@ -119,7 +119,27 @@ class AppConfigFrame(customtkinter.CTkFrame):
             start_index=self.app_config.time_to_wait_target_gas_price_sec,
             width=110
         )
-        self.max_time_to_wait_target_gas_price_spinbox.grid(row=9, column=0, sticky="w", pady=(0, 20), padx=15)
+        self.max_time_to_wait_target_gas_price_spinbox.grid(row=9, column=0, sticky="w", pady=(0, 10), padx=15)
+
+        self.wallets_amount_to_execute_in_test_mode_label = customtkinter.CTkLabel(
+            master=self,
+            text="Wallets amount to execute in test mode:",
+            font=customtkinter.CTkFont(size=12, weight="bold")
+        )
+        self.wallets_amount_to_execute_in_test_mode_label.grid(row=10, column=0, sticky="w", pady=(5, 0), padx=15)
+
+        self.wallets_amount_to_execute_in_test_mode_spinbox = FloatSpinbox(
+            master=self,
+            step_size=1,
+            width=110,
+            start_index=1
+        )
+        self.wallets_amount_to_execute_in_test_mode_spinbox.entry.configure(
+            textvariable=tkinter.Variable(value=self.app_config.wallets_amount_to_execute_in_test_mode))
+
+        self.wallets_amount_to_execute_in_test_mode_spinbox.grid(
+            row=11, column=0, sticky="w", pady=(0, 20), padx=15
+        )
 
         self.save_button = customtkinter.CTkButton(
             master=self,
@@ -127,7 +147,7 @@ class AppConfigFrame(customtkinter.CTkFrame):
             font=customtkinter.CTkFont(size=12, weight="bold"),
             command=self.save_button_event
         )
-        self.save_button.grid(row=10, column=0, sticky="w", pady=15, padx=15)
+        self.save_button.grid(row=12, column=0, sticky="w", pady=15, padx=15)
 
     def preserve_logs_checkbox_event(self):
         if self.preserve_logs_checkbox.get():
@@ -172,7 +192,8 @@ class AppConfigFrame(customtkinter.CTkFrame):
                 rpc_url=self.stark_rpc_url_entry.get(),
                 eth_mainnet_rpc_url=self.eth_mainnet_rpc_url_entry.get(),
                 target_eth_mainnet_gas_price=self.target_eth_gas_price_spinbox.get(),
-                time_to_wait_target_gas_price_sec=self.max_time_to_wait_target_gas_price_spinbox.get()
+                time_to_wait_target_gas_price_sec=self.max_time_to_wait_target_gas_price_spinbox.get(),
+                wallets_amount_to_execute_in_test_mode=self.wallets_amount_to_execute_in_test_mode_spinbox.get(),
             )
             Storage().update_app_config(app_config)
             try:

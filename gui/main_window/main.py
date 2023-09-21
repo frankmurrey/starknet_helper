@@ -1,6 +1,5 @@
 import customtkinter
 
-from src.tasks_executor import TasksExecutor
 from src.tasks_executor import tasks_executor
 
 from gui.main_window.frames import SidebarFrame
@@ -11,7 +10,12 @@ from utlis.repr.misc import print_logo
 
 def run_gui():
     window = MainWindow()
-    window.mainloop()
+    try:
+        window.mainloop()
+    except KeyboardInterrupt:
+        tasks_executor.kill()
+        window.destroy()
+        window.quit()
 
 
 class MainWindow(customtkinter.CTk):

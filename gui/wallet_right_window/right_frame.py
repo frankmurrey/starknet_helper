@@ -25,7 +25,7 @@ class RightFrame(customtkinter.CTkFrame):
         self.grid_rowconfigure(8, weight=0)
         self.grid_rowconfigure(9, weight=1)
 
-        self.wallets_table = WalletsTable(self)
+        self.wallets_table = WalletsTable(self, width=1100)
 
         self.button_frame = customtkinter.CTkFrame(self)
         self.button_frame.grid(row=8, column=0, padx=20, pady=2, sticky="nsew")

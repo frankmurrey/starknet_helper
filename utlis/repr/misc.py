@@ -32,3 +32,7 @@ class AsciiPrints:
   / __/    / /  / / /_/ / /  / /  /  __/ /_/ / 
  /_/      /_/  /_/\__,_/_/  /_/   \___/\__, /  
                                        /___/   '''
+
+
+def print_logo():
+    print(f"{Fore.LIGHTMAGENTA_EX}{AsciiPrints.pre_config_1}{Fore.RESET}")

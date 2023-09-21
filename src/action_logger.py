@@ -3,8 +3,8 @@ from datetime import datetime
 from src.storage import Storage
 from src.storage import ActionStorage
 from src.schemas.logs import WalletActionSchema
-from utlis.xlsx import write_wallet_action_to_xlsx
-from utlis.file_manager import FileManager
+from utils.xlsx import write_wallet_action_to_xlsx
+from utils.file_manager import FileManager
 
 from loguru import logger
 

@@ -150,7 +150,7 @@ class Deploy(ModuleBase):
 
             if self.task.wait_for_receipt is True:
                 logger.info(f"Txn sent. Waiting for receipt (Timeout in {self.task.txn_wait_timeout_sec}s)."
-                             f" Txn Hash: {hex(txn_hash)}")
+                            f" Txn Hash: {hex(txn_hash)}")
 
                 txn_receipt = await self.wait_for_tx_receipt(tx_hash=txn_hash,
                                                              time_out_sec=int(self.task.txn_wait_timeout_sec))

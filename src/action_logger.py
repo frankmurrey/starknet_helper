@@ -45,7 +45,7 @@ class ActionLogger:
         self.save_single_log_to_csv(self.action_data)
         write_wallet_action_to_xlsx()
 
-        logger.debug(f"Logged and saved wallet action in {self.action_storage.get_current_logs_dir()}")
+        logger.info(f"Logged and saved wallet action in {self.action_storage.get_current_logs_dir()}")
 
     def log_action(self):
         if self.app_config.preserve_logs is False:
@@ -53,9 +53,9 @@ class ActionLogger:
 
         self.action_storage.add_action(self.action_data)
         self.save_single_log_to_csv(self.action_data)
-        logger.debug(f"Logged and saved wallet action in {self.action_storage.get_current_logs_dir()}")
+        logger.info(f"Logged and saved wallet action in {self.action_storage.get_current_logs_dir()}")
 
     @staticmethod
     def log_action_from_storage():
         write_wallet_action_to_xlsx()
-        logger.debug(f"Logged and saved wallet action in {ActionStorage().get_current_logs_dir()}")
+        logger.info(f"Logged and saved wallet action in {ActionStorage().get_current_logs_dir()}")

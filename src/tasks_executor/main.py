@@ -12,7 +12,7 @@ import config
 from modules.module_executor import ModuleExecutor
 from src.schemas.tasks.base.base import TaskBase
 from src.schemas.wallet_data import WalletData
-from utlis.repr.private_key import blur_private_key
+from utils.repr.private_key import blur_private_key
 
 
 class TasksExecutor:

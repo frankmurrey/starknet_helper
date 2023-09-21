@@ -126,7 +126,7 @@ class Deploy(ModuleBase):
                        f"{overall_fee / 10 ** 18} ETH.")
 
         if self.task.test_mode is True:
-            logger.debug(f"Test mode enabled. Skipping transaction")
+            logger.info(f"Test mode enabled. Skipping transaction")
             return False
 
         if self.task.forced_gas_limit is True:
@@ -149,7 +149,7 @@ class Deploy(ModuleBase):
             txn_hash = deploy_result.hash
 
             if self.task.wait_for_receipt is True:
-                logger.debug(f"Txn sent. Waiting for receipt (Timeout in {self.task.txn_wait_timeout_sec}s)."
+                logger.info(f"Txn sent. Waiting for receipt (Timeout in {self.task.txn_wait_timeout_sec}s)."
                              f" Txn Hash: {hex(txn_hash)}")
 
                 txn_receipt = await self.wait_for_tx_receipt(tx_hash=txn_hash,

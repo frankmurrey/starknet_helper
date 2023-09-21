@@ -54,7 +54,6 @@ class WalletsTable(customtkinter.CTkScrollableFrame):
         if show_no_wallets:
             self.show_no_wallets_label()
 
-
     def show_no_wallets_label(self):
         self.no_wallets_label = customtkinter.CTkLabel(
             self,

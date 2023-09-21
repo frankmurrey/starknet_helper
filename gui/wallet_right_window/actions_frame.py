@@ -7,6 +7,7 @@ from loguru import logger
 from src.schemas.tasks import TaskBase
 from src.schemas.wallet_data import WalletData
 from src.tasks_executor import tasks_executor
+from src.storage import Storage
 from gui.main_window.interactions_top_level_window import InteractionTopLevelWindow
 from gui.main_window.wallet_action_frame import WalletActionFrame
 from gui.modules.frames import FloatSpinbox
@@ -23,6 +24,8 @@ class ActionsFrame(customtkinter.CTkFrame):
 
         tasks_executor.on_task_completed(self.on_task_completed)
         tasks_executor.on_wallet_completed(self.on_wallet_completed)
+
+        self.app_config = Storage().app_config
 
         self.grid_rowconfigure((0, 1, 3, 4), weight=1)
         self.grid_columnconfigure(1, weight=0)
@@ -162,7 +165,8 @@ class ActionsFrame(customtkinter.CTkFrame):
         wallets = self.master.wallets_table.selected_wallets
 
         if bool(self.run_settings_frame.test_mode_checkbox.get()):
-            wallets = wallets[:3]  # TODO: get wallets count from app config
+            amount = self.app_config.wallets_amount_to_execute_in_test_mode
+            wallets = wallets[:amount]  # TODO: get wallets count from app config
 
         tasks_executor.push_wallets(
             wallets=wallets,

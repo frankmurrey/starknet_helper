@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from pydantic import validator
 
 from src.exceptions import AppValidationError
-from utlis import validation
+from utils import validation
 
 
 class MinMaxAmountOutValidationMixin(BaseModel):

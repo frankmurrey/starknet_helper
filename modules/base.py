@@ -14,7 +14,7 @@ from starknet_py.hash.selector import get_selector_from_name
 from starknet_py.net.http_client import HttpMethod
 from loguru import logger
 
-from utlis.key_manager.key_manager import (get_key_pair_from_pk,
+from utils.key_manager.key_manager import (get_key_pair_from_pk,
                                            get_argent_addr_from_private_key,
                                            get_braavos_addr_from_private_key)
 from src.schemas.logs import WalletActionSchema
@@ -22,7 +22,7 @@ from src.gecko_pricer import GeckoPricer
 from src.storage import Storage
 from src.storage import ActionStorage
 from src import paths
-from utlis.file_manager import FileManager
+from utils.file_manager import FileManager
 from contracts.tokens.main import Tokens
 from contracts.base import TokenBase
 import config

@@ -11,8 +11,8 @@ from src import enums
 from src import paths
 from src.storage import ActionStorage
 from src.storage import Storage
-from utlis.file_manager import FileManager
-from utlis.key_manager.key_manager import get_key_pair_from_pk
+from utils.file_manager import FileManager
+from utils.key_manager.key_manager import get_key_pair_from_pk
 
 if TYPE_CHECKING:
     from src.schemas.tasks.deploy import UpgradeTask

@@ -8,9 +8,9 @@ from loguru import logger
 from src import enums
 from src import exceptions
 from src.schemas.proxy_data import ProxyData
-from utlis.key_manager.key_manager import get_argent_addr_from_private_key
-from utlis.key_manager.key_manager import get_braavos_addr_from_private_key
-from utlis.proxy import parse_proxy_data
+from utils.key_manager.key_manager import get_argent_addr_from_private_key
+from utils.key_manager.key_manager import get_braavos_addr_from_private_key
+from utils.proxy import parse_proxy_data
 import config
 
 

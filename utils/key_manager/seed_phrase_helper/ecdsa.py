@@ -1,4 +1,4 @@
-import utlis.key_manager.seed_phrase_helper.ecdsa_openssl as _ecdsa
+import utils.key_manager.seed_phrase_helper.ecdsa_openssl as _ecdsa
 
 
 ECPointAffine = _ecdsa.ECPointAffine

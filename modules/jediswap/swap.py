@@ -6,7 +6,7 @@ from starknet_py.net.account.account import Account
 from loguru import logger
 
 from modules.jediswap.base import JediSwapBase
-from utlis.get_delay import get_delay
+from utils.get_delay import get_delay
 
 
 if TYPE_CHECKING:

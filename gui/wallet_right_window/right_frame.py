@@ -9,7 +9,7 @@ from gui.wallet_right_window.wallets_table import WalletsTable
 from gui.wallet_right_window.actions_frame import ActionsFrame
 from src.schemas.wallet_data import WalletData
 from src.wallet_manager import WalletManager
-from utlis.file_manager import FileManager
+from utils.file_manager import FileManager
 from src import paths
 from src.storage import Storage
 

@@ -7,9 +7,9 @@ from src import exceptions
 from src.storage import Storage
 from src import paths
 from src.schemas.app_config import AppConfigSchema
-from utlis.file_manager import FileManager
+from utils.file_manager import FileManager
 from gui.modules.frames import FloatSpinbox
-from utlis.gas_price import get_eth_mainnet_gas_price
+from utils.gas_price import get_eth_mainnet_gas_price
 from gui import constants
 
 

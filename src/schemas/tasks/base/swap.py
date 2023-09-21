@@ -5,7 +5,7 @@ from pydantic import validator
 from src.schemas import validation_mixins
 from src.schemas.tasks.base import TaskBase
 from src.exceptions import AppValidationError
-from utlis import validation
+from utils import validation
 
 
 class SwapTaskBase(

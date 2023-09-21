@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from pydantic import validator
 
-from utlis import validation
+from utils import validation
 
 
 class SlippageValidationMixin(BaseModel):

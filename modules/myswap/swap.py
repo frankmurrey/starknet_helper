@@ -8,7 +8,7 @@ from loguru import logger
 
 from contracts.myswap.main import MySwapContracts
 from modules.myswap.base import MySwapBase
-from utlis.get_delay import get_delay
+from utils.get_delay import get_delay
 
 if TYPE_CHECKING:
     from src.schemas.tasks.myswap import MySwapTask

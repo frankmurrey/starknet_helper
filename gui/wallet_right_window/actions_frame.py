@@ -6,7 +6,6 @@ from loguru import logger
 
 from src.schemas.tasks import TaskBase
 from src.schemas.wallet_data import WalletData
-from src.tasks_executor import TasksExecutor
 from src.tasks_executor import tasks_executor
 from gui.main_window.interactions_top_level_window import InteractionTopLevelWindow
 from gui.main_window.wallet_action_frame import WalletActionFrame
@@ -22,11 +21,6 @@ class ActionsFrame(customtkinter.CTkFrame):
             **kwargs):
         super().__init__(master, **kwargs)
 
-        # self.tasks_executor = TasksExecutor(
-        #     on_task_completed=self.on_task_completed,
-        #     on_wallet_completed=self.on_wallet_completed
-        # )
-        # self.tasks_executor.run()
         tasks_executor.on_task_completed(self.on_task_completed)
         tasks_executor.on_wallet_completed(self.on_wallet_completed)
 
@@ -70,13 +64,22 @@ class ActionsFrame(customtkinter.CTkFrame):
             sticky="w"
         )
 
-
     @property
     def tasks(self):
         tasks = []
         for action in self.actions:
             repeats = action["repeats"]
-            task = action["task_config"]
+            task: TaskBase = action["task_config"]
+
+            task.test_mode = bool(self.run_settings_frame.test_mode_checkbox.get())
+            task.min_delay_sec = int(self.run_settings_frame.min_delay_entry_spinbox.entry.get())
+            task.max_delay_sec = self.run_settings_frame.max_delay_entry_spinbox.entry.get()
+            task.wait_for_receipt = bool(self.run_settings_frame.wait_for_receipt_checkbox.get())
+
+            txn_wait_timeout_sec = self.run_settings_frame.txn_wait_timeout_seconds_spinbox.entry.get()
+            task.txn_wait_timeout_sec = int(txn_wait_timeout_sec) if txn_wait_timeout_sec else 120
+
+            task = TaskBase(**task.dict())
 
             for _ in range(repeats):
                 tasks.append(task)
@@ -158,8 +161,8 @@ class ActionsFrame(customtkinter.CTkFrame):
     def on_start_button_click(self):
         wallets = self.master.wallets_table.selected_wallets
         tasks_executor.push_wallets(
-            wallets=wallets
-            # TODO: Shuffle wallets
+            wallets=wallets,
+            shuffle=bool(bool(self.run_settings_frame.shuffle_wallets_checkbox.get()))
         )
 
         tasks_executor.push_tasks(

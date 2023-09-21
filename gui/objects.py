@@ -3,7 +3,7 @@ from typing import Optional, Callable
 
 import customtkinter
 
-from utlis import gui as gui_utils
+from utils import gui as gui_utils
 
 
 class CTkEntryWithLabel(customtkinter.CTkFrame):

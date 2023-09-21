@@ -1,5 +1,5 @@
 from src.paths import MySwapDir
-from utlis.file_manager import FileManager
+from utils.file_manager import FileManager
 
 
 class MySwapContracts:

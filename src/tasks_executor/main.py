@@ -1,12 +1,14 @@
 import time
 import random
 import queue
+import asyncio
 import threading as th
 import multiprocessing as mp
 from typing import Optional, List, Callable
 
 from loguru import logger
 
+import config
 from modules.module_executor import ModuleExecutor
 from src.schemas.tasks.base.base import TaskBase
 from src.schemas.wallet_data import WalletData
@@ -68,8 +70,9 @@ class TasksExecutor:
             task: task to process
             wallet: wallet for task
         """
-        # module_executor = ModuleExecutor(task)
-        logger.debug(f"Processing task: {task.task_id} with wallet: {wallet.name}")    # TODO: DODELATE TASKS PROCESSING
+        logger.debug(f"Processing task: {task.task_id} with wallet: {wallet.name}")  # TODO: DODELATE TASKS PROCESSING
+        module_executor = ModuleExecutor(task=task, wallet=wallet)
+        return asyncio.run(module_executor.start())
 
     def loop(self):
         """
@@ -112,16 +115,19 @@ class TasksExecutor:
                         if self.is_stopped():
                             break
 
-                        self.process_task(
+                        task_result = self.process_task(
                             task=task,
                             wallet=wallet
                         )
                         self.completed_tasks_queue.put_nowait((task, wallet))
 
-                        time_to_sleep = random.randint(
-                            task.min_delay_sec,
-                            task.max_delay_sec
-                        )
+                        if task_result is False:
+                            time_to_sleep = config.DEFAULT_DELAY_SEC
+                        else:
+                            time_to_sleep = random.randint(
+                                task.min_delay_sec,
+                                task.max_delay_sec
+                            )
 
                         logger.info(f"Time to sleep for {time_to_sleep} seconds...")
                         self.sleep(time_to_sleep)

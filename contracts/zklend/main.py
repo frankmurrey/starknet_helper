@@ -1,5 +1,5 @@
 from src.paths import ZkLendDir
-from utlis.file_manager import FileManager
+from utils.file_manager import FileManager
 
 
 class ZkLendContracts:

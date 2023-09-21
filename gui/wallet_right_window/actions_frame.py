@@ -166,7 +166,7 @@ class ActionsFrame(customtkinter.CTkFrame):
 
         if bool(self.run_settings_frame.test_mode_checkbox.get()):
             amount = self.app_config.wallets_amount_to_execute_in_test_mode
-            wallets = wallets[:amount]  # TODO: get wallets count from app config
+            wallets = wallets[:amount]
 
         tasks_executor.push_wallets(
             wallets=wallets,

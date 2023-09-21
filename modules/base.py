@@ -496,7 +496,7 @@ class ModuleBase:
             gas_limit = int(estimate_transaction * 1.4)
 
         if self.task.test_mode is True:
-            logger.debug(f"Test mode enabled. Skipping transaction")
+            logger.info(f"Test mode enabled. Skipping transaction")
             return False
 
         response_data = await self.execute_call_transaction(account=account,
@@ -513,7 +513,7 @@ class ModuleBase:
         txn_hash = response.transaction_hash
 
         if self.task.wait_for_receipt is True:
-            logger.debug(f"Txn sent. Waiting for receipt (Timeout in {self.task.txn_wait_timeout_sec}s)."
+            logger.info(f"Txn sent. Waiting for receipt (Timeout in {self.task.txn_wait_timeout_sec}s)."
                          f" Txn Hash: {hex(txn_hash)}")
 
             txn_receipt = await self.wait_for_tx_receipt(tx_hash=txn_hash,

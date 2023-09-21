@@ -160,6 +160,10 @@ class ActionsFrame(customtkinter.CTkFrame):
 
     def on_start_button_click(self):
         wallets = self.master.wallets_table.selected_wallets
+
+        if bool(self.run_settings_frame.test_mode_checkbox.get()):
+            wallets = wallets[:3]  # TODO: get wallets count from app config
+
         tasks_executor.push_wallets(
             wallets=wallets,
             shuffle=bool(bool(self.run_settings_frame.shuffle_wallets_checkbox.get()))

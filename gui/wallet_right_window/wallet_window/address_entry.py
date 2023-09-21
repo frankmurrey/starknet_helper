@@ -4,7 +4,7 @@ import tkinter.messagebox
 import config
 from src import enums
 from gui import objects
-from utlis.key_manager.key_manager import get_braavos_addr_from_private_key, get_argent_addr_from_private_key
+from utils.key_manager.key_manager import get_braavos_addr_from_private_key, get_argent_addr_from_private_key
 
 
 class AddressEntry(objects.CTkEntryWithLabel):

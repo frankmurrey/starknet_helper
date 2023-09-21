@@ -8,12 +8,12 @@ import hashlib
 import hmac
 from mnemonic.mnemonic import Mnemonic
 import random
-from utlis.key_manager.seed_phrase_helper.utils import bytes_to_str
-from utlis.key_manager.seed_phrase_helper.utils import address_to_key_hash
-from utlis.key_manager.seed_phrase_helper.utils import rand_bytes
-from utlis.key_manager.seed_phrase_helper.ecdsa_base import Point
-from utlis.key_manager.seed_phrase_helper.ecdsa import ECPointAffine
-from utlis.key_manager.seed_phrase_helper.ecdsa import secp256k1
+from utils.key_manager.seed_phrase_helper.utils import bytes_to_str
+from utils.key_manager.seed_phrase_helper.utils import address_to_key_hash
+from utils.key_manager.seed_phrase_helper.utils import rand_bytes
+from utils.key_manager.seed_phrase_helper.ecdsa_base import Point
+from utils.key_manager.seed_phrase_helper.ecdsa import ECPointAffine
+from utils.key_manager.seed_phrase_helper.ecdsa import secp256k1
 
 from eth_utils import encode_hex
 

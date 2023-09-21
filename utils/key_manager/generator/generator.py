@@ -4,10 +4,10 @@ from eth_account import Account
 from starknet_py.net.signer.stark_curve_signer import KeyPair
 
 from src import enums
-from utlis.key_manager.key_manager import get_argent_key_from_phrase
-from utlis.key_manager.key_manager import get_braavos_key_from_phrase
-from utlis.key_manager.key_manager import get_argent_addr_from_private_key
-from utlis.key_manager.key_manager import get_braavos_addr_from_private_key
+from utils.key_manager.key_manager import get_argent_key_from_phrase
+from utils.key_manager.key_manager import get_braavos_key_from_phrase
+from utils.key_manager.key_manager import get_argent_addr_from_private_key
+from utils.key_manager.key_manager import get_braavos_addr_from_private_key
 
 
 class Generator:

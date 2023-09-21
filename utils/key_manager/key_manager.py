@@ -1,6 +1,6 @@
 import hashlib
 
-from utlis.key_manager.seed_phrase_helper.crypto import (HDPrivateKey,
+from utils.key_manager.seed_phrase_helper.crypto import (HDPrivateKey,
                                                          HDKey)
 from starknet_py.net.account.account import Account
 from starknet_py.net.signer.stark_curve_signer import KeyPair

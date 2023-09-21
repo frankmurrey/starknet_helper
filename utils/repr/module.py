@@ -6,10 +6,10 @@ from colorama import Fore, Style
 
 from src.schemas.tasks.base import TaskBase
 from src.schemas.tasks.jediswap import JediSwapTask
-from utlis.repr.misc import Symbol
-from utlis.repr.misc import AsciiPrints
-from utlis.repr.misc import COLOR_LENGTH
-from utlis.repr.misc import MODULE_NAME_MAX_LENGTH
+from utils.repr.misc import Symbol
+from utils.repr.misc import AsciiPrints
+from utils.repr.misc import COLOR_LENGTH
+from utils.repr.misc import MODULE_NAME_MAX_LENGTH
 
 
 class Colors:

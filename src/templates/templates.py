@@ -46,7 +46,7 @@ class Templates:
 
             if file_path.endswith('logs'):
                 os.mkdir(file_path)
-                logger.debug(f'Created {file_path} directory\n')
+                logger.info(f'Created {file_path} directory\n')
 
         logger.critical('Temp files created, restart me please')
         exit(1)
@@ -55,10 +55,10 @@ class Templates:
         data = TOKENS_DATA
         self.file_manager.write_data_to_json_file(file_path=file_path,
                                                   data=data)
-        logger.debug(f'Created {file_path} file')
+        logger.info(f'Created {file_path} file')
 
     def create_app_config_json_file(self, file_path):
         data = APP_CONFIG
         self.file_manager.write_data_to_json_file(file_path=file_path,
                                                   data=data)
-        logger.debug(f'Created {file_path} file')
+        logger.info(f'Created {file_path} file')

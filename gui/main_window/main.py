@@ -5,7 +5,7 @@ from src.tasks_executor import tasks_executor
 from gui.main_window.frames import SidebarFrame
 from gui.wallet_right_window.right_frame import RightFrame
 
-from utlis.repr.misc import print_logo
+from utils.repr.misc import print_logo
 
 
 def run_gui():
@@ -37,6 +37,8 @@ class MainWindow(customtkinter.CTk):
 
         tasks_executor.run()
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
+
+        self.on_start()
 
     def on_start(self):
         print_logo()

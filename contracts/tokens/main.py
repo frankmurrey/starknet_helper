@@ -1,6 +1,6 @@
 from contracts.base import TokenBase
 
-from utlis.file_manager import FileManager
+from utils.file_manager import FileManager
 
 from src.paths import (TempFiles,
                        TOKENS_ABI_DIR)

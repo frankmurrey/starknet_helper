@@ -9,9 +9,11 @@ from typing import Optional, List, Callable
 from loguru import logger
 
 import config
+from src import enums
 from modules.module_executor import ModuleExecutor
 from src.schemas.tasks.base.base import TaskBase
 from src.schemas.wallet_data import WalletData
+from src.logger import configure_logger
 from utils.repr.misc import print_wallet_execution
 
 
@@ -26,11 +28,14 @@ class TasksExecutor:
 
     def __init__(
             self,
+            on_wallet_started: Optional[Callable[[WalletData], None]] = None,
+            on_task_started: Optional[Callable[[TaskBase, WalletData], None]] = None,
             on_task_completed: Optional[Callable[[TaskBase, WalletData], None]] = None,
             on_wallet_completed: Optional[Callable[[WalletData], None]] = None
     ):
         self.running = False
         self.main_process: Optional[mp.Process] = None
+        self.started_thread: Optional[th.Thread] = None
         self.completed_thread: Optional[th.Thread] = None
 
         self.stop_event = mp.Event()
@@ -39,8 +44,21 @@ class TasksExecutor:
         self.wallets_queue = mp.Queue()
         self.tasks_queue = mp.Queue()
 
+        self.started_wallets_queue = mp.Queue()
+        self.started_tasks_queue = mp.Queue()
+
         self.completed_wallets_queue = mp.Queue()
         self.completed_tasks_queue = mp.Queue()
+
+        self._on_wallet_started = (
+            on_wallet_started if on_wallet_started is not None
+            else self.pseudo_completed_callback
+        )
+
+        self._on_task_started = (
+            on_task_started if on_task_started is not None
+            else self.pseudo_completed_callback
+        )
 
         self._on_task_completed = (
             on_task_completed if on_task_completed is not None
@@ -57,6 +75,12 @@ class TasksExecutor:
     def pseudo_completed_callback(self, *args, **kwargs):
         pass
 
+    def on_wallet_started(self, callback: Callable[[WalletData], None]):
+        self._on_wallet_started = callback
+
+    def on_task_started(self, callback: Callable[[TaskBase, WalletData], None]):
+        self._on_task_started = callback
+
     def on_task_completed(self, callback: Callable[[TaskBase, WalletData], None]):
         self._on_task_completed = callback
 
@@ -70,7 +94,7 @@ class TasksExecutor:
             task: task to process
             wallet: wallet for task
         """
-        logger.debug(f"Processing task: {task.task_id} with wallet: {wallet.name}")  # TODO: DODELATE TASKS PROCESSING
+        logger.debug(f"Processing task: {task.task_id} with wallet: {wallet.name}")
         module_executor = ModuleExecutor(task=task, wallet=wallet)
         return asyncio.run(module_executor.start())
 
@@ -78,6 +102,7 @@ class TasksExecutor:
         """
         Main loop
         """
+        configure_logger()
         logger.debug("Starting main loop")
 
         while self.running:
@@ -102,11 +127,18 @@ class TasksExecutor:
                     continue
 
                 for wallet_index, wallet in enumerate(self.wallets_to_process):
+                    self.started_wallets_queue.put_nowait(wallet)
+
                     print_wallet_execution(wallet, wallet_index)
 
                     self.sleep(0.1)
 
                     for task_index, task in enumerate(self.tasks_to_process):
+                        task: TaskBase
+
+                        task.task_status = enums.TaskStatus.PROCESSING
+                        self.started_tasks_queue.put_nowait((task, wallet))
+
                         logger.debug(f"Processing task: {task.task_id}")
 
                         if self.is_killed():
@@ -119,9 +151,14 @@ class TasksExecutor:
                             task=task,
                             wallet=wallet
                         )
+                        if task_result:
+                            task.task_status = enums.TaskStatus.SUCCESS
+                        else:
+                            task.task_status = enums.TaskStatus.FAILED
+
                         self.completed_tasks_queue.put_nowait((task, wallet))
 
-                        if task_result is False:
+                        if not task_result or task.test_mode:
                             time_to_sleep = config.DEFAULT_DELAY_SEC
                         else:
                             time_to_sleep = random.randint(
@@ -194,6 +231,23 @@ class TasksExecutor:
             return True
         return False
 
+    def listen_for_started_items(self):
+        """
+        Listen for started tasks and wallets
+        """
+        while self.running:
+            try:
+                started_task, current_wallet = self.started_tasks_queue.get_nowait()
+                self._on_task_started(started_task, current_wallet)
+            except queue.Empty:
+                time.sleep(0.1)
+
+            try:
+                started_wallet = self.started_wallets_queue.get_nowait()
+                self._on_wallet_started(started_wallet)
+            except queue.Empty:
+                time.sleep(0.1)
+
     def listen_for_completed_items(self):
         """
         Listen for completed tasks and wallets
@@ -251,8 +305,14 @@ class TasksExecutor:
 
         self.running = True
 
+        _on_wallet_started = self._on_wallet_started
+        _on_task_started = self._on_task_started
+
         _on_task_completed = self._on_task_completed
         _on_wallet_completed = self._on_wallet_completed
+
+        self._on_wallet_started = self.pseudo_completed_callback
+        self._on_task_started = self.pseudo_completed_callback
 
         self._on_task_completed = self.pseudo_completed_callback
         self._on_wallet_completed = self.pseudo_completed_callback
@@ -260,8 +320,14 @@ class TasksExecutor:
         self.main_process = mp.Process(target=self.loop)
         self.main_process.start()
 
+        self._on_wallet_started = _on_wallet_started
+        self._on_task_started = _on_task_started
+
         self._on_task_completed = _on_task_completed
         self._on_wallet_completed = _on_wallet_completed
+
+        self.started_thread = th.Thread(target=self.listen_for_started_items)
+        self.started_thread.start()
 
         self.completed_thread = th.Thread(target=self.listen_for_completed_items)
         self.completed_thread.start()

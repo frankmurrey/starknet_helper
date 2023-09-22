@@ -262,6 +262,8 @@ class ActionsFrame(customtkinter.CTkFrame):
             shuffle=bool(self.button_actions_frame.randomize_actions_checkbox.get())
         )
 
+        tasks_executor.start_tasks_processing()
+
     def on_stop_button_click(self):
         tasks_executor.stop_tasks_processing()
 

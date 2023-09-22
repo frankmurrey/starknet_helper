@@ -1,6 +1,7 @@
 import customtkinter
 
 from src.schemas.tasks.base.swap import TaskBase
+from gui import constants
 
 
 class WalletActionFrame(customtkinter.CTkFrame):
@@ -14,6 +15,8 @@ class WalletActionFrame(customtkinter.CTkFrame):
     ):
         super().__init__(master, **kwargs)
 
+        self.task = task
+        self.repeats = repeats
         self.grid(**grid)
         self.grid_columnconfigure((0, 1, 2, 3), weight=1, uniform="uniform")
         self.grid_rowconfigure((0, 1), weight=1)
@@ -23,7 +26,7 @@ class WalletActionFrame(customtkinter.CTkFrame):
             text=task.module_name.title(),
             font=customtkinter.CTkFont(size=12, weight="bold"),
         )
-        self.module_label.grid(row=0, column=0, padx=(1, 15), pady=0, sticky="ew")
+        self.module_label.grid(row=0, column=0, padx=(8, 15), pady=2, sticky="ew")
 
         self.action_label = customtkinter.CTkLabel(
             self,
@@ -42,4 +45,17 @@ class WalletActionFrame(customtkinter.CTkFrame):
         self.repeats_label = customtkinter.CTkLabel(
             self, text=str(repeats), font=customtkinter.CTkFont(size=12, weight="bold")
         )
-        self.repeats_label.grid(row=0, column=3, padx=(25, 0), pady=0, sticky="ew")
+        self.repeats_label.grid(row=0, column=3, padx=(25, 8), pady=2, sticky="ew")
+
+    def set_task_active(self):
+        self.configure(border_width=1, border_color=constants.ACTIVE_ACTION_HEX)
+
+    def set_task_completed(self):
+        self.configure(border_width=1, border_color=constants.SUCCESS_HEX)
+
+    def set_task_failed(self):
+        self.configure(border_width=1, border_color=constants.ERROR_HEX)
+
+    def set_task_empty(self):
+        self.configure(border_width=0)
+

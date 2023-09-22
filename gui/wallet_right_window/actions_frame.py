@@ -77,6 +77,24 @@ class ActionsFrame(customtkinter.CTkFrame):
             sticky="w"
         )
 
+        self.stop_button = customtkinter.CTkButton(
+            self,
+            text="Stop",
+            font=customtkinter.CTkFont(size=12, weight="bold"),
+            width=110,
+            height=30,
+            fg_color="#db524b",
+            hover_color="#5e1914",
+            command=self.on_stop_button_click
+        )
+        self.stop_button.grid(
+            row=3,
+            column=0,
+            padx=(150, 0),
+            pady=5,
+            sticky="w"
+        )
+
     @property
     def tasks(self):
         tasks = []
@@ -213,7 +231,6 @@ class ActionsFrame(customtkinter.CTkFrame):
 
     def on_start_button_click(self):
 
-        print([task.task_id for task in self.tasks])
         wallets = self.master.wallets_table.selected_wallets
 
         if not wallets:
@@ -244,6 +261,15 @@ class ActionsFrame(customtkinter.CTkFrame):
             tasks=self.tasks,
             shuffle=bool(self.button_actions_frame.randomize_actions_checkbox.get())
         )
+
+    def on_stop_button_click(self):
+        tasks_executor.stop_tasks_processing()
+
+        for action_item in self.action_items:
+            action_item: WalletActionFrame
+
+            if action_item.task.task_status != enums.TaskStatus.CREATED:
+                action_item.set_task_empty()
 
 
 class TableTopFrame(customtkinter.CTkFrame):
@@ -441,7 +467,7 @@ class ButtonActionsFrame(customtkinter.CTkFrame):
     def add_action_button_event(self):
         if self.actions_top_level_window is None or not self.actions_top_level_window.winfo_exists():
             self.actions_top_level_window = InteractionTopLevelWindow(parent=self.master)
-            self.actions_top_level_window.geometry("500x900+1305+100")
+            self.actions_top_level_window.geometry("500x900+1505+100")
             self.actions_top_level_window.resizable(False, False)
         else:
             self.actions_top_level_window.focus()

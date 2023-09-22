@@ -1,6 +1,7 @@
 import customtkinter
 
 from src.schemas.tasks.base.swap import TaskBase
+from src import enums
 from gui import constants
 
 
@@ -48,12 +49,15 @@ class WalletActionFrame(customtkinter.CTkFrame):
         self.repeats_label.grid(row=0, column=3, padx=(25, 8), pady=2, sticky="ew")
 
     def set_task_active(self):
+        self.task.task_status = enums.TaskStatus.PROCESSING
         self.configure(border_width=1, border_color=constants.ACTIVE_ACTION_HEX)
 
     def set_task_completed(self):
+        self.task.task_status = enums.TaskStatus.SUCCESS
         self.configure(border_width=1, border_color=constants.SUCCESS_HEX)
 
     def set_task_failed(self):
+        self.task.task_status = enums.TaskStatus.FAILED
         self.configure(border_width=1, border_color=constants.ERROR_HEX)
 
     def set_task_empty(self):

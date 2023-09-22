@@ -38,6 +38,7 @@ class TasksExecutor:
         self.started_thread: Optional[th.Thread] = None
         self.completed_thread: Optional[th.Thread] = None
 
+        self.start_event = mp.Event()
         self.stop_event = mp.Event()
         self.kill_event = mp.Event()
 
@@ -107,6 +108,8 @@ class TasksExecutor:
 
         while self.running:
             try:
+                self.start_event.wait()
+
                 try:
                     self.wallets_to_process = self.wallets_queue.get_nowait()
                 except queue.Empty:
@@ -226,7 +229,7 @@ class TasksExecutor:
         if self.stop_event.is_set():
             if clear:
                 self.stop_event.clear()
-            self.running = False
+            # self.running = False
             self.tasks_to_process = []
             self.wallets_to_process = []
             return True
@@ -297,7 +300,15 @@ class TasksExecutor:
         Stop tasks processing
         """
         self.stop_event.set()
+        self.start_event.clear()
         logger.warning("Tasks processing stopped")
+
+    def start_tasks_processing(self):
+        """
+        Start tasks processing
+        """
+        self.stop_event.clear()
+        self.start_event.set()
 
     def run(self):
         """
@@ -321,6 +332,7 @@ class TasksExecutor:
 
         self.main_process = mp.Process(target=self.loop)
         self.main_process.start()
+        # self.start_event.set()
 
         self._on_wallet_started = _on_wallet_started
         self._on_task_started = _on_task_started

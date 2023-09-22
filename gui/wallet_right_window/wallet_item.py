@@ -30,9 +30,6 @@ class WalletItem(customtkinter.CTkFrame):
 
         self.frame.grid_rowconfigure(0, weight=1)
 
-        pad_x = (40, 0)
-        kf = 0
-
         pad_y = 5
 
         self.chose_checkbox = customtkinter.CTkCheckBox(

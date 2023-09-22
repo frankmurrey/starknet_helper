@@ -112,7 +112,7 @@ class ZkLendSupply(ModuleBase):
 
         return calls
 
-    async def send_txn(self):
+    async def send_txn(self) -> bool:
         txn_payload_calls = await self.build_txn_payload_calls()
         if txn_payload_calls is None:
             return False

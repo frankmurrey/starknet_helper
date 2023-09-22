@@ -143,7 +143,7 @@ class SithSwap(SithBase, SwapModuleBase):
             'amount_y_decimals': amount_in / 10 ** self.token_y_decimals,
         }
 
-    async def send_txn(self):
+    async def send_txn(self) -> bool:
         """
         Send the swap type transaction.
         :return:

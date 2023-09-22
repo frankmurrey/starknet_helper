@@ -69,7 +69,7 @@ class Deploy(ModuleBase):
             "call_data": call_data
         }
 
-    async def send_deploy_txn(self):
+    async def send_txn(self):
         print(hex(self.account.address))
         key_pair = get_key_pair_from_pk(self.pk)
         print(key_pair.private_key)
@@ -110,7 +110,7 @@ class Deploy(ModuleBase):
 
         wallet_eth_balance_wei = await self.get_eth_balance(account=self.account)
         wallet_eth_balance_decimals = wallet_eth_balance_wei / 10 ** 18
-
+        # TODO ClientError exception
         estimated_gas = await self.account._estimate_fee(tx=deploy_txn)
         overall_fee = estimated_gas.overall_fee
 

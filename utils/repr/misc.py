@@ -65,7 +65,6 @@ def print_wallet_execution(wallet: "WalletData", wallet_index: int):
         f"{Colors.CONFIG_KEY_COLOR}PK{Fore.RESET}"
         f" - "
         f"{Colors.CONFIG_VALUE_COLOR}{blur_private_key(wallet.private_key)}{Fore.RESET}"
-        f"\n"
     )
 
 

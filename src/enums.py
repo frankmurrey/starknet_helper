@@ -34,3 +34,10 @@ class ModuleName(str, Enum):
 class PrivateKeyType(str, Enum):
     argent = "argent"
     braavos = "braavos"
+
+
+class TaskStatus(str, Enum):
+    CREATED = "created"
+    PROCESSING = "processing"
+    SUCCESS = "success"
+    FAILED = "failed"

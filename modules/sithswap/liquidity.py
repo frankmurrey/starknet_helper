@@ -68,8 +68,8 @@ class SithSwapAddLiquidity(SithBase):
         return {
             self.i16(self.coin_x.contract_address): amount_out_x_wei,
             self.i16(self.coin_y.contract_address): amount_out_y_wei,
-            'amount_x_decimals': amount_out_x_wei / 10 ** self.coin_x.decimals,
-            'amount_y_decimals': amount_out_y_wei / 10 ** self.coin_y.decimals,
+            'amount_x_decimals': amount_out_x_wei / 10 ** self.token_x_decimals,
+            'amount_y_decimals': amount_out_y_wei / 10 ** self.token_x_decimals,
             'stable': stable,
             'pool_addr': pool_addr
         }
@@ -136,14 +136,19 @@ class SithSwapAddLiquidity(SithBase):
 
         return calls
 
-    async def send_txn(self):
+    async def send_txn(self) -> bool:
+        await self.set_fetched_tokens_data()
+
+        if self.check_local_tokens_data() is False:
+            return False
+
         amounts_out_data: dict = await self.get_amounts_out_data()
         if amounts_out_data is None:
-            return None
+            return False
 
         txn_calls = await self.build_txn_payload_data(amounts_out_data=amounts_out_data)
         if txn_calls is None:
-            return None
+            return False
 
         txn_info_message = (f"Add Liquidity (SithSwap) | "
                             f"{round(amounts_out_data['amount_x_decimals'], 4)} ({self.coin_x.symbol.upper()}) + "
@@ -297,10 +302,15 @@ class SithSwapRemoveLiquidity(SithBase):
             'calls': calls
         }
 
-    async def send_txn(self):
+    async def send_txn(self) -> bool:
+        await self.set_fetched_tokens_data()
+
+        if self.check_local_tokens_data() is False:
+            return False
+
         amounts_out_data = await self.build_txn_payload_data()
         if amounts_out_data is None:
-            return None
+            return False
 
         txn_calls = amounts_out_data['calls']
 

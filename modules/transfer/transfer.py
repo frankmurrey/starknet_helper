@@ -165,7 +165,7 @@ class Transfer(ModuleBase):
             "amount_x_decimals": amount_out_wei / 10 ** self.coin_x_decimals
         }
 
-    async def send_txn(self):
+    async def send_txn(self) -> bool:
         """
         Send the transaction.
         :return:
@@ -173,7 +173,7 @@ class Transfer(ModuleBase):
         await self.set_fetched_tokens_data()
         payload_data = await self.build_txn_payload_data()
         if payload_data is None:
-            return None
+            return False
 
         txn_info_message = (f"Transfer {round(payload_data['amount_x_decimals'], 4)} {self.coin_x.symbol.upper()}, "
                             f"recipient: {self.wallet_data.address}")

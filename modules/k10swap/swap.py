@@ -153,7 +153,7 @@ class K10Swap(SwapModuleBase):
             'amount_y_decimals': amount_in_x_wei / 10 ** self.token_y_decimals,
         }
 
-    async def send_txn(self):
+    async def send_txn(self) -> bool:
         """
         Send swap type transaction
         :return:

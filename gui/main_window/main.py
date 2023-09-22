@@ -1,6 +1,7 @@
 import customtkinter
 
 from src.tasks_executor import tasks_executor
+from src.logger import configure_logger
 
 from gui.main_window.frames import SidebarFrame
 from gui.wallet_right_window.right_frame import RightFrame
@@ -21,6 +22,8 @@ def run_gui():
 class MainWindow(customtkinter.CTk):
     def __init__(self):
         super().__init__()
+        self.on_start()
+
         self.resizable(False, False)
         self.title("StarkNet Helper by @frankmurrey")
 
@@ -38,9 +41,8 @@ class MainWindow(customtkinter.CTk):
         tasks_executor.run()
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
 
-        self.on_start()
-
     def on_start(self):
+        configure_logger()
         print_logo()
 
     def on_closing(self):

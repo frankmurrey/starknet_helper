@@ -1,4 +1,5 @@
-from typing import List
+from typing import List, Union
+from uuid import UUID
 
 import customtkinter
 
@@ -36,6 +37,14 @@ class WalletsTable(customtkinter.CTkScrollableFrame):
     @property
     def selected_wallets(self):
         return [wallet_item.wallet_data for wallet_item in self.wallets_items if wallet_item.is_chosen]
+
+    def get_wallet_item_by_wallet_id(self, wallet_id: UUID) -> Union[WalletItem, None]:
+        if self.wallets_items:
+            for wallet_item in self.wallets_items:
+                if wallet_item.wallet_data.wallet_id == wallet_id:
+                    return wallet_item
+
+        return None
 
     def update_selected_wallets_labels(self):
         self.master.selected_wallets_label.configure(text=f"Selected: {len(self.selected_wallets)}")
@@ -105,7 +114,7 @@ class WalletsTable(customtkinter.CTkScrollableFrame):
                 "row": start_row + 1 + wallet_index,
                 "column": start_column,
                 "padx": 10,
-                "pady": 2,
+                "pady": 3,
                 "sticky": "ew",
             }
 

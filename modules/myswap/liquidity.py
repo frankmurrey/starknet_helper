@@ -123,7 +123,7 @@ class MySwapAddLiquidity(MySwapBase):
                 token_pair[1]: amount_1_decimals
                 }
 
-    async def send_txn(self):
+    async def send_txn(self) -> bool:
         await self.set_fetched_tokens_data()
 
         if self.check_local_tokens_data() is False:
@@ -318,7 +318,7 @@ class MySwapRemoveLiquidity(MySwapBase):
             token_pair[1]: amount_out_1_decimals
         }
 
-    async def send_txn(self):
+    async def send_txn(self) -> bool:
         txn_payload: dict = await self.build_txn_payload_data()
         if txn_payload is None:
             return False

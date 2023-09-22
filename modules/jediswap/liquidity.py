@@ -92,7 +92,7 @@ class JediSwapAddLiquidity(JediSwapBase):
             'amount_y_decimals': amount_y_out_wei / 10 ** self.token_y_decimals,
         }
 
-    async def send_txn(self):
+    async def send_txn(self) -> bool:
         """
         Send the add liquidity transaction.
         :return:

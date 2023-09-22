@@ -216,7 +216,7 @@ class AvnuSwap(SwapModuleBase):
             'amount_y_decimals': amount_out_wei / 10 ** self.token_x_decimals,
         }
 
-    async def send_txn(self):
+    async def send_txn(self) -> bool:
         """
         Sends swap type transaction, if reverse action is enabled in task, sends reverse swap type transaction
         :return:

@@ -18,6 +18,7 @@ class TaskBase(BaseModel):
     module: Optional[Callable]
 
     task_id: UUID = Field(default_factory=uuid4)
+    task_status: enums.TaskStatus = enums.TaskStatus.CREATED
 
     max_fee: int
     forced_gas_limit: bool = False

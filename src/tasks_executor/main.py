@@ -139,7 +139,7 @@ class TasksExecutor:
                             self.sleep(time_to_sleep)
 
                         else:
-                            logger.info(f"All wallets and tasks completed!")
+                            logger.success(f"All wallets and tasks completed!")
 
                     self.completed_wallets_queue.put_nowait(wallet)
 

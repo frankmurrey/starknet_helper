@@ -107,6 +107,7 @@ class ModuleExecutor:
 
                 action_log_data.is_success = False
                 action_log_data.status = err_msg
+                return False
 
             else:
                 proxy_set_up_status = True

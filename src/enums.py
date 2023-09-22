@@ -41,3 +41,9 @@ class TaskStatus(str, Enum):
     PROCESSING = "processing"
     SUCCESS = "success"
     FAILED = "failed"
+
+
+class WalletStatus(str, Enum):
+    active = "active"
+    completed = "completed"
+    inactive = "inactive"

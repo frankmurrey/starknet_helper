@@ -106,7 +106,7 @@ class TasksExecutor:
 
                     self.sleep(0.1)
 
-                    for task in self.tasks_to_process:
+                    for task_index, task in enumerate(self.tasks_to_process):
                         logger.debug(f"Processing task: {task.task_id}")
 
                         if self.is_killed():
@@ -129,8 +129,17 @@ class TasksExecutor:
                                 task.max_delay_sec
                             )
 
-                        logger.info(f"Time to sleep for {time_to_sleep} seconds...")
-                        self.sleep(time_to_sleep)
+                        is_last = all([
+                            wallet_index == len(self.wallets_to_process) - 1,
+                            task_index == len(self.tasks_to_process) - 1
+                        ])
+
+                        if not is_last:
+                            logger.info(f"Time to sleep for {time_to_sleep} seconds...")
+                            self.sleep(time_to_sleep)
+
+                        else:
+                            logger.info(f"All wallets and tasks completed!")
 
                     self.completed_wallets_queue.put_nowait(wallet)
 

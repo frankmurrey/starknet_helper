@@ -203,7 +203,7 @@ class ActionsFrame(customtkinter.CTkFrame):
 
     def on_wallet_started(self, started_wallet: "WalletData"):
         wallet_item = self.wallets_table.get_wallet_item_by_wallet_id(wallet_id=started_wallet.wallet_id)
-        wallet_item.frame.configure(border_width=1, border_color=constants.ACTIVE_ACTION_HEX)
+        wallet_item.set_wallet_active()
 
     def on_task_started(self, started_task: "TaskBase", current_wallet: "WalletData"):
         task_item = self.get_action_item_by_id(action_id=started_task.task_id)
@@ -222,7 +222,7 @@ class ActionsFrame(customtkinter.CTkFrame):
 
     def on_wallet_completed(self, completed_wallet: "WalletData"):
         wallet_item = self.wallets_table.get_wallet_item_by_wallet_id(wallet_id=completed_wallet.wallet_id)
-        wallet_item.frame.configure(border_width=1, border_color=constants.SUCCESS_HEX)
+        wallet_item.set_wallet_completed()
         if not self.current_wallet_action_items:
             return
 
@@ -230,6 +230,12 @@ class ActionsFrame(customtkinter.CTkFrame):
             action_item.set_task_empty()
 
     def on_start_button_click(self):
+
+        for wallet_item in self.wallets_table.wallets_items:
+            wallet_item.set_wallet_inactive()
+
+        for action_item in self.action_items:
+            action_item.set_task_empty()
 
         wallets = self.master.wallets_table.selected_wallets
 
@@ -266,12 +272,6 @@ class ActionsFrame(customtkinter.CTkFrame):
 
     def on_stop_button_click(self):
         tasks_executor.stop_tasks_processing()
-
-        for action_item in self.action_items:
-            action_item: WalletActionFrame
-
-            if action_item.task.task_status != enums.TaskStatus.CREATED:
-                action_item.set_task_empty()
 
 
 class TableTopFrame(customtkinter.CTkFrame):

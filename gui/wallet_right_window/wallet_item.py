@@ -5,6 +5,7 @@ import customtkinter
 from src.schemas.proxy_data import ProxyData
 from src.schemas.wallet_data import WalletData
 from gui.wallet_right_window.wallet_window import WalletWindow
+from gui import constants
 
 
 class WalletItem(customtkinter.CTkFrame):
@@ -221,3 +222,14 @@ class WalletItem(customtkinter.CTkFrame):
     def close_edit_wallet_window(self):
         self.edit_window.close()
         self.edit_window = None
+
+    def set_wallet_active(self):
+        self.frame.configure(border_width=1, border_color=constants.ACTIVE_ACTION_HEX)
+
+    def set_wallet_completed(self):
+        self.frame.configure(border_width=1, border_color=constants.SUCCESS_HEX)
+
+    def set_wallet_inactive(self):
+        self.frame.configure(border_width=0)
+
+

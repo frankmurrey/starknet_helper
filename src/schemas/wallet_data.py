@@ -1,6 +1,7 @@
 from typing import Union, Optional
 from typing import Callable, Optional
 from uuid import UUID, uuid4
+from src import enums
 
 
 from pydantic import BaseModel
@@ -25,6 +26,7 @@ class WalletData(BaseModel):
     type: enums.PrivateKeyType = enums.PrivateKeyType.argent
     cairo_version: int = 1
     wallet_id: UUID = Field(default_factory=uuid4)
+    wallet_status: enums.WalletStatus = enums.WalletStatus.inactive
 
     @validator("proxy", pre=True)
     def validate_proxy(cls, v):

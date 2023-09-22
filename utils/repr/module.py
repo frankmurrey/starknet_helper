@@ -1,4 +1,5 @@
 import config
+import random
 
 from enum import Enum
 
@@ -6,6 +7,7 @@ from colorama import Fore, Style
 
 from src.schemas.tasks.base import TaskBase
 from src.schemas.tasks.jediswap import JediSwapTask
+from utils.repr.misc import donation_messages
 from utils.repr.misc import Symbol
 from utils.repr.misc import Colors
 from utils.repr.misc import COLOR_LENGTH
@@ -180,6 +182,13 @@ def print_module_config(task: TaskBase):
 
     print(*repr_strings, sep="\n")
     print(f"{Fore.LIGHTMAGENTA_EX}Made by Frank Murrey - https://github.com/frankmurrey{Fore.RESET}")
+
+    if random.randint(1, 5) == 1:
+        message = random.choice(donation_messages)
+        print(f"{Fore.LIGHTMAGENTA_EX}{message}{Fore.RESET}\n")
+        print(f"{Fore.LIGHTMAGENTA_EX}EVM - ... {Fore.RESET}\n")
+        print(f"{Fore.LIGHTMAGENTA_EX}STARK - ...{Fore.RESET}\n")
+
     print(f"{Fore.LIGHTMAGENTA_EX}Starting in {config.DEFAULT_DELAY_SEC} sec...{Fore.RESET}\n")
 
 

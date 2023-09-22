@@ -141,16 +141,17 @@ class TasksExecutor:
 
                         logger.debug(f"Processing task: {task.task_id}")
 
+                        task_result = self.process_task(
+                            task=task,
+                            wallet=wallet
+                        )
+
                         if self.is_killed():
                             break
 
                         if self.is_stopped():
                             break
 
-                        task_result = self.process_task(
-                            task=task,
-                            wallet=wallet
-                        )
                         if task_result:
                             task.task_status = enums.TaskStatus.SUCCESS
                         else:
@@ -296,6 +297,7 @@ class TasksExecutor:
         Stop tasks processing
         """
         self.stop_event.set()
+        logger.warning("Tasks processing stopped")
 
     def run(self):
         """

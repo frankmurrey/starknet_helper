@@ -40,6 +40,7 @@ class DmailSendMailTab:
             master=self.tabview.tab(tab_name),
             grid=text_box_grid,
             text=text,
+            height=200,
         )
 
     def build_config_data(self):

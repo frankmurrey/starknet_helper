@@ -1,15 +1,48 @@
 import hashlib
 
-from utils.key_manager.seed_phrase_helper.crypto import (HDPrivateKey,
-                                                         HDKey)
-from starknet_py.net.account.account import Account
-from starknet_py.net.signer.stark_curve_signer import KeyPair
-
 from starknet_py.hash.address import compute_address
+
+from utils.key_manager.seed_phrase_helper.crypto import HDPrivateKey, HDKey
+from starknet_py.net.signer.stark_curve_signer import KeyPair
+from src import enums
+
+
+class KeyData:
+    def __init__(self, class_hash: hex, call_data: list):
+        self.class_hash = class_hash
+        self.call_data = call_data
 
 
 def get_key_pair_from_pk(private_key):
     return KeyPair.from_private_key(private_key)
+
+
+def get_key_data(
+        key_type: enums.PrivateKeyType,
+        key_pair: KeyPair
+) -> KeyData:
+
+    if key_type == enums.PrivateKeyType.argent:
+        class_hash = 0x01a736d6ed154502257f02b1ccdf4d9d1089f80811cd6acad48e6b6a9d1f2003
+        account_initialize_call_data = [key_pair.public_key, 0]
+
+        call_data = account_initialize_call_data
+
+    elif key_type == enums.PrivateKeyType.braavos:
+        class_hash = 0x03131fa018d520a037686ce3efddeab8f28895662f019ca3ca18a626650f7d1e
+        account_initialize_call_data = [key_pair.public_key]
+
+        call_data = [
+            0x5aa23d5bb71ddaa783da7ea79d405315bafa7cf0387a74f4593578c3e9e6570,
+            0x2dd76e7ad84dbed81c314ffe5e7a7cacfb8f4836f01af4e913f275f89a3de1a,
+            len(account_initialize_call_data),
+            *account_initialize_call_data
+        ]
+
+    else:
+        raise Exception(f"Unknown key type: {key_type}")
+
+    return KeyData(class_hash=class_hash, call_data=call_data)
 
 
 def get_argent_key_from_phrase(mnemonic):

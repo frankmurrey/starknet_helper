@@ -246,6 +246,13 @@ class ActionsFrame(customtkinter.CTkFrame):
             )
             return
 
+        if not self.action_items:
+            tkinter.messagebox.showerror(
+                title="Error",
+                message="No actions added"
+            )
+            return
+
         yesno = tkinter.messagebox.askyesno(
             title="Start",
             message="Are you sure you want to start?",
@@ -457,6 +464,7 @@ class ButtonActionsFrame(customtkinter.CTkFrame):
             font=customtkinter.CTkFont(size=12, weight="bold"),
             checkbox_width=18,
             checkbox_height=18,
+            state="disabled",
         )
         self.randomize_actions_checkbox.grid(
             row=0,

@@ -14,9 +14,9 @@ from starknet_py.hash.selector import get_selector_from_name
 from starknet_py.net.http_client import HttpMethod
 from loguru import logger
 
-from utils.key_manager.key_manager import (get_key_pair_from_pk,
-                                           get_argent_addr_from_private_key,
-                                           get_braavos_addr_from_private_key)
+from utils.key_manager.key_manager import get_key_pair_from_pk
+from utils.key_manager.key_manager import get_argent_addr_from_private_key
+from utils.key_manager.key_manager import get_braavos_addr_from_private_key
 from src.schemas.logs import WalletActionSchema
 from src.gecko_pricer import GeckoPricer
 from src.storage import Storage
@@ -80,11 +80,7 @@ class ModuleBase:
             account: Account,
     ):
         try:
-            account_contract = await self.get_account_contract(
-                address=account.address,
-                abi=FileManager.read_abi_from_file(paths.ACCOUNT_ABI_FILE),
-                provider=account,
-            )
+            account_contract = await self.get_account_contract(account=account)
             version = await account_contract.functions['getVersion'].call()
 
             version_decoded = self.decode_version(version=version.version)
@@ -309,7 +305,7 @@ class ModuleBase:
         try:
             estimate = await account.client.estimate_fee(tx=transaction)
             return estimate.overall_fee
-        except ClientError:
+        except ClientError as e:
             return None
 
     async def wait_for_tx_receipt(self,
@@ -325,15 +321,28 @@ class ModuleBase:
 
     async def get_account_contract(
             self,
-            address: int,
-            abi: list,
-            provider: Account,
-    ) -> Contract:
-        return Contract(
-            address=address,
-            abi=abi,
-            provider=provider
-        )
+            account: Account,
+    ) -> Union[Contract, None]:
+        try:
+            acc_abi = FileManager.read_abi_from_file(paths.ACCOUNT_ABI_FILE)
+            if acc_abi is None:
+                logger.error(f"Error while reading account abi file")
+                return None
+
+            return Contract(
+                address=account.address,
+                abi=FileManager.read_abi_from_file(paths.ACCOUNT_ABI_FILE),
+                provider=account
+            )
+        except ClientError:
+            return None
+
+    async def account_deployed(self, account: Account) -> bool:
+        version = await self.get_cairo_version_for_txn_execution(account=account)
+        if version is None:
+            return False
+
+        return True
 
     async def deploy_account_argent(self,
                                     private_key: str) -> Union[AccountDeploymentResult, None]:
@@ -526,7 +535,7 @@ class ModuleBase:
                 current_log_action.status = err_msg
                 return False
 
-            logger.success(f"Txn success, status: {txn_receipt.status} "
+            logger.success(f"Txn success, status: {txn_receipt.execution_status} "
                            f"(Actual fee: {txn_receipt.actual_fee / 10 ** 18}. "
                            f"Txn Hash: {hex(txn_hash)})")
 

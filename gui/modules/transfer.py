@@ -1,14 +1,12 @@
-from typing import Callable
-from typing import Union
 from tkinter import messagebox
 
 import customtkinter
 from pydantic.error_wrappers import ValidationError
 from tkinter import Variable
-from loguru import logger
 
 from gui.modules.txn_settings_frame import TxnSettingFrame
 from gui.objects import CTkEntryWithLabel
+from gui.objects import CTkCustomTextBox
 from contracts.tokens.main import Tokens
 from src.schemas.tasks.transfer import TransferTask
 
@@ -39,6 +37,22 @@ class TransferTab:
 
         self.txn_settings_frame = TxnSettingFrame(
             master=self.tabview.tab(tab_name), grid=txn_settings_grid
+        )
+
+        text_box_grid = {
+            "row": 2,
+            "column": 0,
+            "padx": 20,
+            "pady": 20,
+            "sticky": "ew"
+        }
+
+        text = f"- Recipient should be set in the wallet settings as 'Pair address'."
+
+        self.info_textbox = CTkCustomTextBox(
+            master=self.tabview.tab(tab_name),
+            grid=text_box_grid,
+            text=text,
         )
 
     def build_config_data(self):

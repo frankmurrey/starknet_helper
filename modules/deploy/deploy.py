@@ -1,14 +1,17 @@
-from typing import TYPE_CHECKING
+import dataclasses
+from typing import TYPE_CHECKING, Union
 
 from starknet_py.net.account.account import Account
 from starknet_py.net.models.transaction import DeployAccount
+from starknet_py.net.client_errors import ClientError
 from loguru import logger
 
 from modules.base import ModuleBase
 from src.schemas.logs import WalletActionSchema
 from src import enums
 from src.storage import ActionStorage
-from utils.key_manager.key_manager import get_key_pair_from_pk
+from utils.key_manager.key_manager import get_key_pair_from_pk, get_key_data
+from modules.deploy.custom_curve_signer import BraavosCurveSigner
 
 if TYPE_CHECKING:
     from src.schemas.tasks.deploy import DeployTask
@@ -33,64 +36,77 @@ class Deploy(ModuleBase):
         self.task = task
         self.account = account
         self.pk = private_key
+
         self.key_type = key_type
+        self.key_pair = get_key_pair_from_pk(self.pk)
+        self.key_data = get_key_data(key_pair=self.key_pair, key_type=self.key_type)
 
-    def get_key_data(
-            self,
-            key_pair) -> dict:
+        if self.key_type == enums.PrivateKeyType.braavos:
+            self.account.signer = BraavosCurveSigner(
+                account_address=self.account.address,
+                key_pair=self.key_pair,
+                chain_id=self.chain_id
+            )
 
-        if self.key_type == enums.PrivateKeyType.argent:
-            class_hash = 0x025ec026985a3bf9d0cc1fe17326b245dfdc3ff89b8fde106542a3ea56c5a918
-            account_initialize_call_data = [key_pair.public_key, 0]
+    async def build_deploy_txn(self) -> Union[DeployAccount, None]:
+        """
+        Build signed deploy account transaction
+        :return:
+        """
+        nonce = await self.get_nonce(account=self.account)
 
-            call_data = [
-                0x33434ad846cdd5f23eb73ff09fe6fddd568284a0fb7d1be20ee482f044dabe2,
-                0x79dc0da7c54b95f10aa182ad0a46400db63156920adb65eca2654c0945a463,
-                len(account_initialize_call_data),
-                *account_initialize_call_data
-            ]
+        max_fee = None
+        estimated_fee = True
 
-        elif self.key_type == enums.PrivateKeyType.braavos:
-            class_hash = 0x03131fa018d520a037686ce3efddeab8f28895662f019ca3ca18a626650f7d1e
-            account_initialize_call_data = [key_pair.public_key]
+        if self.task.forced_gas_limit:
+            max_fee = int(self.task.max_fee * 10 ** 9)
+            estimated_fee = None
 
-            call_data = [
-                0x5aa23d5bb71ddaa783da7ea79d405315bafa7cf0387a74f4593578c3e9e6570,
-                0x2dd76e7ad84dbed81c314ffe5e7a7cacfb8f4836f01af4e913f275f89a3de1a,
-                len(account_initialize_call_data),
-                *account_initialize_call_data
-            ]
+        try:
+            deploy_account_tx = await self.account.sign_deploy_account_transaction(
+                class_hash=self.key_data.class_hash,
+                contract_address_salt=self.key_pair.public_key,
+                constructor_calldata=self.key_data.call_data,
+                nonce=nonce,
+                max_fee=max_fee,
+                auto_estimate=estimated_fee
+            )
 
-        else:
-            raise Exception(f"Unknown key type: {self.key_type}")
+            return deploy_account_tx
 
-        return {
-            "class_hash": class_hash,
-            "call_data": call_data
-        }
+        except ClientError as e:
+            if "unavailable for deployment" in str(e):
+                err_msg = f"Account unavailable for deployment or already deployed."
+                logger.error(err_msg)
+                return None
+
+            else:
+                err_msg = f"Error while estimating transaction fee"
+                logger.error(err_msg)
+                return None
 
     async def send_txn(self):
-        print(hex(self.account.address))
-        key_pair = get_key_pair_from_pk(self.pk)
-        print(key_pair.private_key)
-        key_data = self.get_key_data(key_pair=key_pair)
+        """
+        Send deploy transaction
+        :return:
+        """
+        account_deployed = await self.account_deployed(account=self.account)
+        if account_deployed is True:
+            logger.warning(f"Account already deployed.")
+            return False
 
         logger.warning(f"Action: Deploy {self.key_type.title()} account")
         current_log_action: WalletActionSchema = ActionStorage().get_current_action()
         current_log_action.module_name = self.task.module_name
         current_log_action.action_type = self.task.module_type
 
-        nonce = await self.get_nonce(account=self.account)
-
-        deploy_txn = DeployAccount(
-            class_hash=key_data["class_hash"],
-            contract_address_salt=key_pair.public_key,
-            constructor_calldata=key_data["call_data"],
-            version=1,
-            max_fee=0,
-            nonce=nonce,
-            signature=[]
-        )
+        signed_deploy_txn = await self.build_deploy_txn()
+        if signed_deploy_txn is None:
+            err_msg = f"Error while estimating transaction fee"
+            logger.error(err_msg)
+            current_log_action.is_success = False
+            current_log_action.status = err_msg
+            return False
 
         target_gas_price_gwei = self.storage.app_config.target_eth_mainnet_gas_price
         target_gas_price_wei = target_gas_price_gwei * 10 ** 9
@@ -110,9 +126,25 @@ class Deploy(ModuleBase):
 
         wallet_eth_balance_wei = await self.get_eth_balance(account=self.account)
         wallet_eth_balance_decimals = wallet_eth_balance_wei / 10 ** 18
-        # TODO ClientError exception
-        estimated_gas = await self.account._estimate_fee(tx=deploy_txn)
-        overall_fee = estimated_gas.overall_fee
+
+        try:
+            estimated_fee = await self.account.client.estimate_fee(tx=signed_deploy_txn)
+            overall_fee = estimated_fee.overall_fee
+
+        except ClientError:
+            err_msg = f"Error while estimating transaction fee"
+            logger.error(err_msg)
+            current_log_action.is_success = False
+            current_log_action.status = err_msg
+            return False
+
+        overall_fee = int(overall_fee * 2)
+        if overall_fee is None:
+            err_msg = f"Error while estimating transaction fee."
+            logger.error(err_msg)
+            current_log_action.is_success = False
+            current_log_action.status = err_msg
+            return False
 
         if overall_fee > wallet_eth_balance_wei:
             err_msg = (f"Not enough native for fee, wallet ETH balance = {wallet_eth_balance_decimals} "
@@ -129,24 +161,9 @@ class Deploy(ModuleBase):
             logger.info(f"Test mode enabled. Skipping transaction")
             return False
 
-        if self.task.forced_gas_limit is True:
-            gas_limit = int(self.task.max_fee)
-        else:
-            gas_limit = int(overall_fee * 1.4)
-
         try:
-            deploy_result = await self.account.deploy_account(
-                address=self.account.address,
-                class_hash=key_data["class_hash"],
-                salt=key_pair.public_key,
-                key_pair=key_pair,
-                client=self.client,
-                chain=self.chain_id,
-                constructor_calldata=key_data["call_data"],
-                max_fee=gas_limit,
-            )
-
-            txn_hash = deploy_result.hash
+            deploy_result = await self.account.client.deploy_account(signed_deploy_txn)
+            txn_hash = deploy_result.transaction_hash
 
             if self.task.wait_for_receipt is True:
                 logger.info(f"Txn sent. Waiting for receipt (Timeout in {self.task.txn_wait_timeout_sec}s)."
@@ -161,7 +178,7 @@ class Deploy(ModuleBase):
                     current_log_action.status = err_msg
                     return False
 
-                logger.success(f"Txn success, status: {txn_receipt.status} "
+                logger.success(f"Txn success, status: {txn_receipt.execution_status} "
                                f"(Actual fee: {txn_receipt.actual_fee / 10 ** 18}. "
                                f"Txn Hash: {hex(txn_hash)})")
 

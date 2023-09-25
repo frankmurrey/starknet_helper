@@ -10,6 +10,7 @@ from gui.modules.withdraw import WithdrawLendingTab
 from gui.modules.stark_id import StarkIdMintTab
 from gui.modules.dmail import DmailSendMailTab
 from gui.modules.deploy import DeployTab
+from gui.modules.upgrade import UpgradeTab
 from gui.modules.transfer import TransferTab
 
 import customtkinter
@@ -146,6 +147,15 @@ class InteractionTopLevelWindow(customtkinter.CTkToplevel):
             self.chose_module_frame.float_spinbox.max_value = 1
             self.chose_module_frame.float_spinbox.entry.configure(textvariable=Variable(value=1))
 
+        elif tab_name == "Upgrade":
+            self.current_tab = UpgradeTab(
+                self.tabview,
+                tab_name
+            )
+            self.current_tab_name = tab_name
+            self.chose_module_frame.float_spinbox.max_value = 1
+            self.chose_module_frame.float_spinbox.entry.configure(textvariable=Variable(value=1))
+
         elif tab_name == "Transfer":
             self.current_tab = TransferTab(
                 self.tabview,
@@ -232,6 +242,7 @@ class ChoseModuleFrame(customtkinter.CTkFrame):
             self,
             values=[
                 'Deploy',
+                'Upgrade',
                 'Swap',
                 'Transfer',
                 "Add Liquidity",

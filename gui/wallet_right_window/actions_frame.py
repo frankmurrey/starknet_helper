@@ -265,6 +265,8 @@ class ActionsFrame(customtkinter.CTkFrame):
             amount = self.app_config.wallets_amount_to_execute_in_test_mode
             wallets = wallets[:amount]
 
+        tasks_executor.start_tasks_processing()
+
         tasks_executor.push_wallets(
             wallets=wallets,
             shuffle=bool(bool(self.run_settings_frame.shuffle_wallets_checkbox.get()))
@@ -274,8 +276,6 @@ class ActionsFrame(customtkinter.CTkFrame):
             tasks=self.tasks,
             shuffle=bool(self.button_actions_frame.randomize_actions_checkbox.get())
         )
-
-        tasks_executor.start_tasks_processing()
 
     def on_stop_button_click(self):
         tasks_executor.stop_tasks_processing()

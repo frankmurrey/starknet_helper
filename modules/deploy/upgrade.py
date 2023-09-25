@@ -58,18 +58,13 @@ class Upgrade(ModuleBase):
             return False
 
     async def build_txn_payload_calls(self):
-        account_contract = await self.get_account_contract(
-            address=self.account.address,
-            abi=FileManager.read_abi_from_file(paths.ACCOUNT_ABI_FILE),
-            provider=self.account,
-        )
-
+        account_contract = await self.get_account_contract(account=self.account)
         upgrade_needed = await self.upgrade_needed(account_contract=account_contract)
         if not upgrade_needed:
             return None
 
         upgrade_call = account_contract.functions['upgrade'].prepare(
-            implementation=config.IMPLEMENTATION_ADDRESS,
+            implementation=config.IMPLEMENTATION_ADDRESS_ARGENT,
             calldata=[0]
         )
 

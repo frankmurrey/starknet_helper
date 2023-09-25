@@ -46,4 +46,5 @@ class DmailSendMailTab:
     def build_config_data(self):
         return DmailSendMailTask(
             max_fee=self.txn_settings_frame.max_fee_entry.get(),
+            forced_gas_limit=self.txn_settings_frame.forced_gas_limit_check_box.get(),
         )

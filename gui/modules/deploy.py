@@ -1,5 +1,3 @@
-import customtkinter
-
 from src.schemas.tasks.deploy import DeployTask
 
 from gui.modules.txn_settings_frame import TxnSettingFrame
@@ -46,6 +44,8 @@ class DeployTab:
 
     def build_config_data(self):
         return DeployTask(
-            max_fee=self.txn_settings_frame.max_fee_entry.get()
+            max_fee=self.txn_settings_frame.max_fee_entry.get(),
+            forced_gas_limit=self.txn_settings_frame.forced_gas_limit_check_box.get(),
+
         )
 

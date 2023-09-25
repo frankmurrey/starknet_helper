@@ -301,7 +301,7 @@ class TasksExecutor:
         """
         self.stop_event.set()
         self.start_event.clear()
-        logger.warning("Tasks processing stopped")
+        logger.critical("Tasks processing will be stopped after current task")
 
     def start_tasks_processing(self):
         """

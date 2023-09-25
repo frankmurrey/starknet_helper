@@ -309,6 +309,7 @@ class TasksExecutor:
         """
         self.stop_event.clear()
         self.start_event.set()
+        logger.info("Running tasks processing")
 
     def run(self):
         """

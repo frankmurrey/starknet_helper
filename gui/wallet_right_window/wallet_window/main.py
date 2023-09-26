@@ -224,7 +224,7 @@ class WalletWindow(customtkinter.CTkToplevel):
         super().__init__(master)
 
         self.title("Add wallet")
-        self.geometry("320x450")
+        self.geometry("340x450")
 
         self.after(10, self.focus_force)
 

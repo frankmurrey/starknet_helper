@@ -108,7 +108,12 @@ def print_module_config(task: TaskBase):
 
     repr_strings = []
 
-    task_dict = task.dict(exclude={"module_name", "module", "task_id"})
+    task_dict = task.dict(exclude={
+        "module_name",
+        "module",
+        "task_id",
+        "task_status"
+    })
 
     max_key_width = max(len(key) for key in task_dict.keys())
     max_value_width = max(len(str(value)) for value in task_dict.values())

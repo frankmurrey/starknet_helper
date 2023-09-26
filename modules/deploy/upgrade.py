@@ -6,13 +6,8 @@ from loguru import logger
 
 import config
 from modules.base import ModuleBase
-from src.schemas.logs import WalletActionSchema
-from src import enums
-from src import paths
-from src.storage import ActionStorage
 from src.storage import Storage
-from utils.file_manager import FileManager
-from utils.key_manager.key_manager import get_key_pair_from_pk
+from utils.misc import decode_wallet_version
 
 if TYPE_CHECKING:
     from src.schemas.tasks.deploy import UpgradeTask
@@ -41,7 +36,7 @@ class Upgrade(ModuleBase):
         try:
             version = await account_contract.functions['getVersion'].call()
 
-            version_decoded = self.decode_version(version=version.version)
+            version_decoded = decode_wallet_version(version=version.version)
             last_provided_version = Storage().app_config.last_wallet_version
 
             if version_decoded == last_provided_version:

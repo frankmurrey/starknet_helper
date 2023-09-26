@@ -1,4 +1,3 @@
-import random
 import time
 from typing import Union
 from typing import TYPE_CHECKING
@@ -137,8 +136,6 @@ class AvnuSwap(SwapModuleBase):
 
         amount_in_wei = self.i16(quotes['buyAmount'])
 
-        exchange_address = quotes['routes'][0]['address']
-
         approve_call = self.build_token_approve_call(token_addr=self.coin_x.contract_address,
                                                      spender=hex(self.router_contract.address),
                                                      amount_wei=int(amount_out_wei))
@@ -158,8 +155,10 @@ class AvnuSwap(SwapModuleBase):
         Builds payload data for reverse swap type transaction, if reverse action is enabled in task
         :return:
         """
-        actual_wallet_y_balance_wei = await self.get_token_balance(token_address=self.coin_y.contract_address,
-                                                                   account=self.account)
+        actual_wallet_y_balance_wei = await self.get_token_balance(
+            token_address=self.coin_y.contract_address,
+            account=self.account
+        )
 
         if actual_wallet_y_balance_wei == 0:
             logger.error(f"Wallet {self.coin_y.symbol.upper()} balance = 0")

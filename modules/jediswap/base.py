@@ -1,4 +1,3 @@
-import random
 from typing import Union
 from typing import TYPE_CHECKING
 
@@ -15,9 +14,11 @@ if TYPE_CHECKING:
 class JediSwapBase(SwapModuleBase):
     task: 'JediSwapTask'
 
-    def __init__(self,
-                 account,
-                 task):
+    def __init__(
+            self,
+            account,
+            task
+    ):
 
         super().__init__(
             account=account,
@@ -25,21 +26,26 @@ class JediSwapBase(SwapModuleBase):
         )
         self.jedi_contracts = JediSwapContracts()
 
-        self.router_contract = self.get_contract(address=self.jedi_contracts.router_address,
-                                                 abi=self.jedi_contracts.router_abi,
-                                                 provider=account)
+        self.router_contract = self.get_contract(
+            address=self.jedi_contracts.router_address,
+            abi=self.jedi_contracts.router_abi,
+            provider=account)
 
-        self.factory_contract = self.get_contract(address=self.jedi_contracts.factory_address,
-                                                  abi=self.jedi_contracts.factory_abi,
-                                                  provider=account)
+        self.factory_contract = self.get_contract(
+            address=self.jedi_contracts.factory_address,
+            abi=self.jedi_contracts.factory_abi,
+            provider=account
+        )
 
         self._account = account
 
-    async def get_amount_in(self,
-                            amount_out_wei: int,
-                            coin_x_obj: TokenBase,
-                            coin_y_obj: TokenBase,
-                            router_contract) -> Union[int, None]:
+    async def get_amount_in(
+            self,
+            amount_out_wei: int,
+            coin_x_obj: TokenBase,
+            coin_y_obj: TokenBase,
+            router_contract
+    ) -> Union[int, None]:
         """
         Get the amount in for coin pair, using router contract.
         :param amount_out_wei:

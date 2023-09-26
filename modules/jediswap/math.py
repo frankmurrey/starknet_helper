@@ -1,7 +1,17 @@
-def get_lp_burn_output(amount_to_burn: int,
-                       total_supply: int,
-                       contract_balance_x: int,
-                       contract_balance_y: int) -> tuple:
+def get_lp_burn_output(
+        amount_to_burn: int,
+        total_supply: int,
+        contract_balance_x: int,
+        contract_balance_y: int
+) -> tuple:
+    """
+    Get the amount of tokens to burn from liquidity pool
+    :param amount_to_burn:
+    :param total_supply:
+    :param contract_balance_x:
+    :param contract_balance_y:
+    :return:
+    """
 
     liquidity_mul_balance_x = amount_to_burn * contract_balance_x
     amount_x = liquidity_mul_balance_x / total_supply

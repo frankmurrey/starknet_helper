@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING
 from starknet_py.net.account.account import Account
 from loguru import logger
 
-from contracts.tokens.main import Tokens
 from contracts.sithswap.main import SithSwapContracts
 from modules.base import SwapModuleBase
 from modules.sithswap.base import SithBase
@@ -19,9 +18,11 @@ class SithSwap(SithBase, SwapModuleBase):
     task: 'SithSwapTask'
     account: Account
 
-    def __init__(self,
-                 account,
-                 task: 'SithSwapTask'):
+    def __init__(
+            self,
+            account,
+            task: 'SithSwapTask'
+    ):
 
         super().__init__(
             account=account,
@@ -32,9 +33,11 @@ class SithSwap(SithBase, SwapModuleBase):
         self.account = account
 
         self.sith_swap_contracts = SithSwapContracts()
-        self.router_contract = self.get_contract(address=self.sith_swap_contracts.router_address,
-                                                 abi=self.sith_swap_contracts.router_abi,
-                                                 provider=account)
+        self.router_contract = self.get_contract(
+            address=self.sith_swap_contracts.router_address,
+            abi=self.sith_swap_contracts.router_abi,
+            provider=account
+        )
 
     async def build_txn_payload_data(self) -> Union[dict, None]:
         """
@@ -58,23 +61,27 @@ class SithSwap(SithBase, SwapModuleBase):
         amount_in_wei_with_slippage = int(amount_in * (1 - (self.task.slippage / 100)))
         is_stable = amounts_in_data["stable"]
 
-        approve_call = self.build_token_approve_call(token_addr=self.coin_x.contract_address,
-                                                     spender=hex(self.router_contract.address),
-                                                     amount_wei=int(amount_x_wei))
+        approve_call = self.build_token_approve_call(
+            token_addr=self.coin_x.contract_address,
+            spender=hex(self.router_contract.address),
+            amount_wei=int(amount_x_wei)
+        )
 
         swap_deadline = int(time.time() + 1000)
-        swap_call = self.build_call(to_addr=self.router_contract.address,
-                                    func_name='swapExactTokensForTokens',
-                                    call_data=[amount_x_wei,
-                                               0,
-                                               amount_in_wei_with_slippage,
-                                               0,
-                                               1,
-                                               self.i16(self.coin_x.contract_address),
-                                               self.i16(self.coin_y.contract_address),
-                                               is_stable,
-                                               self.account.address,
-                                               swap_deadline])
+        swap_call = self.build_call(
+            to_addr=self.router_contract.address,
+            func_name='swapExactTokensForTokens',
+            call_data=[amount_x_wei,
+                       0,
+                       amount_in_wei_with_slippage,
+                       0,
+                       1,
+                       self.i16(self.coin_x.contract_address),
+                       self.i16(self.coin_y.contract_address),
+                       is_stable,
+                       self.account.address,
+                       swap_deadline]
+        )
         calls = [approve_call, swap_call]
 
         return {
@@ -90,7 +97,6 @@ class SithSwap(SithBase, SwapModuleBase):
         """
         wallet_y_balance_wei = await self.get_token_balance(token_address=self.coin_y.contract_address,
                                                             account=self.account)
-
         if wallet_y_balance_wei == 0:
             logger.error(f"Wallet {self.coin_y.symbol.upper()} balance = 0")
 
@@ -116,24 +122,28 @@ class SithSwap(SithBase, SwapModuleBase):
         amount_in_wei_with_slippage = int(amount_in * (1 - (self.task.slippage / 100)))
         is_stable = amounts_y_data["stable"]
 
-        approve_call = self.build_token_approve_call(token_addr=self.coin_x.contract_address,
-                                                     spender=hex(self.router_contract.address),
-                                                     amount_wei=int(amount_out_y_wei))
+        approve_call = self.build_token_approve_call(
+            token_addr=self.coin_x.contract_address,
+            spender=hex(self.router_contract.address),
+            amount_wei=int(amount_out_y_wei)
+        )
 
         swap_deadline = int(time.time() + 1000)
 
-        swap_call = self.build_call(to_addr=self.router_contract.address,
-                                    func_name='swapExactTokensForTokens',
-                                    call_data=[amount_out_y_wei,
-                                               0,
-                                               amount_in_wei_with_slippage,
-                                               0,
-                                               1,
-                                               self.i16(self.coin_y.contract_address),
-                                               self.i16(self.coin_x.contract_address),
-                                               is_stable,
-                                               self.account.address,
-                                               swap_deadline])
+        swap_call = self.build_call(
+            to_addr=self.router_contract.address,
+            func_name='swapExactTokensForTokens',
+            call_data=[amount_out_y_wei,
+                       0,
+                       amount_in_wei_with_slippage,
+                       0,
+                       1,
+                       self.i16(self.coin_y.contract_address),
+                       self.i16(self.coin_x.contract_address),
+                       is_stable,
+                       self.account.address,
+                       swap_deadline]
+        )
 
         calls = [approve_call, swap_call]
 

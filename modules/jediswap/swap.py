@@ -34,6 +34,8 @@ class JediSwap(JediSwapBase):
         :return:
         """
         amount_out_wei = await self.calculate_amount_out_from_balance(coin_x=self.coin_x)
+        if amount_out_wei is None:
+            return None
 
         amount_in_wei = await self.get_amount_in(
             amount_out_wei=amount_out_wei,
@@ -46,22 +48,26 @@ class JediSwap(JediSwapBase):
 
         amount_in_wei_with_slippage = int(amount_in_wei * (1 - (self.task.slippage / 100)))
 
-        approve_call = self.build_token_approve_call(token_addr=self.coin_x.contract_address,
-                                                     spender=hex(self.router_contract.address),
-                                                     amount_wei=int(amount_out_wei))
+        approve_call = self.build_token_approve_call(
+            token_addr=self.coin_x.contract_address,
+            spender=hex(self.router_contract.address),
+            amount_wei=int(amount_out_wei)
+        )
 
         swap_deadline = int(time.time() + 1000)
-        swap_call = self.build_call(to_addr=self.router_contract.address,
-                                    func_name='swap_exact_tokens_for_tokens',
-                                    call_data=[amount_out_wei,
-                                               0,
-                                               amount_in_wei_with_slippage,
-                                               0,
-                                               2,
-                                               self.i16(self.coin_x.contract_address),
-                                               self.i16(self.coin_y.contract_address),
-                                               self.account.address,
-                                               swap_deadline])
+        swap_call = self.build_call(
+            to_addr=self.router_contract.address,
+            func_name='swap_exact_tokens_for_tokens',
+            call_data=[amount_out_wei,
+                       0,
+                       amount_in_wei_with_slippage,
+                       0,
+                       2,
+                       self.i16(self.coin_x.contract_address),
+                       self.i16(self.coin_y.contract_address),
+                       self.account.address,
+                       swap_deadline]
+        )
         calls = [approve_call, swap_call]
         return {
             'calls': calls,
@@ -74,8 +80,10 @@ class JediSwap(JediSwapBase):
         Build the transaction payload data for the reverse swap type transaction, if reverse action is enabled in task.
         :return:
         """
-        wallet_y_balance_wei = await self.get_token_balance(token_address=self.coin_y.contract_address,
-                                                            account=self.account)
+        wallet_y_balance_wei = await self.get_token_balance(
+            token_address=self.coin_y.contract_address,
+            account=self.account
+        )
 
         if wallet_y_balance_wei == 0:
             logger.error(f"Wallet {self.coin_y.symbol.upper()} balance = 0")
@@ -97,23 +105,27 @@ class JediSwap(JediSwapBase):
 
         amount_in_wei_with_slippage = int(amount_in_wei * (1 - (self.task.slippage / 100)))
 
-        approve_call = self.build_token_approve_call(token_addr=self.coin_y.contract_address,
-                                                     spender=hex(self.router_contract.address),
-                                                     amount_wei=int(amount_out_y_wei))
+        approve_call = self.build_token_approve_call(
+            token_addr=self.coin_y.contract_address,
+            spender=hex(self.router_contract.address),
+            amount_wei=int(amount_out_y_wei)
+        )
 
         swap_deadline = int(time.time() + 1000)
 
-        swap_call = self.build_call(to_addr=self.router_contract.address,
-                                    func_name='swap_exact_tokens_for_tokens',
-                                    call_data=[amount_out_y_wei,
-                                               0,
-                                               amount_in_wei_with_slippage,
-                                               0,
-                                               2,
-                                               self.i16(self.coin_y.contract_address),
-                                               self.i16(self.coin_x.contract_address),
-                                               self.account.address,
-                                               swap_deadline])
+        swap_call = (self.build_call
+                     (to_addr=self.router_contract.address,
+                      func_name='swap_exact_tokens_for_tokens',
+                      call_data=[amount_out_y_wei,
+                                 0,
+                                 amount_in_wei_with_slippage,
+                                 0,
+                                 2,
+                                 self.i16(self.coin_y.contract_address),
+                                 self.i16(self.coin_x.contract_address),
+                                 self.account.address,
+                                 swap_deadline])
+                     )
         calls = [approve_call, swap_call]
 
         return {

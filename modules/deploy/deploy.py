@@ -171,7 +171,7 @@ class Deploy(ModuleBase):
 
                 txn_receipt = await self.wait_for_tx_receipt(tx_hash=txn_hash,
                                                              time_out_sec=int(self.task.txn_wait_timeout_sec))
-                if txn_receipt is False:
+                if txn_receipt is None:
                     err_msg = f"Txn timeout ({self.task.txn_wait_timeout_sec}s)."
                     logger.error(err_msg)
                     current_log_action.is_success = False

@@ -1,20 +1,20 @@
 import tkinter.messagebox
-from tkinter import Variable
+from tkinter import Variable, filedialog
 from typing import List, Union
 from uuid import UUID
+
+import customtkinter
 
 from src.schemas.tasks import TaskBase
 from src.schemas.wallet_data import WalletData
 from src.tasks_executor import tasks_executor
 from src.storage import Storage
+from utils.file_manager import FileManager
 from gui.main_window.interactions_top_level_window import InteractionTopLevelWindow
 from gui.main_window.wallet_action_frame import WalletActionFrame
 from gui.modules.frames import FloatSpinbox
 from gui.wallet_right_window.wallets_table import WalletsTable
-from gui import constants
 from src import enums
-
-import customtkinter
 
 
 class ActionsFrame(customtkinter.CTkFrame):
@@ -47,6 +47,19 @@ class ActionsFrame(customtkinter.CTkFrame):
         self.current_actions_frame = CurrentActionsFrame(master=self)
         self.button_actions_frame = ButtonActionsFrame(parent=self)
 
+        self.actions_label = customtkinter.CTkLabel(
+            self,
+            text="Actions:",
+            font=customtkinter.CTkFont(size=18, weight="bold")
+        )
+        self.actions_label.grid(
+            row=0,
+            column=1,
+            padx=0,
+            pady=(10, 0),
+            sticky="ws"
+        )
+
         self.run_settings_label = customtkinter.CTkLabel(
             self,
             text="Run settings:",
@@ -54,7 +67,7 @@ class ActionsFrame(customtkinter.CTkFrame):
         )
         self.run_settings_label.grid(
             row=0,
-            column=1,
+            column=2,
             padx=20,
             pady=(10, 0),
             sticky="ws"
@@ -129,6 +142,22 @@ class ActionsFrame(customtkinter.CTkFrame):
 
         return None
 
+    def set_actions(
+            self,
+            actions: List[dict]
+    ):
+        try:
+            self.actions = actions
+            self.redraw_current_actions_frame()
+
+        except Exception as e:
+            self.actions = []
+            self.redraw_current_actions_frame()
+            tkinter.messagebox.showerror(
+                title="Error",
+                message="Wrong actions config file"
+            )
+
     def set_action(
             self,
             action: dict
@@ -136,8 +165,15 @@ class ActionsFrame(customtkinter.CTkFrame):
         if action is None:
             return
 
-        self.actions.append(action)
-        self.redraw_current_actions_frame()
+        try:
+            self.actions.append(action)
+            self.redraw_current_actions_frame()
+
+        except Exception as e:
+            tkinter.messagebox.showerror(
+                title="Error",
+                message=str(e)
+            )
 
     def redraw_current_actions_frame(self):
         for action_item in self.action_items:
@@ -145,7 +181,6 @@ class ActionsFrame(customtkinter.CTkFrame):
             action_item.destroy()
 
         self.action_items.clear()
-
         if not self.actions:
             self.current_actions_frame.no_actions_label.grid(
                 row=0,
@@ -199,6 +234,7 @@ class ActionsFrame(customtkinter.CTkFrame):
 
         self.actions = []
         self.action_items = []
+        self.current_wallet_action_items = []
         self.redraw_current_actions_frame()
 
     def on_wallet_started(self, started_wallet: "WalletData"):
@@ -274,7 +310,7 @@ class ActionsFrame(customtkinter.CTkFrame):
 
         tasks_executor.push_tasks(
             tasks=self.tasks,
-            shuffle=bool(self.button_actions_frame.randomize_actions_checkbox.get())
+            shuffle=False
         )
 
     def on_stop_button_click(self):
@@ -360,7 +396,7 @@ class CurrentActionsFrame(customtkinter.CTkScrollableFrame):
             row=1,
             column=0,
             padx=20,
-            pady=(10, 0),
+            pady=(10, 20),
             sticky="nsew"
         )
         self.grid_columnconfigure(0, weight=1)
@@ -384,93 +420,89 @@ class ButtonActionsFrame(customtkinter.CTkFrame):
             parent: any,
             **kwargs):
         super().__init__(master=parent, **kwargs)
-        self.parent = parent
+        self.parent: ActionsFrame = parent
         self.actions_top_level_window = None
 
-        self.grid_rowconfigure(1, weight=1)
-        self.grid_columnconfigure((0, 1, 2, 4), weight=0)
+        self.grid_rowconfigure((0, 1, 2, 3), weight=0)
+        self.grid_columnconfigure(0, weight=0)
 
         self.grid(
-            row=2,
-            column=0,
-            padx=20,
-            pady=(5, 20),
+            row=1,
+            column=1,
+            padx=(0, 10),
+            pady=(10, 20),
             sticky="nsew"
         )
-
         self.add_action_button = customtkinter.CTkButton(
             self,
-            text="+",
+            text="Add action",
             font=customtkinter.CTkFont(size=12, weight="bold"),
-            width=25,
-            height=25,
+            width=110,
+            height=30,
             command=self.add_action_button_event
         )
         self.add_action_button.grid(
             row=0,
             column=0,
-            padx=(30, 0),
-            pady=(10, 10),
-            sticky="wn"
-        )
-
-        self.add_action_label = customtkinter.CTkLabel(
-            self,
-            text="Add action",
-            font=customtkinter.CTkFont(size=13, weight="bold")
-        )
-        self.add_action_label.grid(
-            row=0,
-            column=1,
-            padx=(6, 0),
-            pady=(10, 10),
-            sticky="wn"
+            padx=20,
+            pady=20,
+            sticky="ew"
         )
 
         self.remove_all_actions_button = customtkinter.CTkButton(
             self,
-            text="-",
+            text="Clear all",
             font=customtkinter.CTkFont(size=12, weight="bold"),
             fg_color="#db524b",
             hover_color="#5e1914",
-            width=25,
-            height=25,
+            width=110,
+            height=30,
             command=self.parent.remove_all_actions
         )
+
         self.remove_all_actions_button.grid(
-            row=0,
-            column=2,
-            padx=(20, 0),
-            pady=(10, 10),
+            row=1,
+            column=0,
+            padx=20,
+            pady=(0, 50),
             sticky="ew"
         )
 
-        self.remove_all_actions_label = customtkinter.CTkLabel(
+        self.save_actions_cfg_button = customtkinter.CTkButton(
             self,
-            text="Clear all",
-            font=customtkinter.CTkFont(size=13, weight="bold")
-        )
-        self.remove_all_actions_label.grid(
-            row=0,
-            column=3,
-            padx=(6, 0),
-            pady=(10, 10),
-            sticky="w"
+            text="Save config",
+            font=customtkinter.CTkFont(size=12, weight="bold"),
+            width=110,
+            height=30,
+            fg_color="#5c24ec",
+            hover_color='#430278',
+            command=self.save_actions_cfg_button_event
         )
 
-        self.randomize_actions_checkbox = customtkinter.CTkCheckBox(
-            self,
-            text="Randomize",
-            font=customtkinter.CTkFont(size=12, weight="bold"),
-            checkbox_width=18,
-            checkbox_height=18,
-            state="disabled",
+        self.save_actions_cfg_button.grid(
+            row=2,
+            column=0,
+            padx=20,
+            pady=10,
+            sticky="ew"
         )
-        self.randomize_actions_checkbox.grid(
-            row=0,
-            column=4,
-            padx=(20, 0),
-            pady=(10, 10),
+
+        self.upload_actions_cfg_button = customtkinter.CTkButton(
+            self,
+            text="Load config",
+            font=customtkinter.CTkFont(size=12, weight="bold"),
+            width=110,
+            height=30,
+            fg_color='#5c24ec',
+            hover_color='#430278',
+            command=self.upload_actions_cfg_button_event
+        )
+
+        self.upload_actions_cfg_button.grid(
+            row=3,
+            column=0,
+            padx=20,
+            pady=10,
             sticky="ew"
         )
 
@@ -482,7 +514,43 @@ class ButtonActionsFrame(customtkinter.CTkFrame):
         else:
             self.actions_top_level_window.focus()
 
+    def save_actions_cfg_button_event(self):
+        actions = self.parent.actions
 
+        if not actions:
+            tkinter.messagebox.showerror(
+                title="Error",
+                message="No actions added"
+            )
+            return
+
+        file_path = tkinter.filedialog.asksaveasfilename(
+            initialfile="actions_config.pkl",
+            title="Save actions config",
+            filetypes=(("pickle files", "*.pkl"),)
+        )
+        FileManager.save_to_pickle_file(actions, file_path)
+
+    def upload_actions_cfg_button_event(self):
+        file_path = tkinter.filedialog.askopenfilename(
+            title="Select actions config file",
+            filetypes=(("pickle files", "*.pkl"),)
+        )
+        if not file_path:
+            return
+
+        actions = FileManager.read_from_pickle_file(file_path)
+        if not actions:
+            tkinter.messagebox.showerror(
+                title="Error",
+                message="Can't read actions config file"
+            )
+            return
+
+        self.parent.set_actions(actions)
+
+
+# TODO: АЙДИШНИКИ НА КНОПКИ ВЫНЕСТИ В КОНСТАНТЫ ИЛИ В КЛАССЫ И ПОТОМ ИМПОРТИРОВАТЬ ИХ В КЛАССЫ ГДЕ ОНИ ИСПОЛЬЗУЮТСЯ ИЛИ ВООБЩЕ ВЫНЕСТИ В КОНСТАНТЫ В ОТДЕЛЬНЫЙ ФАЙЛ И ИМПОРТИРОВАТЬ ИХ ВО ВСЕ КЛАССЫ
 class RunSettingsFrame(customtkinter.CTkFrame):
     def __init__(
             self,
@@ -493,7 +561,7 @@ class RunSettingsFrame(customtkinter.CTkFrame):
 
         self.grid(
             row=1,
-            column=1,
+            column=2,
             padx=20,
             pady=(10, 20),
             sticky="nsew",
@@ -611,15 +679,11 @@ class RunSettingsFrame(customtkinter.CTkFrame):
                                                              step_size=5,
                                                              width=105)
         self.txn_wait_timeout_seconds_spinbox.entry.configure(
-            state="disabled",
-            fg_color="#3f3f3f",
-            textvariable=Variable(value="")
+            state="normal",
+            textvariable=Variable(value=120)
         )
         self.txn_wait_timeout_seconds_spinbox.add_button.configure(
-            state="disabled"
-        )
-        self.txn_wait_timeout_seconds_spinbox.subtract_button.configure(
-            state="disabled"
+            state="normal"
         )
         self.txn_wait_timeout_seconds_spinbox.grid(
             row=5,
@@ -643,9 +707,10 @@ class RunSettingsFrame(customtkinter.CTkFrame):
             row=6,
             column=0,
             padx=20,
-            pady=(10, 0),
+            pady=(10, 10),
             sticky="w"
         )
+        self.wait_for_receipt_checkbox.select()
 
     def wait_for_txn_checkbox_event(self):
         if self.wait_for_receipt_checkbox.get():

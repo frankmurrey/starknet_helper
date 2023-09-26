@@ -1,4 +1,3 @@
-import random
 import time
 from typing import Union
 from typing import TYPE_CHECKING
@@ -18,9 +17,11 @@ class MySwap(MySwapBase):
     task: 'MySwapTask'
     account: Account
 
-    def __init__(self,
-                 account,
-                 task: 'MySwapTask', ):
+    def __init__(
+            self,
+            account,
+            task: 'MySwapTask'
+    ):
         super().__init__(
             account=account,
             task=task,
@@ -30,9 +31,11 @@ class MySwap(MySwapBase):
         self.account = account
 
         self.my_swap_contracts = MySwapContracts()
-        self.router_contract = self.get_contract(address=self.my_swap_contracts.router_address,
-                                                 abi=self.my_swap_contracts.router_abi,
-                                                 provider=account)
+        self.router_contract = self.get_contract(
+            address=self.my_swap_contracts.router_address,
+            abi=self.my_swap_contracts.router_abi,
+            provider=account
+        )
 
     async def build_txn_payload_data(self) -> Union[dict, None]:
         """
@@ -43,9 +46,11 @@ class MySwap(MySwapBase):
         if amount_out_wei is None:
             return None
 
-        reserves_data = await self.get_pool_reserves_data(coin_x_symbol=self.coin_x.symbol,
-                                                          coin_y_symbol=self.coin_y.symbol,
-                                                          router_contract=self.router_contract)
+        reserves_data = await self.get_pool_reserves_data(
+            coin_x_symbol=self.coin_x.symbol,
+            coin_y_symbol=self.coin_y.symbol,
+            router_contract=self.router_contract
+        )
         if reserves_data is None:
             return None
 
@@ -59,17 +64,21 @@ class MySwap(MySwapBase):
         if amount_in_wei is None:
             return None
 
-        approve_call = self.build_token_approve_call(token_addr=self.coin_x.contract_address,
-                                                     spender=hex(self.router_contract.address),
-                                                     amount_wei=int(amount_out_wei))
-        swap_call = self.build_call(to_addr=self.router_contract.address,
-                                    func_name='swap',
-                                    call_data=[reserves_data['pool_id'],
-                                               self.i16(self.coin_x.contract_address),
-                                               amount_out_wei,
-                                               0,
-                                               amount_in_wei,
-                                               0])
+        approve_call = self.build_token_approve_call(
+            token_addr=self.coin_x.contract_address,
+            spender=hex(self.router_contract.address),
+            amount_wei=int(amount_out_wei)
+        )
+        swap_call = self.build_call(
+            to_addr=self.router_contract.address,
+            func_name='swap',
+            call_data=[reserves_data['pool_id'],
+                       self.i16(self.coin_x.contract_address),
+                       amount_out_wei,
+                       0,
+                       amount_in_wei,
+                       0]
+        )
         calls = [approve_call, swap_call]
 
         return {
@@ -83,8 +92,10 @@ class MySwap(MySwapBase):
         Build the transaction payload data for the reverse swap type transaction, if reverse action is enabled in task.
         :return:
         """
-        wallet_y_balance_wei = await self.get_token_balance(token_address=self.coin_y.contract_address,
-                                                                account=self.account)
+        wallet_y_balance_wei = await self.get_token_balance(
+            token_address=self.coin_y.contract_address,
+            account=self.account
+        )
         if wallet_y_balance_wei == 0:
             logger.error(f"Wallet {self.coin_y.symbol.upper()} balance = 0")
             return None
@@ -98,9 +109,11 @@ class MySwap(MySwapBase):
             logger.error(f"Wallet {self.coin_y.symbol.upper()} balance less than initial balance")
             return None
 
-        reserves_data = await self.get_pool_reserves_data(coin_x_symbol=self.coin_y.symbol,
-                                                          coin_y_symbol=self.coin_x.symbol,
-                                                          router_contract=self.router_contract)
+        reserves_data = await self.get_pool_reserves_data(
+            coin_x_symbol=self.coin_y.symbol,
+            coin_y_symbol=self.coin_x.symbol,
+            router_contract=self.router_contract
+        )
         if reserves_data is None:
             return None
 
@@ -113,17 +126,22 @@ class MySwap(MySwapBase):
         if amount_in_x_wei is None:
             return None
 
-        approve_call = self.build_token_approve_call(token_addr=self.coin_y.contract_address,
-                                                     spender=hex(self.router_contract.address),
-                                                     amount_wei=int(amount_out_y_wei))
-        swap_call = self.build_call(to_addr=self.router_contract.address,
-                                    func_name='swap',
-                                    call_data=[reserves_data['pool_id'],
-                                               self.i16(self.coin_y.contract_address),
-                                               amount_out_y_wei,
-                                               0,
-                                               amount_in_x_wei,
-                                               0])
+        approve_call = self.build_token_approve_call(
+            token_addr=self.coin_y.contract_address,
+            spender=hex(self.router_contract.address),
+            amount_wei=int(amount_out_y_wei)
+        )
+
+        swap_call = self.build_call(
+            to_addr=self.router_contract.address,
+            func_name='swap',
+            call_data=[reserves_data['pool_id'],
+                       self.i16(self.coin_y.contract_address),
+                       amount_out_y_wei,
+                       0,
+                       amount_in_x_wei,
+                       0]
+        )
 
         calls = [approve_call, swap_call]
 
@@ -151,7 +169,6 @@ class MySwap(MySwapBase):
             account=self.account,
             txn_payload_data=txn_payload_data
         )
-
         if txn_status is False:
             return False
 

@@ -26,10 +26,14 @@ import config as cfg
 
 class ModuleExecutor:
     """
-    Module executor for modules in a modules directory
+    Module executor for modules
     """
 
-    def __init__(self, task: tasks.TaskBase, wallet: WalletData):
+    def __init__(
+            self,
+            task: tasks.TaskBase,
+            wallet: WalletData
+    ):
         self.task = task
         self.module_name = task.module_name
         self.module_type = task.module_type
@@ -76,17 +80,13 @@ class ModuleExecutor:
             proxy_body = f"{proxy_data.host}:{proxy_data.port}"
             action_log_data.proxy = proxy_body
 
-            proxy_set_up_status = False
-
             if (
                 proxy_data.is_mobile is True
                 and self.app_config.mobile_proxy_rotation is True
             ):
                 rotation_link = self.app_config.mobile_proxy_rotation_link
                 if not rotation_link:
-                    err_msg = (
-                        "Mobile proxy rotation link is not set (go to app_config.json)"
-                    )
+                    err_msg = "Mobile proxy rotation link is not set (go to app_config.json)"
                     logger.error(err_msg)
 
                     action_log_data.is_success = False

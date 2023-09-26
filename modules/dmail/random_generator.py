@@ -4,6 +4,10 @@ from faker import Faker
 
 
 def generate_random_profile() -> DmailProfileSchema:
+    """
+    Generate random profile for dmail
+    :return:
+    """
     fake = Faker()
     profile = fake.profile()
     email_address = profile['mail']

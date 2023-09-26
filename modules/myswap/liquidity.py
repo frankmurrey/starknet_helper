@@ -1,4 +1,3 @@
-import random
 from typing import Union
 from typing import TYPE_CHECKING
 
@@ -17,9 +16,11 @@ class MySwapAddLiquidity(MySwapBase):
 
     task: 'MySwapAddLiquidityTask'
 
-    def __init__(self,
-                 account,
-                 task: 'MySwapAddLiquidityTask', ):
+    def __init__(
+            self,
+            account,
+            task: 'MySwapAddLiquidityTask'
+    ):
         super().__init__(
             account=account,
             task=task
@@ -50,7 +51,8 @@ class MySwapAddLiquidity(MySwapBase):
             amount_out_wei=amount_out_x_wei,
             coin_x_obj=self.coin_x,
             coin_y_obj=self.coin_y,
-            slippage=0)
+            slippage=0
+        )
 
         if amount_out_y_wei is None:
             return None
@@ -80,24 +82,38 @@ class MySwapAddLiquidity(MySwapBase):
         if token_pair is None:
             return None
 
-        token_0_decimals = await self.get_tokens_decimals_by_call(token_address=self.i16(token_pair[0]),
-                                                                  account=self.account)
+        token_0_decimals = await self.get_tokens_decimals_by_call(
+            token_address=self.i16(token_pair[0]),
+            account=self.account
+        )
+        if token_0_decimals is None:
+            return None
+
         amount_out_0_wei = int(amounts_out[token_pair[0]])
         amount_out_0_wei_with_slippage = int(amount_out_0_wei * (1 - self.task.slippage / 100))
         amount_0_decimals = amount_out_0_wei / 10 ** token_0_decimals
 
-        token_1_decimals = await self.get_tokens_decimals_by_call(token_address=self.i16(token_pair[1]),
-                                                                  account=self.account)
+        token_1_decimals = await self.get_tokens_decimals_by_call(
+            token_address=self.i16(token_pair[1]),
+            account=self.account
+        )
+        if token_1_decimals is None:
+            return None
+
         amount_out_1_wei = int(amounts_out[token_pair[1]])
         amount_out_1_wei_with_slippage = int(amount_out_1_wei * (1 - self.task.slippage / 100))
         amount_1_decimals = amount_out_1_wei / 10 ** token_1_decimals
 
-        approve_call_0 = self.build_token_approve_call(token_addr=token_pair[0],
-                                                       spender=hex(self.router_contract.address),
-                                                       amount_wei=amount_out_0_wei)
-        approve_call_1 = self.build_token_approve_call(token_addr=token_pair[1],
-                                                       spender=hex(self.router_contract.address),
-                                                       amount_wei=amount_out_1_wei)
+        approve_call_0 = self.build_token_approve_call(
+            token_addr=token_pair[0],
+            spender=hex(self.router_contract.address),
+            amount_wei=amount_out_0_wei
+        )
+        approve_call_1 = self.build_token_approve_call(
+            token_addr=token_pair[1],
+            spender=hex(self.router_contract.address),
+            amount_wei=amount_out_1_wei
+        )
 
         add_liq_call = self.build_call(
             to_addr=self.router_contract.address,
@@ -118,10 +134,11 @@ class MySwapAddLiquidity(MySwapBase):
 
         calls = [approve_call_0, approve_call_1, add_liq_call]
 
-        return {"calls": calls,
-                token_pair[0]: amount_0_decimals,
-                token_pair[1]: amount_1_decimals
-                }
+        return {
+            "calls": calls,
+            token_pair[0]: amount_0_decimals,
+            token_pair[1]: amount_1_decimals
+        }
 
     async def send_txn(self) -> bool:
         await self.set_fetched_tokens_data()
@@ -137,14 +154,18 @@ class MySwapAddLiquidity(MySwapBase):
         amount_out_x_decimals = txn_payload_data[self.coin_x.contract_address]
         amount_out_y_decimals = txn_payload_data[self.coin_y.contract_address]
 
-        txn_info_message = (f"Add Liquidity (MySwap) | "
-                            f"{round(amount_out_x_decimals, 5)} ({self.coin_x.symbol.upper()}) "
-                            f"+ {round(amount_out_y_decimals, 5)} ({self.coin_y.symbol.upper()}). "
-                            f"Slippage: {self.task.slippage}%.")
+        txn_info_message = (
+            f"Add Liquidity (MySwap) | "
+            f"{round(amount_out_x_decimals, 5)} ({self.coin_x.symbol.upper()}) "
+            f"+ {round(amount_out_y_decimals, 5)} ({self.coin_y.symbol.upper()}). "
+            f"Slippage: {self.task.slippage}%."
+        )
 
-        txn_status = await self.simulate_and_send_transfer_type_transaction(account=self.account,
-                                                                            calls=txn_calls,
-                                                                            txn_info_message=txn_info_message, )
+        txn_status = await self.simulate_and_send_transfer_type_transaction(
+            account=self.account,
+            calls=txn_calls,
+            txn_info_message=txn_info_message
+        )
 
         return txn_status
 
@@ -153,9 +174,11 @@ class MySwapRemoveLiquidity(MySwapBase):
 
     task: 'MySwapRemoveLiquidityTask'
 
-    def __init__(self,
-                 account,
-                 task: 'MySwapRemoveLiquidityTask', ):
+    def __init__(
+            self,
+            account,
+            task: 'MySwapRemoveLiquidityTask'
+    ):
         super().__init__(
             account=account,
             task=task,
@@ -164,9 +187,11 @@ class MySwapRemoveLiquidity(MySwapBase):
         self.account = account
         self.task = task
 
-    def get_lp_token_address_for_pool(self,
-                                      token_0_symbol,
-                                      token_1_symbol) -> Union[str, None]:
+    def get_lp_token_address_for_pool(
+            self,
+            token_0_symbol,
+            token_1_symbol
+    ) -> Union[str, None]:
         """
         Get LP token address for pool from token name
         :param token_0_symbol:
@@ -178,8 +203,10 @@ class MySwapRemoveLiquidity(MySwapBase):
 
         return lp_token_address
 
-    async def get_lp_supply(self,
-                            lp_addr) -> Union[int, None]:
+    async def get_lp_supply(
+            self,
+            lp_addr
+    ) -> Union[int, None]:
         """
         Get LP token supply
         :param lp_addr:
@@ -263,7 +290,6 @@ class MySwapRemoveLiquidity(MySwapBase):
             account=self.account,
             address=self.account.address
         )
-
         if wallet_lp_balance_wei == 0:
             logger.error(f"Wallet {self.coin_x.symbol.upper()} balance = 0")
             return None
@@ -284,9 +310,11 @@ class MySwapRemoveLiquidity(MySwapBase):
         amount_out_0_with_slippage = int(amounts_out[token_pair[0]] * (1 - self.task.slippage / 100))
         amount_out_1_with_slippage = int(amounts_out[token_pair[1]] * (1 - self.task.slippage / 100))
 
-        approve_call = self.build_token_approve_call(token_addr=lp_token_address,
-                                                     spender=hex(self.router_contract.address),
-                                                     amount_wei=wallet_lp_balance_wei)
+        approve_call = self.build_token_approve_call(
+            token_addr=lp_token_address,
+            spender=hex(self.router_contract.address),
+            amount_wei=wallet_lp_balance_wei
+        )
 
         remove_liq_call = self.build_call(
             to_addr=self.router_contract.address,
@@ -302,12 +330,16 @@ class MySwapRemoveLiquidity(MySwapBase):
             ]
         )
 
-        token_0_decimals = await self.get_tokens_decimals_by_call(token_address=self.i16(token_pair[0]),
-                                                                  account=self.account)
+        token_0_decimals = await self.get_tokens_decimals_by_call(
+            token_address=self.i16(token_pair[0]),
+            account=self.account
+        )
         amount_out_x_decimals = amounts_out[self.coin_x.contract_address] / 10 ** token_0_decimals
 
-        token_1_decimals = await self.get_tokens_decimals_by_call(token_address=self.i16(token_pair[1]),
-                                                                  account=self.account)
+        token_1_decimals = await self.get_tokens_decimals_by_call(
+            token_address=self.i16(token_pair[1]),
+            account=self.account
+        )
         amount_out_1_decimals = amounts_out[self.coin_y.contract_address] / 10 ** token_1_decimals
 
         calls = [approve_call, remove_liq_call]
@@ -319,6 +351,15 @@ class MySwapRemoveLiquidity(MySwapBase):
         }
 
     async def send_txn(self) -> bool:
+        """
+        Send transaction
+        :return:
+        """
+        await self.set_fetched_tokens_data()
+
+        if self.check_local_tokens_data() is False:
+            return False
+
         txn_payload: dict = await self.build_txn_payload_data()
         if txn_payload is None:
             return False
@@ -327,10 +368,12 @@ class MySwapRemoveLiquidity(MySwapBase):
         amount_out_x_decimals = txn_payload[self.coin_x.contract_address]
         amount_out_y_decimals = txn_payload[self.coin_y.contract_address]
 
-        txn_info_message = (f"Remove Liquidity (MySwap). "
-                            f"{round(amount_out_x_decimals, 5)} ({self.coin_x.symbol.upper()}) + "
-                            f"{round(amount_out_y_decimals, 5)} ({self.coin_y.symbol.upper()}). "
-                            f"Slippage: {self.task.slippage}%.")
+        txn_info_message = (
+            f"Remove Liquidity (MySwap). "
+            f"{round(amount_out_x_decimals, 5)} ({self.coin_x.symbol.upper()}) + "
+            f"{round(amount_out_y_decimals, 5)} ({self.coin_y.symbol.upper()}). "
+            f"Slippage: {self.task.slippage}%."
+        )
 
         txn_status = await self.simulate_and_send_transfer_type_transaction(account=self.account,
                                                                             calls=txn_calls,

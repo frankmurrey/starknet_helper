@@ -5,10 +5,8 @@ from loguru import logger
 from starknet_py.net.client_errors import ClientError
 from starknet_py.net.account.account import Account
 
-
 from modules.sithswap.base import SithBase
 from modules.sithswap.math import calc_output_burn_liquidity
-from contracts.tokens.main import Tokens
 
 
 if TYPE_CHECKING:
@@ -19,9 +17,11 @@ if TYPE_CHECKING:
 class SithSwapAddLiquidity(SithBase):
     task: 'SithSwapAddLiquidityTask'
 
-    def __init__(self,
-                 account,
-                 task: 'SithSwapAddLiquidityTask'):
+    def __init__(
+            self,
+            account,
+            task: 'SithSwapAddLiquidityTask'
+    ):
 
         super().__init__(
             account=account,
@@ -150,14 +150,18 @@ class SithSwapAddLiquidity(SithBase):
         if txn_calls is None:
             return False
 
-        txn_info_message = (f"Add Liquidity (SithSwap) | "
-                            f"{round(amounts_out_data['amount_x_decimals'], 4)} ({self.coin_x.symbol.upper()}) + "
-                            f"{round(amounts_out_data['amount_y_decimals'], 4)} ({self.coin_y.symbol.upper()}). "
-                            f"Slippage: {self.task.slippage}%.")
+        txn_info_message = (
+            f"Add Liquidity (SithSwap) | "
+            f"{round(amounts_out_data['amount_x_decimals'], 4)} ({self.coin_x.symbol.upper()}) + "
+            f"{round(amounts_out_data['amount_y_decimals'], 4)} ({self.coin_y.symbol.upper()}). "
+            f"Slippage: {self.task.slippage}%."
+        )
 
-        txn_status = await self.simulate_and_send_transfer_type_transaction(account=self.account,
-                                                                            calls=txn_calls,
-                                                                            txn_info_message=txn_info_message, )
+        txn_status = await self.simulate_and_send_transfer_type_transaction(
+            account=self.account,
+            calls=txn_calls,
+            txn_info_message=txn_info_message
+        )
 
         return txn_status
 
@@ -165,9 +169,11 @@ class SithSwapAddLiquidity(SithBase):
 class SithSwapRemoveLiquidity(SithBase):
     task: 'SithSwapRemoveLiquidityTask'
 
-    def __init__(self,
-                 account,
-                 task: 'SithSwapRemoveLiquidityTask'):
+    def __init__(
+            self,
+            account,
+            task: 'SithSwapRemoveLiquidityTask'
+    ):
 
         super().__init__(
             account=account,
@@ -179,17 +185,21 @@ class SithSwapRemoveLiquidity(SithBase):
 
     async def get_lp_supply(
             self,
-            lp_addr: int):
+            lp_addr: int
+    ):
         """
         Get LP token supply.
         :param lp_addr:
         :return:
         """
         try:
-            lp_contract = self.get_contract(address=lp_addr,
-                                            abi=self.sith_swap_contracts.pool_abi,
-                                            provider=self.account)
+            lp_contract = self.get_contract(
+                address=lp_addr,
+                abi=self.sith_swap_contracts.pool_abi,
+                provider=self.account
+            )
             response = await lp_contract.functions['totalSupply'].call()
+
             return response.res
 
         except ClientError:

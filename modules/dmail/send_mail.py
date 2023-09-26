@@ -1,5 +1,7 @@
 from typing import TYPE_CHECKING
 
+from starknet_py.net.client_models import Call
+
 from modules.base import ModuleBase
 from modules.dmail.random_generator import generate_random_profile
 from src.schemas.dmail_profile import DmailProfileSchema
@@ -27,12 +29,18 @@ class DmailSendMail(ModuleBase):
         self.account = account
 
         self.dmail_contracts = DmailContracts()
-        self.router_contract = self.get_contract(address=self.dmail_contracts.router_address,
-                                                 abi=self.dmail_contracts.router_abi,
-                                                 provider=account)
+        self.router_contract = self.get_contract(
+            address=self.dmail_contracts.router_address,
+            abi=self.dmail_contracts.router_abi,
+            provider=account
+        )
         self.profile: DmailProfileSchema = generate_random_profile()
 
-    async def build_txn_payload_calls(self):
+    async def build_txn_payload_calls(self) -> list[Call]:
+        """
+        Build transaction payload calls
+        :return:
+        """
         mail_call = self.build_call(
             to_addr=self.router_contract.address,
             func_name='transaction',
@@ -45,14 +53,20 @@ class DmailSendMail(ModuleBase):
         return [mail_call]
 
     async def send_txn(self) -> bool:
+        """
+        Send dmail transaction
+        :return:
+        """
         txn_payload_calls = await self.build_txn_payload_calls()
         if txn_payload_calls is None:
             return False
 
         txn_info_message = f"Send mail (Dmail). Receiver: {self.profile.email}. Theme: {self.profile.theme}"
 
-        txn_status = await self.simulate_and_send_transfer_type_transaction(account=self.account,
-                                                                            calls=txn_payload_calls,
-                                                                            txn_info_message=txn_info_message, )
+        txn_status = await self.simulate_and_send_transfer_type_transaction(
+            account=self.account,
+            calls=txn_payload_calls,
+            txn_info_message=txn_info_message
+        )
 
         return txn_status

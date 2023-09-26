@@ -36,13 +36,17 @@ class MySwapBase(SwapModuleBase):
         self._account = account
 
         self.my_swap_contracts = MySwapContracts()
-        self.router_contract = self.get_contract(address=self.my_swap_contracts.router_address,
-                                                 abi=self.my_swap_contracts.router_abi,
-                                                 provider=account)
+        self.router_contract = self.get_contract(
+            address=self.my_swap_contracts.router_address,
+            abi=self.my_swap_contracts.router_abi,
+            provider=account
+        )
 
-    def get_pool_id(self,
-                    coin_x_symbol: str,
-                    coin_y_symbol: str) -> Union[int, None]:
+    def get_pool_id(
+            self,
+            coin_x_symbol: str,
+            coin_y_symbol: str
+    ) -> Union[int, None]:
         """
         Get pool id from pool name
         :param coin_x_symbol:
@@ -58,8 +62,7 @@ class MySwapBase(SwapModuleBase):
 
         return None
 
-    async def get_token_pair_for_pool(self,
-                                      pool_id: int) -> Union[list, None]:
+    async def get_token_pair_for_pool(self, pool_id: int) -> Union[list, None]:
         """
         Get token pair for pool
         :param pool_id:
@@ -77,13 +80,15 @@ class MySwapBase(SwapModuleBase):
         if coin_x_obj is None or coin_y_obj is None:
             return None
 
-        return [coin_x_obj.contract_address, coin_y_obj.contract_address]
+        return [coin_x_obj.contract_address,
+                coin_y_obj.contract_address]
 
     async def get_pool_reserves_data(
             self,
             coin_x_symbol: str,
             coin_y_symbol: str,
-            router_contract) -> Union[dict, None]:
+            router_contract
+    ) -> Union[dict, None]:
         """
         Get pool reserves data from router
         :param coin_x_symbol:
@@ -123,7 +128,8 @@ class MySwapBase(SwapModuleBase):
             self,
             coin_x_address: str,
             coin_y_address: str,
-            reserves_data) -> Union[dict, None]:
+            reserves_data
+    ) -> Union[dict, None]:
         """
         Get sorted reserves
         :param coin_x_address:
@@ -163,15 +169,19 @@ class MySwapBase(SwapModuleBase):
         :return:
         """
 
-        sorted_reserves = await self.get_sorted_reserves(coin_x_address=coin_x_obj.contract_address,
-                                                         coin_y_address=coin_y_obj.contract_address,
-                                                         reserves_data=reserves_data)
+        sorted_reserves = await self.get_sorted_reserves(
+            coin_x_address=coin_x_obj.contract_address,
+            coin_y_address=coin_y_obj.contract_address,
+            reserves_data=reserves_data
+        )
         if sorted_reserves is None:
             return None
 
-        amount_in_wei = get_amount_in_from_reserves(amount_out=amount_out_wei,
-                                                    reserve_x=sorted_reserves[coin_x_obj.contract_address],
-                                                    reserve_y=sorted_reserves[coin_y_obj.contract_address])
+        amount_in_wei = get_amount_in_from_reserves(
+            amount_out=amount_out_wei,
+            reserve_x=sorted_reserves[coin_x_obj.contract_address],
+            reserve_y=sorted_reserves[coin_y_obj.contract_address]
+        )
         fee = sorted_reserves['fee']
 
         amount_in_after_slippage = amount_in_wei * (1 - (slippage / 100))

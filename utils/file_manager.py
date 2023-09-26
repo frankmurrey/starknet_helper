@@ -1,5 +1,6 @@
 import os
 import json
+import pickle
 from typing import Union, List, Dict, Any
 from datetime import datetime
 
@@ -16,6 +17,26 @@ class FileManager:
 
     def __init__(self):
         pass
+
+    @staticmethod
+    def save_to_pickle_file(data, file_path):
+        try:
+            with open(file_path, "wb") as file:
+                pickle.dump(data, file)
+
+        except Exception as e:
+            logger.error(f"Error while writing file \"{file_path}\": {e}")
+            return None
+
+    @staticmethod
+    def read_from_pickle_file(file_path):
+        try:
+            with open(file_path, "rb") as file:
+                return pickle.load(file)
+
+        except Exception as e:
+            logger.error(f"Error while reading file \"{file_path}\": {e}")
+            return None
 
     @staticmethod
     def read_abi_from_file(file_path: str) -> Union[dict, list, None]:
@@ -36,7 +57,6 @@ class FileManager:
 
         except Exception as e:
             logger.error(f"Error while reading file \"{file_path}\": {e}")
-            logger.exception(e)
             return None
 
     @staticmethod
@@ -56,7 +76,6 @@ class FileManager:
 
         except Exception as e:
             logger.error(f"Error while reading file \"{file_path}\": {e}")
-            logger.exception(e)
             return None
 
         return None
@@ -76,7 +95,6 @@ class FileManager:
 
         except Exception as e:
             logger.error(f"Error while reading file \"{file_path}\": {e}")
-            logger.exception(e)
             return None
 
     @staticmethod
@@ -97,7 +115,7 @@ class FileManager:
     ) -> None:
         try:
             with open(file_path, "w") as file:
-                json.dump(data, file, indent=4)
+                json.dump(data, file, indent=4, default=str)
 
         except Exception as e:
             logger.error(f"Error while writing file \"{file_path}\": {e}")

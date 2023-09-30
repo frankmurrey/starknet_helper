@@ -1,5 +1,7 @@
 import customtkinter
 
+from loguru import logger
+
 from src.tasks_executor import tasks_executor
 from src.logger import configure_logger
 
@@ -7,6 +9,7 @@ from gui.main_window.frames import SidebarFrame
 from gui.wallet_right_window.right_frame import RightFrame
 
 from utils.repr.misc import print_logo
+from utils.misc import mingw_installed
 
 
 def run_gui():
@@ -43,6 +46,12 @@ class MainWindow(customtkinter.CTk):
 
     def on_start(self):
         configure_logger()
+
+        if mingw_installed() is False:
+            logger.error("MinGW is not installed, please install it and try again")
+            logger.error("https://starknetpy.readthedocs.io/en/latest/installation.html#windows")
+            exit(1)
+
         print_logo()
 
     def on_closing(self):

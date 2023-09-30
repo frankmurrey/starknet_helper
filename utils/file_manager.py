@@ -11,6 +11,7 @@ from loguru import logger
 
 from src import paths
 from src import exceptions
+from utils.misc import detect_separator
 
 
 class FileManager:
@@ -98,8 +99,16 @@ class FileManager:
             return None
 
     @staticmethod
-    def read_data_from_csv_file(filepath: str) -> Union[List[Dict[str, Any]], None]:
-        df = pd.read_csv(filepath, sep=";")
+    def read_data_from_csv_file(
+            filepath: str
+    ) -> Union[List[Dict[str, Any]], None]:
+        separator = detect_separator(filepath, [",", ";"])
+        print(separator)
+        if separator is None:
+            logger.error(f"Could not detect separator in file \"{filepath}\"")
+            return None
+
+        df = pd.read_csv(filepath, sep=separator)
         df = df.replace(np.nan, None)
         return df.to_dict(orient="records")
 

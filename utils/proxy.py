@@ -19,18 +19,22 @@ def parse_proxy_data(proxy_str: str) -> Union[ProxyData, None]:
         proxy_str = proxy_str.split(":")
         if len(proxy_str) == 2:
             host, port = proxy_str
-            proxy = ProxyData(host=host,
-                              port=port,
-                              is_mobile=is_mobile)
+            proxy = ProxyData(
+                host=host,
+                port=port,
+                is_mobile=is_mobile
+            )
 
         elif len(proxy_str) == 4:
             host, port, username, password = proxy_str
-            proxy = ProxyData(host=host,
-                              port=port,
-                              username=username,
-                              password=password,
-                              auth=True,
-                              is_mobile=is_mobile)
+            proxy = ProxyData(
+                host=host,
+                port=port,
+                username=username,
+                password=password,
+                auth=True,
+                is_mobile=is_mobile
+            )
 
         else:
             proxy = None

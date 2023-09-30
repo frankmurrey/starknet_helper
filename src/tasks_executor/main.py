@@ -13,6 +13,7 @@ from src import enums
 from modules.module_executor import ModuleExecutor
 from src.schemas.tasks.base.base import TaskBase
 from src.schemas.wallet_data import WalletData
+from src.tasks_executor.queue import clear_queue
 from src.logger import configure_logger
 from utils.repr.misc import print_wallet_execution
 
@@ -186,6 +187,7 @@ class TasksExecutor:
 
                 self.wallets_to_process = []
                 self.tasks_to_process = []
+                self.stop_tasks_processing()
 
             except KeyboardInterrupt:
                 self.running = False
@@ -220,6 +222,9 @@ class TasksExecutor:
             if clear:
                 self.kill_event.clear()
             self.running = False
+            self.start_event.clear()
+            clear_queue(self.tasks_queue)
+            clear_queue(self.wallets_queue)
             self.tasks_to_process = []
             self.wallets_to_process = []
             return True
@@ -229,11 +234,16 @@ class TasksExecutor:
         if self.stop_event.is_set():
             if clear:
                 self.stop_event.clear()
-            # self.running = False
+            self.start_event.clear()
+            clear_queue(self.tasks_queue)
+            clear_queue(self.wallets_queue)
             self.tasks_to_process = []
             self.wallets_to_process = []
             return True
         return False
+
+    def is_running(self):
+        return self.start_event.is_set() and not self.stop_event.is_set()
 
     def listen_for_started_items(self):
         """
@@ -301,7 +311,6 @@ class TasksExecutor:
         """
         self.stop_event.set()
         self.start_event.clear()
-        logger.critical("Tasks processing will be stopped after current task")
 
     def start_tasks_processing(self):
         """

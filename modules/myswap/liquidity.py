@@ -82,6 +82,24 @@ class MySwapAddLiquidity(MySwapBase):
         if token_pair is None:
             return None
 
+        token_0_balance_wei = await self.get_token_balance_for_address(
+            token_address=self.i16(token_pair[0]),
+            account=self.account,
+            address=self.account.address
+        )
+        if token_0_balance_wei == 0:
+            logger.error(f"Wallet {token_pair[0]} balance = 0")
+            return None
+
+        token_1_balance_wei = await self.get_token_balance_for_address(
+            token_address=self.i16(token_pair[1]),
+            account=self.account,
+            address=self.account.address
+        )
+        if token_1_balance_wei == 0:
+            logger.error(f"Wallet {token_pair[1]} balance = 0")
+            return None
+
         token_0_decimals = await self.get_tokens_decimals_by_call(
             token_address=self.i16(token_pair[0]),
             account=self.account
@@ -90,6 +108,13 @@ class MySwapAddLiquidity(MySwapBase):
             return None
 
         amount_out_0_wei = int(amounts_out[token_pair[0]])
+        if amount_out_0_wei > token_0_balance_wei:
+            logger.error(
+                f"Amount out of Token0 ({round(amount_out_0_wei / 10 ** token_0_decimals, 4)}) > "
+                f"wallet token balance ({round(token_0_balance_wei / 10 ** token_0_decimals, 4)})"
+            )
+            return None
+
         amount_out_0_wei_with_slippage = int(amount_out_0_wei * (1 - self.task.slippage / 100))
         amount_0_decimals = amount_out_0_wei / 10 ** token_0_decimals
 
@@ -101,6 +126,12 @@ class MySwapAddLiquidity(MySwapBase):
             return None
 
         amount_out_1_wei = int(amounts_out[token_pair[1]])
+        if amount_out_1_wei > token_1_balance_wei:
+            logger.error(
+                f"Amount out of Token1 ({round(amount_out_1_wei / 10 ** token_1_decimals, 4)}) > "
+                f"wallet token balance ({round(token_1_balance_wei / 10 ** token_1_decimals, 4)})"
+            )
+            return None
         amount_out_1_wei_with_slippage = int(amount_out_1_wei * (1 - self.task.slippage / 100))
         amount_1_decimals = amount_out_1_wei / 10 ** token_1_decimals
 
@@ -291,7 +322,7 @@ class MySwapRemoveLiquidity(MySwapBase):
             address=self.account.address
         )
         if wallet_lp_balance_wei == 0:
-            logger.error(f"Wallet {self.coin_x.symbol.upper()} balance = 0")
+            logger.error(f"Wallet LP balance = 0")
             return None
 
         token_pair: list[str, str] = await self.get_token_pair_for_pool(pool_id=pool_id)

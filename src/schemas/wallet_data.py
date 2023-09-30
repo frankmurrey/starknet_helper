@@ -47,10 +47,11 @@ class WalletData(BaseModel):
     @validator("private_key", pre=True)
     def validate_private_key(cls, v):
         if not v:
-            raise exceptions.AppValidationError("Private key is required")
+            raise exceptions.AppValidationError(f"Private key is required")
 
         if len(v) != config.STARK_KEY_LENGTH:
-            raise exceptions.AppValidationError("Private key must be 64 characters long")
+            print(v)
+            raise exceptions.AppValidationError("Private key must be 66 characters long")
 
         return v
 

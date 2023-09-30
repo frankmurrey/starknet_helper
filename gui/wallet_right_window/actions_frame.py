@@ -203,7 +203,7 @@ class ActionsFrame(customtkinter.CTkFrame):
                 "row": start_row + action_index,
                 "column": start_column,
                 "padx": 2,
-                "pady": 2,
+                "pady": 4,
                 "sticky": "ew"
             }
 

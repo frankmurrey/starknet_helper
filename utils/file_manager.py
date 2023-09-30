@@ -103,7 +103,6 @@ class FileManager:
             filepath: str
     ) -> Union[List[Dict[str, Any]], None]:
         separator = detect_separator(filepath, [",", ";"])
-        print(separator)
         if separator is None:
             logger.error(f"Could not detect separator in file \"{filepath}\"")
             return None

@@ -188,7 +188,7 @@ def print_module_config(task: TaskBase):
     print(*repr_strings, sep="\n")
     print(f"{Fore.LIGHTMAGENTA_EX}Made by Frank Murrey - https://github.com/frankmurrey{Fore.RESET}")
 
-    if random.randint(1, 5) == 1:
+    if random.randint(1, 8) == 1:
         message = random.choice(donation_messages)
         print(f"{Fore.LIGHTMAGENTA_EX}{message}{Fore.RESET}\n")
         print(f"{Fore.LIGHTMAGENTA_EX}EVM - ... {Fore.RESET}\n")

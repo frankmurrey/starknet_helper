@@ -95,10 +95,12 @@ class WalletGeneratorFrame(customtkinter.CTkFrame):
             wallet_type=private_key_type
         )
 
-        file_path = filedialog.asksaveasfilename(title="Save wallets",
-                                                 defaultextension=".xlsx",
-                                                 filetypes=(("Excel files", "*.xlsx"), ("All files", "*.*"),),
-                                                 initialfile=f"generated.xlsx")
+        file_path = filedialog.asksaveasfilename(
+            title="Save wallets",
+            defaultextension=".xlsx",
+            filetypes=(("Excel files", "*.xlsx"), ("All files", "*.*"),),
+            initialfile=f"generated.xlsx"
+        )
 
         write_generated_wallets_to_xlsx(data=wallets, path=file_path)
 

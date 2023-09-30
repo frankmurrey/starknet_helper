@@ -13,6 +13,18 @@ class KeyData:
         self.call_data = call_data
 
 
+def pad_hex_with_zeros(
+        original_hex,
+        desired_length
+):
+    if not original_hex.startswith("0x"):
+        raise ValueError("Input is not a valid hexadecimal string with '0x' prefix")
+
+    padded_hex = "0x" + original_hex[2:].zfill(desired_length - 2)
+
+    return padded_hex
+
+
 def get_key_pair_from_pk(private_key):
     return KeyPair.from_private_key(private_key)
 

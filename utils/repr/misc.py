@@ -94,7 +94,7 @@ class Colors:
 class AsciiPrints:
     pre_config_1 = '''
      ______   __  ___                          
-    / ____/  /  |/  __  _______________  __  __
+    / ____/  /  |/  /_  _______________  __  __
    / /_     / /|_/ / / / / ___/ ___/ _ \/ / / /
   / __/    / /  / / /_/ / /  / /  /  __/ /_/ / 
  /_/      /_/  /_/\__,_/_/  /_/   \___/\__, /  
@@ -102,7 +102,7 @@ class AsciiPrints:
 
 
 def print_logo():
-    print(f"{Fore.LIGHTMAGENTA_EX}{AsciiPrints.pre_config_1}{Fore.RESET}")
+    print(f"{Fore.LIGHTMAGENTA_EX}{AsciiPrints.pre_config_1}{Fore.RESET}\n")
 
 
 def print_wallet_execution(wallet: "WalletData", wallet_index: int):

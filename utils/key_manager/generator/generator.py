@@ -3,7 +3,9 @@ from typing import List
 from eth_account import Account
 from starknet_py.net.signer.stark_curve_signer import KeyPair
 
+import config
 from src import enums
+from utils.key_manager.key_manager import pad_hex_with_zeros
 from utils.key_manager.key_manager import get_argent_key_from_phrase
 from utils.key_manager.key_manager import get_braavos_key_from_phrase
 from utils.key_manager.key_manager import get_argent_addr_from_private_key
@@ -48,7 +50,11 @@ class Generator:
 
         keys = []
         for mnemonic in mnemonics:
-            keys.append(get_argent_key_from_phrase(mnemonic))
+            pk = get_argent_key_from_phrase(mnemonic)
+            if len(pk) < config.STARK_KEY_LENGTH:
+                pk = pad_hex_with_zeros(pk, config.STARK_KEY_LENGTH)
+
+            keys.append(pk)
 
         return keys
 
@@ -67,7 +73,11 @@ class Generator:
 
         keys = []
         for mnemonic in mnemonics:
-            keys.append(get_braavos_key_from_phrase(mnemonic))
+            pk = get_braavos_key_from_phrase(mnemonic)
+            if len(pk) < config.STARK_KEY_LENGTH:
+                pk = pad_hex_with_zeros(pk, config.STARK_KEY_LENGTH)
+
+            keys.append(pk)
 
         return keys
 
@@ -88,12 +98,14 @@ class Generator:
 
         addresses = []
         for private_key in private_keys:
-            addresses.append(
-                get_argent_addr_from_private_key(
-                    private_key=private_key,
-                    cairo_version=cairo_version
-                )
+            addr = get_argent_addr_from_private_key(
+                private_key=private_key,
+                cairo_version=cairo_version
             )
+            if len(addr) < config.STARK_KEY_LENGTH:
+                addr = pad_hex_with_zeros(addr, config.STARK_KEY_LENGTH)
+
+            addresses.append(addr)
 
         return addresses
 
@@ -114,12 +126,14 @@ class Generator:
 
         addresses = []
         for private_key in private_keys:
-            addresses.append(
-                get_braavos_addr_from_private_key(
-                    private_key=private_key,
-                    cairo_version=cairo_version
-                )
+            addr = get_braavos_addr_from_private_key(
+                private_key=private_key,
+                cairo_version=cairo_version
             )
+            if len(addr) < config.STARK_KEY_LENGTH:
+                addr = pad_hex_with_zeros(addr, config.STARK_KEY_LENGTH)
+
+            addresses.append(addr)
 
         return addresses
 

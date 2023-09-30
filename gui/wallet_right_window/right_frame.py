@@ -111,6 +111,9 @@ class RightFrame(customtkinter.CTkFrame):
 
         wallets_raw_data = FileManager.read_data_from_csv_file(filepath)
         wallets = WalletManager.get_wallets(wallets_raw_data)
+        if wallets is None:
+            return None
+
         self.set_wallets(wallets)
 
     def remove_all_wallets(self):

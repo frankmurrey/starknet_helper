@@ -4,6 +4,7 @@ from typing import List, Union
 from uuid import UUID
 
 import customtkinter
+from loguru import logger
 
 from src.schemas.tasks import TaskBase
 from src.schemas.wallet_data import WalletData
@@ -267,6 +268,9 @@ class ActionsFrame(customtkinter.CTkFrame):
 
     def on_start_button_click(self):
 
+        if tasks_executor.is_running():
+            return
+
         for wallet_item in self.wallets_table.wallets_items:
             wallet_item.set_wallet_inactive()
 
@@ -314,6 +318,7 @@ class ActionsFrame(customtkinter.CTkFrame):
         )
 
     def on_stop_button_click(self):
+        logger.critical("Tasks processing will be stopped after current task")
         tasks_executor.stop_tasks_processing()
 
 

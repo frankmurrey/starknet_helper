@@ -4,6 +4,7 @@ import queue
 import asyncio
 import threading as th
 import multiprocessing as mp
+from datetime import datetime, timedelta
 from typing import Optional, List, Callable
 
 from loguru import logger
@@ -130,7 +131,12 @@ class TasksExecutor:
                 if not len(self.wallets_to_process) or not len(self.tasks_to_process):
                     continue
 
+                is_stop = False
+
                 for wallet_index, wallet in enumerate(self.wallets_to_process):
+                    if is_stop:
+                        break
+
                     self.started_wallets_queue.put_nowait(wallet)
 
                     print_wallet_execution(wallet, wallet_index)
@@ -139,6 +145,9 @@ class TasksExecutor:
 
                     for task_index, task in enumerate(self.tasks_to_process):
                         task: TaskBase
+
+                        if is_stop:
+                            break
 
                         task.task_status = enums.TaskStatus.PROCESSING
                         self.started_tasks_queue.put_nowait((task, wallet))
@@ -151,9 +160,11 @@ class TasksExecutor:
                         )
 
                         if self.is_killed():
+                            is_stop = True
                             break
 
                         if self.is_stopped():
+                            is_stop = True
                             break
 
                         if task_result:
@@ -177,7 +188,9 @@ class TasksExecutor:
                         ])
 
                         if not is_last:
-                            logger.info(f"Time to sleep for {time_to_sleep} seconds...")
+                            continue_datetime = datetime.now() + timedelta(seconds=time_to_sleep)
+                            logger.info(f"Time to sleep for {time_to_sleep} seconds..., "
+                                        f"continue at {continue_datetime}")
                             self.sleep(time_to_sleep)
 
                         else:

@@ -50,7 +50,6 @@ class WalletData(BaseModel):
             raise exceptions.AppValidationError(f"Private key is required")
 
         if len(v) != config.STARK_KEY_LENGTH:
-            print(v)
             raise exceptions.AppValidationError("Private key must be 66 characters long")
 
         return v

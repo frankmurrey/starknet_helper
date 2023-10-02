@@ -16,6 +16,7 @@ from src.schemas.tasks.base.base import TaskBase
 from src.schemas.wallet_data import WalletData
 from src.tasks_executor.queue import clear_queue
 from src.logger import configure_logger
+from src.storage import ActionStorage
 from utils.repr.misc import print_wallet_execution
 
 
@@ -130,6 +131,9 @@ class TasksExecutor:
 
                 if not len(self.wallets_to_process) or not len(self.tasks_to_process):
                     continue
+
+                ActionStorage().reset_all_actions()
+                ActionStorage().create_and_set_new_logs_dir()
 
                 is_stop = False
 

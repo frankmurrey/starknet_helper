@@ -191,8 +191,9 @@ def print_module_config(task: TaskBase):
     if random.randint(1, 8) == 1:
         message = random.choice(donation_messages)
         print(f"{Fore.LIGHTMAGENTA_EX}{message}{Fore.RESET}\n")
-        print(f"{Fore.LIGHTMAGENTA_EX}EVM - ... {Fore.RESET}\n")
-        print(f"{Fore.LIGHTMAGENTA_EX}STARK - ...{Fore.RESET}\n")
+        print(f"{Fore.LIGHTMAGENTA_EX}EVM - 0xA7579FF5783e8bD48E5002a294A0b1054F820760 {Fore.RESET}\n")
+        print(f"{Fore.LIGHTMAGENTA_EX}STARK - 0x062d04705B96734eba8622667E9Bc8fec78C77e4c5878B2c72eA84702C17db3b"
+              f"{Fore.RESET}\n")
 
     print(f"{Fore.LIGHTMAGENTA_EX}Starting in {config.DEFAULT_DELAY_SEC} sec...{Fore.RESET}\n")
 

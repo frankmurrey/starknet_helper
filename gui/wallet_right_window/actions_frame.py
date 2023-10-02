@@ -9,6 +9,7 @@ from loguru import logger
 from src.schemas.tasks import TaskBase
 from src.schemas.wallet_data import WalletData
 from src.tasks_executor import tasks_executor
+from src.storage import ActionStorage
 from src.storage import Storage
 from utils.file_manager import FileManager
 from gui.main_window.interactions_top_level_window import InteractionTopLevelWindow
@@ -39,6 +40,7 @@ class ActionsFrame(customtkinter.CTkFrame):
         self.grid_rowconfigure((0, 1, 3, 4), weight=1)
         self.grid_columnconfigure(1, weight=0)
 
+        self.action_storage = ActionStorage()
         self.actions: List[dict] = []
         self.action_items: List[WalletActionFrame] = []
 
@@ -306,10 +308,9 @@ class ActionsFrame(customtkinter.CTkFrame):
             wallets = wallets[:amount]
 
         tasks_executor.start_tasks_processing()
-
         tasks_executor.push_wallets(
             wallets=wallets,
-            shuffle=bool(bool(self.run_settings_frame.shuffle_wallets_checkbox.get()))
+            shuffle=self.run_settings_frame.shuffle_wallets_checkbox.get()
         )
 
         tasks_executor.push_tasks(
@@ -716,6 +717,31 @@ class RunSettingsFrame(customtkinter.CTkFrame):
             sticky="w"
         )
         self.wait_for_receipt_checkbox.select()
+
+        self.retries_label = customtkinter.CTkLabel(
+            self,
+            text="Retries:",
+            font=customtkinter.CTkFont(size=12, weight="bold")
+        )
+        self.retries_label.grid(
+            row=4,
+            column=1,
+            padx=20,
+            pady=0,
+            sticky="w"
+        )
+
+        self.retries_spinbox = FloatSpinbox(self,
+                                            start_index=1,
+                                            step_size=1,
+                                            width=105)
+        self.retries_spinbox.grid(
+            row=5,
+            column=1,
+            padx=20,
+            pady=0,
+            sticky="w"
+        )
 
     def wait_for_txn_checkbox_event(self):
         if self.wait_for_receipt_checkbox.get():

@@ -51,7 +51,3 @@ def decode_wallet_version(version: int) -> str:
     final_version = version_string.lstrip("\x00")
 
     return final_version
-
-
-if __name__ == '__main__':
-    print(mingw_installed())

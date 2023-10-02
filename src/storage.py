@@ -66,6 +66,13 @@ class ActionStorage:
             self.all_actions = []
             self.current_action: WalletActionSchema = WalletActionSchema()
             self.current_logs_dir = None
+            self.current_active_wallet = None
+
+        def set_current_active_wallet(self, wallet_data):
+            self.current_active_wallet = wallet_data
+
+        def get_current_active_wallet(self):
+            return self.current_active_wallet
 
         def add_action(self, action_data: WalletActionSchema):
             if Storage().app_config.preserve_logs is False:
@@ -87,6 +94,7 @@ class ActionStorage:
 
         def set_current_logs_dir(self, new_logs_dir):
             if not os.path.exists(new_logs_dir):
+                logger.error(f"Logs dir \"{new_logs_dir}\" does not exist")
                 return
 
             self.current_logs_dir = new_logs_dir

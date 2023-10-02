@@ -16,10 +16,9 @@ from loguru import logger
 from utils.key_manager.key_manager import get_key_pair_from_pk
 from utils.key_manager.key_manager import get_argent_addr_from_private_key
 from utils.key_manager.key_manager import get_braavos_addr_from_private_key
-from src.schemas.logs import WalletActionSchema
+from src.schemas.action_models import ModuleExecutionResult
 from src.gecko_pricer import GeckoPricer
 from src.storage import Storage
-from src.storage import ActionStorage
 from src import paths
 from utils.file_manager import FileManager
 from utils.misc import decode_wallet_version
@@ -49,6 +48,7 @@ class ModuleBase:
         self.tokens = Tokens()
 
         self.task = task
+        self.module_execution_result = ModuleExecutionResult()
 
     def i16(self,
             hex_d: str):
@@ -385,7 +385,8 @@ class ModuleBase:
             self,
             account: Account,
             calls: list,
-            max_fee: int,
+            max_fee: Union[int, None],
+            auto_estimate: Union[bool, None],
             cairo_version: int
     ) -> tuple:
         """
@@ -393,11 +394,17 @@ class ModuleBase:
         :param account:
         :param calls:
         :param max_fee:
+        :param auto_estimate:
         :param cairo_version:
         :return: bool, response
         """
         try:
-            resp = await account.execute(calls=calls, max_fee=max_fee, cairo_version=cairo_version)
+            resp = await account.execute(
+                calls=calls,
+                max_fee=max_fee,
+                cairo_version=cairo_version,
+                auto_estimate=auto_estimate
+            )
             return True, resp
 
         except Exception as ex:
@@ -434,9 +441,11 @@ class ModuleBase:
         :return:
         """
         try:
-            return await self.client.wait_for_tx(tx_hash=tx_hash,
-                                                 check_interval=5,
-                                                 retries=(time_out_sec // 5) + 1)
+            return await self.client.wait_for_tx(
+                tx_hash=tx_hash,
+                check_interval=5,
+                retries=(time_out_sec // 5) + 1
+            )
         except Exception as ex:
             logger.error(f"Error while waiting for txn receipt: {ex}")
             return None
@@ -468,24 +477,61 @@ class ModuleBase:
             self,
             account: Account,
             calls: list,
-            cairo_version: int
+            cairo_version: int,
+            auto_estimate: bool = False
     ) -> Union[Invoke, None]:
         try:
             return await account.sign_invoke_transaction(
                 calls=calls,
-                max_fee=0,
-                cairo_version=cairo_version
+                max_fee=0 if auto_estimate is False else None,
+                cairo_version=cairo_version,
+                auto_estimate=auto_estimate if auto_estimate is True else None
             )
 
         except ClientError:
             return None
+
+    async def try_send_txn(
+            self,
+            retries: int = 1,
+    ) -> ModuleExecutionResult:
+        """
+        Tries to send a transaction.
+        :param retries:
+        :return:
+        """
+        result = self.module_execution_result
+
+        if not isinstance(retries, int):
+            logger.error(f"Retries must be an integer, got {retries}, setting to 1")
+            retries = 1
+
+        for i in range(retries):
+            result = await self.send_txn()
+            logger.info(f"Sending txn, attempt {i + 1}/{retries}")
+
+            if result.execution_status is True:
+                return result
+
+        if self.task.test_mode is True:
+            return result
+        else:
+            logger.error(f"Failed to send txn after {retries} attempts")
+            return result
+
+    async def send_txn(self):
+        """
+        Abstract method for sending a transaction.
+        :return:
+        """
+        raise NotImplementedError
 
     async def simulate_and_send_transfer_type_transaction(
             self,
             account: Account,
             calls: list,
             txn_info_message: str
-    ) -> bool:
+    ) -> ModuleExecutionResult:
         """
         Simulates and sends a transfer type transaction.
         :param account:
@@ -494,9 +540,6 @@ class ModuleBase:
         :return:
         """
         logger.warning(f"Action: {txn_info_message}")
-        current_log_action: WalletActionSchema = ActionStorage().get_current_action()
-        current_log_action.module_name = self.task.module_name
-        current_log_action.action_type = self.task.module_type
 
         target_gas_price_gwei = self.storage.app_config.target_eth_mainnet_gas_price
         target_gas_price_wei = self.storage.app_config.target_eth_mainnet_gas_price * 10 ** 9
@@ -511,33 +554,34 @@ class ModuleBase:
             err_msg = f"Gas price is too high ({gas_price / 10 ** 9} Gwei) after {time_out_sec}. Aborting transaction."
             logger.error(err_msg)
 
-            current_log_action.is_success = False
-            current_log_action.status = err_msg
-            return False
+            self.module_execution_result.execution_status = False
+            self.module_execution_result.execution_info = err_msg
+            return self.module_execution_result
 
-        logger.info(f"Gas price is under target value ({target_gas_price_gwei}), now = {gas_price / 10 ** 9} Gwei).")
+        logger.info(f"Gas price is under target value ({target_gas_price_gwei}), now = {gas_price / 10 ** 9} Gwei.")
 
         cairo_version = await self.get_cairo_version_for_txn_execution(account=account)
         if cairo_version is None:
             err_msg = "Error while getting Cairo version. Aborting transaction."
             logger.error(err_msg)
 
-            current_log_action.is_success = False
-            current_log_action.status = err_msg
-            return False
+            self.module_execution_result.execution_status = False
+            self.module_execution_result.execution_info = err_msg
+            return self.module_execution_result
 
         signed_invoke_transaction = await self.sign_invoke_transaction(
             account=account,
             calls=calls,
-            cairo_version=cairo_version
+            cairo_version=cairo_version,
+            auto_estimate=not self.task.forced_gas_limit
         )
         if signed_invoke_transaction is None:
             err_msg = "Error while signing transaction. Aborting transaction."
             logger.error(err_msg)
 
-            current_log_action.is_success = False
-            current_log_action.status = err_msg
-            return False
+            self.module_execution_result.execution_status = False
+            self.module_execution_result.execution_info = err_msg
+            return self.module_execution_result
 
         time.sleep(1)
         estimate_transaction = await self.get_estimated_transaction_fee(
@@ -548,9 +592,9 @@ class ModuleBase:
             err_msg = "Transaction estimation failed."
             logger.error(f"{err_msg} Aborting transaction.")
 
-            current_log_action.is_success = False
-            current_log_action.status = err_msg
-            return False
+            self.module_execution_result.execution_status = False
+            self.module_execution_result.execution_info = err_msg
+            return self.module_execution_result
 
         estimate_gas_decimals = estimate_transaction / 10 ** 18
         wallet_eth_balance = await self.get_eth_balance(account=account)
@@ -558,9 +602,9 @@ class ModuleBase:
             err_msg = "Error while getting wallet ETH balance. Aborting transaction."
             logger.error(err_msg)
 
-            current_log_action.is_success = False
-            current_log_action.status = err_msg
-            return False
+            self.module_execution_result.execution_status = False
+            self.module_execution_result.execution_info = err_msg
+            return self.module_execution_result
 
         wallet_eth_balance_decimals = wallet_eth_balance / 10 ** 18
 
@@ -573,36 +617,35 @@ class ModuleBase:
                 f"{err_msg}. Aborting transaction."
             )
 
-            current_log_action.is_success = False
-            current_log_action.status = err_msg
-            return False
+            self.module_execution_result.execution_status = False
+            self.module_execution_result.execution_info = err_msg
+            return self.module_execution_result
 
         logger.success(
             f"Transaction estimation success, overall fee: "
             f"{estimate_gas_decimals} ETH."
         )
 
-        if self.task.forced_gas_limit is True:
-            gas_limit = int(self.task.max_fee)
-        else:
-            gas_limit = int(estimate_transaction * account.ESTIMATED_FEE_MULTIPLIER)
+        max_fee = int(self.task.max_fee) if self.task.forced_gas_limit is True else None
 
         if self.task.test_mode is True:
             logger.info(f"Test mode enabled. Skipping transaction")
-            return False
+            return self.module_execution_result
 
         response_data = await self.execute_call_transaction(
             account=account,
             calls=calls,
-            max_fee=gas_limit,
-            cairo_version=cairo_version
+            max_fee=max_fee,
+            cairo_version=cairo_version,
+            auto_estimate=not self.task.forced_gas_limit
         )
         response_status, response = response_data
         if response_status is False:
             err_msg = f"Error while sending txn, {response}"
-            current_log_action.is_success = False
-            current_log_action.status = err_msg
-            return False
+
+            self.module_execution_result.execution_status = False
+            self.module_execution_result.execution_info = err_msg
+            return self.module_execution_result
 
         txn_hash = response.transaction_hash
 
@@ -620,30 +663,31 @@ class ModuleBase:
                 err_msg = f"Transaction failed or not in blockchain after {self.task.txn_wait_timeout_sec}s"
                 logger.error(f"{err_msg}. Txn Hash: {hex(txn_hash)}")
 
-                current_log_action.is_success = False
-                current_log_action.status = err_msg
-                return False
+                self.module_execution_result.execution_status = False
+                self.module_execution_result.execution_info = err_msg
+                return self.module_execution_result
+
+            txn_status = txn_receipt.execution_status.value if txn_receipt.execution_status is not None else None
 
             logger.success(
-                f"Txn success, status: {txn_receipt.execution_status} "
+                f"Txn success, status: {txn_status} "
                 f"(Actual fee: {txn_receipt.actual_fee / 10 ** 18}. "
                 f"Txn Hash: {hex(txn_hash)})"
             )
 
-            current_log_action.is_success = True
-            current_log_action.status = f"Txn success, status: {txn_receipt.status}"
-            current_log_action.transaction_hash = hex(txn_hash)
-
-            return True
+            self.module_execution_result.execution_status = True
+            self.module_execution_result.execution_info = f"Txn success, status: {txn_status}"
+            self.module_execution_result.hash = hex(txn_hash)
+            return self.module_execution_result
 
         else:
             logger.success(f"Txn sent. Txn Hash: {hex(txn_hash)}")
 
-            current_log_action.is_success = True
-            current_log_action.status = "Txn sent"
-            current_log_action.transaction_hash = hex(txn_hash)
+            self.module_execution_result.execution_status = True
+            self.module_execution_result.execution_info = "Txn sent"
+            self.module_execution_result.hash = hex(txn_hash)
 
-            return True
+            return self.module_execution_result
 
 
 class SwapModuleBase(ModuleBase):
@@ -671,17 +715,25 @@ class SwapModuleBase(ModuleBase):
         Fetches initial balances and token decimals for both tokens.
         :return:
         """
-        self.initial_balance_x_wei = await self.get_token_balance(token_address=self.coin_x.contract_address,
-                                                                  account=self._account)
-        self.initial_balance_y_wei = await self.get_token_balance(token_address=self.coin_y.contract_address,
-                                                                  account=self._account)
+        self.initial_balance_x_wei = await self.get_token_balance(
+            token_address=self.coin_x.contract_address,
+            account=self._account
+        )
+        self.initial_balance_y_wei = await self.get_token_balance(
+            token_address=self.coin_y.contract_address,
+            account=self._account
+        )
 
-        self.token_x_decimals = await self.get_token_decimals(contract_address=self.coin_x.contract_address,
-                                                              abi=self.coin_x.abi,
-                                                              provider=self._account)
-        self.token_y_decimals = await self.get_token_decimals(contract_address=self.coin_y.contract_address,
-                                                              abi=self.coin_y.abi,
-                                                              provider=self._account)
+        self.token_x_decimals = await self.get_token_decimals(
+            contract_address=self.coin_x.contract_address,
+            abi=self.coin_x.abi,
+            provider=self._account
+        )
+        self.token_y_decimals = await self.get_token_decimals(
+            contract_address=self.coin_y.contract_address,
+            abi=self.coin_y.abi,
+            provider=self._account
+        )
 
     def check_local_tokens_data(self) -> bool:
         """
@@ -745,7 +797,7 @@ class SwapModuleBase(ModuleBase):
             account: Account,
             txn_payload_data: dict,
             is_reverse: bool = False
-    ) -> bool:
+    ) -> ModuleExecutionResult:
         """
         Sends a swap type transaction.
         :param account:
@@ -777,7 +829,8 @@ class SwapModuleBase(ModuleBase):
             if coin_x_cg_id is None or coin_y_cg_id is None:
                 logger.error(
                     f"Error while getting CoinGecko IDs for {coin_x_symbol.upper()} and {coin_y_symbol.upper()}")
-                return False
+
+                return self.module_execution_result
 
             max_price_difference_percent: Union[float, int] = self.task.max_price_difference_percent
             swap_price_validation_data = await self.gecko_pricer.is_target_price_valid(
@@ -793,7 +846,8 @@ class SwapModuleBase(ModuleBase):
                 logger.error(f"Swap rate is not valid ({module_name}). "
                              f"Gecko rate: {price_data['gecko_price']}, "
                              f"Swap rate: {price_data['target_price']}")
-                return False
+
+                return self.module_execution_result
 
             logger.info(f"Swap rate is valid ({module_name}). "
                         f"Gecko rate: {price_data['gecko_price']}, "
@@ -806,5 +860,3 @@ class SwapModuleBase(ModuleBase):
         )
 
         return txn_status
-
-

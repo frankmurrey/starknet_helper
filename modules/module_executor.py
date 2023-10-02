@@ -11,6 +11,7 @@ from starknet_py.net.models import StarknetChainId
 from src.schemas import tasks
 from src.schemas.wallet_data import WalletData
 from src.schemas.logs import WalletActionSchema
+from src.schemas.action_models import ModuleExecutionResult
 from src.storage import Storage
 from src.storage import ActionStorage
 from src.action_logger import ActionLogger
@@ -63,13 +64,9 @@ class ModuleExecutor:
             wallet_data: WalletData,
             base_url: str
     ) -> Union[bool, None]:
-
         proxy_data = wallet_data.proxy
         proxy_manager = ProxyManager(proxy_data=proxy_data)
         proxies = proxy_manager.get_proxy()
-
-        if self.task.test_mode is False:
-            self.action_storage.create_and_set_new_logs_dir()
 
         action_log_data = WalletActionSchema(
             date_time=datetime.now().strftime("%d-%m-%Y_%H-%M-%S"),
@@ -139,6 +136,9 @@ class ModuleExecutor:
             chain=StarknetChainId.MAINNET,
         )
 
+        retries = self.task.retries if self.task.test_mode is False else 1
+
+        execution_status: ModuleExecutionResult
         if self.module_name == enums.ModuleName.DEPLOY:
             module = self.task.module(
                 private_key=wallet_data.private_key,
@@ -146,7 +146,7 @@ class ModuleExecutor:
                 task=self.task,
                 key_type=wallet_data.type,
             )
-            execution_status = await module.send_txn()
+            execution_status = await module.try_send_txn(retries=retries)
 
         elif self.module_name == enums.ModuleName.TRANSFER:
             module = self.task.module(
@@ -155,15 +155,24 @@ class ModuleExecutor:
                 wallet_data=wallet_data
             )
 
-            execution_status = await module.send_txn()
+            execution_status = await module.try_send_txn(retries=retries)
 
         else:
             module = self.task.module(account=account, task=self.task)
-            execution_status = await module.send_txn()
+            execution_status = await module.try_send_txn(retries=retries)
 
         if self.task.test_mode is False:
-            ActionLogger.log_action_from_storage()
+            action_log_data.module_name = self.module_name.value
+            action_log_data.module_type = self.module_type.value
+
+            action_log_data.is_success = execution_status.execution_status
+            action_log_data.status = execution_status.execution_info
+            action_log_data.transaction_hash = execution_status.hash
+
+            action_logger = ActionLogger()
+            action_logger.add_action_to_log_storage(action_data=action_log_data)
+            action_logger.log_action_from_storage()
 
         await connector.close()
 
-        return execution_status
+        return execution_status.execution_status

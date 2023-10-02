@@ -6,6 +6,7 @@ from starknet_py.net.account.account import Account
 from loguru import logger
 
 from modules.jediswap.base import JediSwapBase
+from src.schemas.action_models import ModuleExecutionResult
 from utils.get_delay import get_delay
 
 
@@ -113,19 +114,22 @@ class JediSwap(JediSwapBase):
 
         swap_deadline = int(time.time() + 1000)
 
-        swap_call = (self.build_call
-                     (to_addr=self.router_contract.address,
-                      func_name='swap_exact_tokens_for_tokens',
-                      call_data=[amount_out_y_wei,
-                                 0,
-                                 amount_in_wei_with_slippage,
-                                 0,
-                                 2,
-                                 self.i16(self.coin_y.contract_address),
-                                 self.i16(self.coin_x.contract_address),
-                                 self.account.address,
-                                 swap_deadline])
-                     )
+        swap_call = self.build_call(
+            to_addr=self.router_contract.address,
+            func_name='swap_exact_tokens_for_tokens',
+            call_data=[
+                amount_out_y_wei,
+                0,
+                amount_in_wei_with_slippage,
+                0,
+                2,
+                self.i16(self.coin_y.contract_address),
+                self.i16(self.coin_x.contract_address),
+                self.account.address,
+                swap_deadline
+            ]
+        )
+
         calls = [approve_call, swap_call]
 
         return {
@@ -134,7 +138,7 @@ class JediSwap(JediSwapBase):
             'amount_y_decimals': amount_in_wei / 10 ** self.token_x_decimals,
         }
 
-    async def send_txn(self) -> bool:
+    async def send_txn(self) -> ModuleExecutionResult:
         """
         Sends swap type transaction, if reverse action is enabled in task, sends reverse swap type transaction
         :return:
@@ -142,11 +146,13 @@ class JediSwap(JediSwapBase):
         await self.set_fetched_tokens_data()
 
         if self.check_local_tokens_data() is False:
-            return False
+            self.module_execution_result.execution_info = f"Failed to fetch local tokens data"
+            return self.module_execution_result
 
         txn_payload_data = await self.build_txn_payload_data()
         if txn_payload_data is None:
-            return False
+            self.module_execution_result.execution_info = f"Failed to build transaction payload data"
+            return self.module_execution_result
 
         txn_status = await self.send_swap_type_txn(
             account=self.account,
@@ -154,7 +160,8 @@ class JediSwap(JediSwapBase):
         )
 
         if txn_status is False:
-            return False
+            self.module_execution_result.execution_info = f"Failed to send swap type txn"
+            return self.module_execution_result
 
         if self.task.reverse_action is True:
             delay = get_delay(self.task.min_delay_sec, self.task.max_delay_sec)
@@ -163,7 +170,8 @@ class JediSwap(JediSwapBase):
 
             reverse_txn_payload_data = await self.build_reverse_txn_payload_data()
             if reverse_txn_payload_data is None:
-                return False
+                self.module_execution_result.execution_info = f"Failed to build reverse transaction payload data"
+                return self.module_execution_result
 
             reverse_txn_status = await self.send_swap_type_txn(
                 account=self.account,
@@ -171,3 +179,5 @@ class JediSwap(JediSwapBase):
             )
 
             return reverse_txn_status
+
+        return txn_status

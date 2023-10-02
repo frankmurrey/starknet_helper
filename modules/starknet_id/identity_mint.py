@@ -10,6 +10,7 @@ from loguru import logger
 import config
 from modules.base import ModuleBase
 from contracts.starknet_id.main import StarkNetIdContracts
+from src.schemas.action_models import ModuleExecutionResult
 
 if TYPE_CHECKING:
     from src.schemas.tasks.identity import IdentityMintTask
@@ -103,14 +104,15 @@ class IdentityMint(ModuleBase):
 
         return calls
 
-    async def send_txn(self) -> bool:
+    async def send_txn(self) -> ModuleExecutionResult:
         """
         Send the identity mint transaction.
         :return:
         """
         txn_payload_calls = await self.build_txn_payload_calls()
         if txn_payload_calls is None:
-            return False
+            self.module_execution_result.execution_info = f"Failed to build transaction payload calls"
+            return self.module_execution_result
 
         txn_info_message = f"StarkNet Identity Mint (token id: {self.token_id})"
 

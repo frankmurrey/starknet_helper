@@ -8,6 +8,7 @@ import config
 from modules.base import ModuleBase
 from src.schemas.wallet_data import WalletData
 from contracts.tokens.main import Tokens
+from src.schemas.action_models import ModuleExecutionResult
 
 if TYPE_CHECKING:
     from src.schemas.tasks.transfer import TransferTask
@@ -198,7 +199,7 @@ class Transfer(ModuleBase):
             "amount_x_decimals": amount_out_wei / 10 ** self.coin_x_decimals
         }
 
-    async def send_txn(self) -> bool:
+    async def send_txn(self) -> ModuleExecutionResult:
         """
         Send the transaction.
         :return:
@@ -206,11 +207,13 @@ class Transfer(ModuleBase):
         await self.set_fetched_tokens_data()
 
         if self.check_local_tokens_data() is False:
-            return False
+            self.module_execution_result.execution_info = f"Failed to fetch local tokens data"
+            return self.module_execution_result
 
         payload_data = await self.build_txn_payload_data()
         if payload_data is None:
-            return False
+            self.module_execution_result.execution_info = f"Failed to build transaction payload data"
+            return self.module_execution_result
 
         txn_info_message = (
             f"Transfer {round(payload_data['amount_x_decimals'], 4)} {self.coin_x.symbol.upper()}, "

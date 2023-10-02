@@ -10,6 +10,7 @@ from modules.base import SwapModuleBase
 from contracts.avnu.main import AvnuContracts
 from contracts.base import TokenBase
 from utils.get_delay import get_delay
+from src.schemas.action_models import ModuleExecutionResult
 
 if TYPE_CHECKING:
     from src.schemas.tasks.avnu import AvnuSwapTask
@@ -73,7 +74,7 @@ class AvnuSwap(SwapModuleBase):
             return response[0]
 
         except ClientError:
-            logger.error(f"Failed to get quotes")
+            logger.error(f"Failed to get quotes, try to change IP address")
             return None
 
     async def build_call_data(
@@ -217,7 +218,7 @@ class AvnuSwap(SwapModuleBase):
             'amount_y_decimals': amount_out_wei / 10 ** self.token_x_decimals,
         }
 
-    async def send_txn(self) -> bool:
+    async def send_txn(self) -> ModuleExecutionResult:
         """
         Sends swap type transaction, if reverse action is enabled in task, sends reverse swap type transaction
         :return:
@@ -225,18 +226,21 @@ class AvnuSwap(SwapModuleBase):
         await self.set_fetched_tokens_data()
 
         if self.check_local_tokens_data() is False:
-            return False
+            self.module_execution_result.execution_info = f"Failed to fetch local tokens data"
+            return self.module_execution_result
 
         txn_payload_data = await self.build_txn_payload_data()
         if txn_payload_data is None:
-            return False
+            self.module_execution_result.execution_info = f"Failed to build txn payload data"
+            return self.module_execution_result
 
         txn_status = await self.send_swap_type_txn(
             account=self.account,
             txn_payload_data=txn_payload_data
         )
         if txn_status is False:
-            return False
+            self.module_execution_result.execution_info = f"Failed to send swap type txn"
+            return self.module_execution_result
 
         if self.task.reverse_action is True:
             delay = get_delay(self.task.min_delay_sec, self.task.max_delay_sec)
@@ -245,7 +249,8 @@ class AvnuSwap(SwapModuleBase):
 
             reverse_txn_payload_data = await self.build_reverse_txn_payload_data()
             if reverse_txn_payload_data is None:
-                return False
+                self.module_execution_result.execution_info = f"Failed to build reverse txn payload data"
+                return self.module_execution_result
 
             reverse_txn_status = await self.send_swap_type_txn(
                 account=self.account,
@@ -254,6 +259,9 @@ class AvnuSwap(SwapModuleBase):
             )
 
             if reverse_txn_status is False:
-                return False
+                self.module_execution_result.execution_info = f"Failed to send reverse swap type txn"
+                return self.module_execution_result
 
             return reverse_txn_status
+
+        return txn_status

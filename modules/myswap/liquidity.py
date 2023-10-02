@@ -6,6 +6,7 @@ from starknet_py.net.client_errors import ClientError
 
 from modules.myswap.base import MySwapBase
 from modules.myswap.math import calc_output_burn_liquidity
+from src.schemas.action_models import ModuleExecutionResult
 
 if TYPE_CHECKING:
     from src.schemas.tasks.myswap import MySwapAddLiquidityTask
@@ -171,15 +172,17 @@ class MySwapAddLiquidity(MySwapBase):
             token_pair[1]: amount_1_decimals
         }
 
-    async def send_txn(self) -> bool:
+    async def send_txn(self) -> ModuleExecutionResult:
         await self.set_fetched_tokens_data()
 
         if self.check_local_tokens_data() is False:
-            return False
+            self.module_execution_result.execution_info = f"Failed to fetch local tokens data"
+            return self.module_execution_result
 
         txn_payload_data: dict = await self.build_txn_payload_data()
         if txn_payload_data is None:
-            return False
+            self.module_execution_result.execution_info = f"Failed to build transaction payload data"
+            return self.module_execution_result
 
         txn_calls = txn_payload_data['calls']
         amount_out_x_decimals = txn_payload_data[self.coin_x.contract_address]
@@ -381,7 +384,7 @@ class MySwapRemoveLiquidity(MySwapBase):
             token_pair[1]: amount_out_1_decimals
         }
 
-    async def send_txn(self) -> bool:
+    async def send_txn(self) -> ModuleExecutionResult:
         """
         Send transaction
         :return:
@@ -389,11 +392,13 @@ class MySwapRemoveLiquidity(MySwapBase):
         await self.set_fetched_tokens_data()
 
         if self.check_local_tokens_data() is False:
-            return False
+            self.module_execution_result.execution_info = f"Failed to fetch local tokens data"
+            return self.module_execution_result
 
         txn_payload: dict = await self.build_txn_payload_data()
         if txn_payload is None:
-            return False
+            self.module_execution_result.execution_info = f"Failed to build transaction payload data"
+            return self.module_execution_result
 
         txn_calls = txn_payload['calls']
         amount_out_x_decimals = txn_payload[self.coin_x.contract_address]
@@ -406,8 +411,10 @@ class MySwapRemoveLiquidity(MySwapBase):
             f"Slippage: {self.task.slippage}%."
         )
 
-        txn_status = await self.simulate_and_send_transfer_type_transaction(account=self.account,
-                                                                            calls=txn_calls,
-                                                                            txn_info_message=txn_info_message, )
+        txn_status = await self.simulate_and_send_transfer_type_transaction(
+            account=self.account,
+            calls=txn_calls,
+            txn_info_message=txn_info_message,
+        )
 
         return txn_status

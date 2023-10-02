@@ -7,6 +7,7 @@ from starknet_py.net.client_errors import ClientError
 
 from modules.jediswap.base import JediSwapBase
 from modules.jediswap.math import get_lp_burn_output
+from src.schemas.action_models import ModuleExecutionResult
 
 if TYPE_CHECKING:
     from src.schemas.tasks.jediswap import JediSwapAddLiquidityTask
@@ -102,7 +103,7 @@ class JediSwapAddLiquidity(JediSwapBase):
             'amount_y_decimals': amount_y_out_wei / 10 ** self.token_y_decimals,
         }
 
-    async def send_txn(self) -> bool:
+    async def send_txn(self) -> ModuleExecutionResult:
         """
         Send the add liquidity transaction.
         :return:
@@ -110,11 +111,13 @@ class JediSwapAddLiquidity(JediSwapBase):
         await self.set_fetched_tokens_data()
 
         if self.check_local_tokens_data() is False:
-            return False
+            self.module_execution_result.execution_info = f"Failed to fetch local tokens data"
+            return self.module_execution_result
 
         txn_payload_data = await self.build_txn_payload_calls()
         if txn_payload_data is None:
-            return False
+            self.module_execution_result.execution_info = f"Failed to build transaction payload calls"
+            return self.module_execution_result
 
         txn_info_message = (
             f"Add Liquidity (JediSwap) | "
@@ -342,7 +345,7 @@ class JediSwapRemoveLiquidity(JediSwapBase):
             'amount_y_decimals': amount_y_out_wei / 10 ** self.token_y_decimals,
         }
 
-    async def send_txn(self) -> bool:
+    async def send_txn(self) -> ModuleExecutionResult:
         """
         Send the remove liquidity transaction.
         :return:
@@ -350,11 +353,13 @@ class JediSwapRemoveLiquidity(JediSwapBase):
         await self.set_fetched_tokens_data()
 
         if self.check_local_tokens_data() is False:
-            return False
+            self.module_execution_result.execution_info = f"Failed to fetch local tokens data"
+            return self.module_execution_result
 
         txn_payload_data = await self.build_txn_payload_data()
         if txn_payload_data is None:
-            return False
+            self.module_execution_result.execution_info = f"Failed to build transaction payload calls"
+            return self.module_execution_result
 
         txn_info_message = (
             f"Remove Liquidity (JediSwap). "

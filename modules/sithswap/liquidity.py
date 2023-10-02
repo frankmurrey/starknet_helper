@@ -7,6 +7,7 @@ from starknet_py.net.account.account import Account
 
 from modules.sithswap.base import SithBase
 from modules.sithswap.math import calc_output_burn_liquidity
+from src.schemas.action_models import ModuleExecutionResult
 
 
 if TYPE_CHECKING:
@@ -136,19 +137,22 @@ class SithSwapAddLiquidity(SithBase):
 
         return calls
 
-    async def send_txn(self) -> bool:
+    async def send_txn(self) -> ModuleExecutionResult:
         await self.set_fetched_tokens_data()
 
         if self.check_local_tokens_data() is False:
-            return False
+            self.module_execution_result.execution_info = f"Failed to fetch local tokens data"
+            return self.module_execution_result
 
         amounts_out_data: dict = await self.get_amounts_out_data()
         if amounts_out_data is None:
-            return False
+            self.module_execution_result.execution_info = f"Failed to get amounts out data"
+            return self.module_execution_result
 
         txn_calls = await self.build_txn_payload_data(amounts_out_data=amounts_out_data)
         if txn_calls is None:
-            return False
+            self.module_execution_result.execution_info = f"Failed to build transaction payload data"
+            return self.module_execution_result
 
         txn_info_message = (
             f"Add Liquidity (SithSwap) | "
@@ -312,15 +316,17 @@ class SithSwapRemoveLiquidity(SithBase):
             'calls': calls
         }
 
-    async def send_txn(self) -> bool:
+    async def send_txn(self) -> ModuleExecutionResult:
         await self.set_fetched_tokens_data()
 
         if self.check_local_tokens_data() is False:
-            return False
+            self.module_execution_result.execution_info = f"Failed to fetch local tokens data"
+            return self.module_execution_result
 
         amounts_out_data = await self.build_txn_payload_data()
         if amounts_out_data is None:
-            return False
+            self.module_execution_result.execution_info = f"Failed to build transaction payload data"
+            return self.module_execution_result
 
         txn_calls = amounts_out_data['calls']
 

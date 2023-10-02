@@ -29,14 +29,15 @@ class TxnSettingFrame(customtkinter.CTkFrame):
         self.max_fee_entry = customtkinter.CTkEntry(
             self.frame,
             width=100,
-            textvariable=Variable(value=150000)
+            state="disabled",
+            fg_color="#3f3f3f",
         )
         self.max_fee_entry.grid(
             row=1,
             column=0,
             padx=20,
             pady=(0, 10),
-            sticky="w"
+            sticky="w",
         )
 
         self.forced_gas_limit_check_box = customtkinter.CTkCheckBox(
@@ -45,7 +46,8 @@ class TxnSettingFrame(customtkinter.CTkFrame):
             checkbox_height=18,
             checkbox_width=18,
             onvalue=True,
-            offvalue=False
+            offvalue=False,
+            command=self.forced_gas_limit_check_box_event,
         )
         self.forced_gas_limit_check_box.grid(
             row=2,
@@ -54,3 +56,17 @@ class TxnSettingFrame(customtkinter.CTkFrame):
             pady=(0, 10),
             sticky="w"
         )
+
+    def forced_gas_limit_check_box_event(self):
+        if self.forced_gas_limit_check_box.get() is True:
+            self.max_fee_entry.configure(
+                state="normal",
+                textvariable=Variable(value=250000),
+                fg_color="#343638"
+            )
+        else:
+            self.max_fee_entry.configure(
+                state="disabled",
+                textvariable=Variable(value=""),
+                fg_color="#3f3f3f"
+            )

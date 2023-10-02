@@ -9,6 +9,7 @@ from contracts.sithswap.main import SithSwapContracts
 from modules.base import SwapModuleBase
 from modules.sithswap.base import SithBase
 from utils.get_delay import get_delay
+from src.schemas.action_models import ModuleExecutionResult
 
 if TYPE_CHECKING:
     from src.schemas.tasks.sithswap import SithSwapTask
@@ -153,7 +154,7 @@ class SithSwap(SithBase, SwapModuleBase):
             'amount_y_decimals': amount_in / 10 ** self.token_y_decimals,
         }
 
-    async def send_txn(self) -> bool:
+    async def send_txn(self) -> ModuleExecutionResult:
         """
         Send the swap type transaction.
         :return:
@@ -161,11 +162,13 @@ class SithSwap(SithBase, SwapModuleBase):
         await self.set_fetched_tokens_data()
 
         if self.check_local_tokens_data() is False:
-            return False
+            self.module_execution_result.execution_info = f"Failed to fetch local tokens data"
+            return self.module_execution_result
 
         txn_payload_data = await self.build_txn_payload_data()
         if txn_payload_data is None:
-            return False
+            self.module_execution_result.execution_info = f"Failed to build transaction payload data"
+            return self.module_execution_result
 
         txn_status = await self.send_swap_type_txn(
             account=self.account,
@@ -173,7 +176,8 @@ class SithSwap(SithBase, SwapModuleBase):
         )
 
         if not txn_status:
-            return False
+            self.module_execution_result.execution_info = f"Failed to send swap type txn"
+            return self.module_execution_result
 
         if self.task.reverse_action is True:
             delay = get_delay(self.task.min_delay_sec, self.task.max_delay_sec)
@@ -182,7 +186,8 @@ class SithSwap(SithBase, SwapModuleBase):
 
             reverse_txn_payload_data = await self.build_reverse_txn_payload_data()
             if reverse_txn_payload_data is None:
-                return False
+                self.module_execution_result.execution_info = f"Failed to build reverse transaction payload data"
+                return self.module_execution_result
 
             reverse_txn_status = await self.send_swap_type_txn(
                 account=self.account,
@@ -190,3 +195,5 @@ class SithSwap(SithBase, SwapModuleBase):
             )
 
             return reverse_txn_status
+
+        return txn_status

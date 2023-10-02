@@ -6,6 +6,7 @@ from starknet_py.net.client_models import Call
 from modules.base import ModuleBase
 from contracts.tokens.main import Tokens
 from contracts.zklend.main import ZkLendContracts
+from src.schemas.action_models import ModuleExecutionResult
 
 if TYPE_CHECKING:
     from src.schemas.tasks.zklend import ZkLendWithdrawTask
@@ -71,14 +72,15 @@ class ZkLendWithdraw(ModuleBase):
 
         return [withdraw_call]
 
-    async def send_txn(self) -> bool:
+    async def send_txn(self) -> ModuleExecutionResult:
         """
         Send the transaction.
         :return:
         """
         txn_payload_calls = await self.build_txn_payload_calls()
         if txn_payload_calls is None:
-            return False
+            self.module_execution_result.execution_info = f"Failed to build transaction payload calls"
+            return self.module_execution_result
 
         txn_info_message = f"Withdraw (ZkLend) | {round(self.amount_out_decimals, 4)} ({self.coin_x.symbol.upper()})."
 

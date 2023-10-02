@@ -8,6 +8,7 @@ from loguru import logger
 
 from modules.base import ModuleBase
 from src.schemas.logs import WalletActionSchema
+from src.schemas.action_models import ModuleExecutionResult
 from src import enums
 from src.storage import ActionStorage
 from utils.key_manager.key_manager import get_key_pair_from_pk, get_key_data
@@ -85,28 +86,29 @@ class Deploy(ModuleBase):
                 logger.error(err_msg)
                 return None
 
-    async def send_txn(self):
+    async def send_txn(self) -> ModuleExecutionResult:
         """
         Send deploy transaction
         :return:
         """
         account_deployed = await self.account_deployed(account=self.account)
         if account_deployed is True:
-            logger.warning(f"Account already deployed.")
-            return False
+            err_msg = f"Account already deployed."
+            logger.warning(err_msg)
+            self.module_execution_result.execution_info = err_msg
+            return self.module_execution_result
 
         logger.warning(f"Action: Deploy {self.key_type.title()} account")
         current_log_action: WalletActionSchema = ActionStorage().get_current_action()
-        current_log_action.module_name = self.task.module_name
-        current_log_action.action_type = self.task.module_type
+        current_log_action.module_name = self.task.module_name.value
+        current_log_action.action_type = self.task.module_type.value
 
         signed_deploy_txn = await self.build_deploy_txn()
         if signed_deploy_txn is None:
             err_msg = f"Error while estimating transaction fee"
             logger.error(err_msg)
-            current_log_action.is_success = False
-            current_log_action.status = err_msg
-            return False
+            self.module_execution_result.execution_info = err_msg
+            return self.module_execution_result
 
         target_gas_price_gwei = self.storage.app_config.target_eth_mainnet_gas_price
         target_gas_price_wei = target_gas_price_gwei * 10 ** 9
@@ -118,9 +120,8 @@ class Deploy(ModuleBase):
             err_msg = f"Gas price is too high ({gas_price / 10 ** 9} Gwei) after {time_out_sec}. Aborting transaction."
             logger.error(err_msg)
 
-            current_log_action.is_success = False
-            current_log_action.status = err_msg
-            return False
+            self.module_execution_result.execution_info = err_msg
+            return self.module_execution_result
 
         logger.info(f"Gas price is under target value ({target_gas_price_gwei}), now = {gas_price / 10 ** 9} Gwei.")
 
@@ -134,32 +135,34 @@ class Deploy(ModuleBase):
         except ClientError:
             err_msg = f"Error while estimating transaction fee"
             logger.error(err_msg)
-            current_log_action.is_success = False
-            current_log_action.status = err_msg
-            return False
+
+            self.module_execution_result.execution_info = err_msg
+            return self.module_execution_result
 
         overall_fee = int(overall_fee * 2)
         if overall_fee is None:
             err_msg = f"Error while estimating transaction fee."
             logger.error(err_msg)
-            current_log_action.is_success = False
-            current_log_action.status = err_msg
-            return False
+
+            self.module_execution_result.execution_info = err_msg
+            return self.module_execution_result
 
         if overall_fee > wallet_eth_balance_wei:
             err_msg = (f"Not enough native for fee, wallet ETH balance = {wallet_eth_balance_decimals} "
                        f"(need {overall_fee / 10 ** 18}) ")
             logger.error(err_msg)
-            current_log_action.is_success = False
-            current_log_action.status = err_msg
-            return False
+
+            self.module_execution_result.execution_info = err_msg
+            return self.module_execution_result
 
         logger.success(f"Transaction estimation success, overall fee: "
                        f"{overall_fee / 10 ** 18} ETH.")
 
         if self.task.test_mode is True:
-            logger.info(f"Test mode enabled. Skipping transaction")
-            return False
+            err_msg = f"Test mode enabled. Skipping transaction"
+
+            self.module_execution_result.execution_info = err_msg
+            return self.module_execution_result
 
         try:
             deploy_result = await self.account.client.deploy_account(signed_deploy_txn)
@@ -174,29 +177,32 @@ class Deploy(ModuleBase):
                 if txn_receipt is None:
                     err_msg = f"Txn timeout ({self.task.txn_wait_timeout_sec}s)."
                     logger.error(err_msg)
-                    current_log_action.is_success = False
-                    current_log_action.status = err_msg
-                    return False
 
-                logger.success(f"Txn success, status: {txn_receipt.execution_status} "
+                    self.module_execution_result.execution_info = err_msg
+                    return self.module_execution_result
+
+                txn_status = txn_receipt.execution_status.value if txn_receipt.execution_status is not None else None
+                logger.success(f"Txn success, status: {txn_status} "
                                f"(Actual fee: {txn_receipt.actual_fee / 10 ** 18}. "
                                f"Txn Hash: {hex(txn_hash)})")
 
-                current_log_action.is_success = True
-                current_log_action.status = f"Txn success, status: {txn_receipt.status}"
-                current_log_action.transaction_hash = hex(txn_hash)
-                return True
+                self.module_execution_result.execution_status = True
+                self.module_execution_result.execution_info = f"Txn success, status: {txn_status}"
+                self.module_execution_result.transaction_hash = hex(txn_hash)
+
+                return self.module_execution_result
 
             else:
                 logger.success(f"Txn sent. Txn Hash: {hex(txn_hash)}")
-                current_log_action.is_success = True
-                current_log_action.status = "Txn sent"
-                current_log_action.transaction_hash = hex(txn_hash)
-                return True
+
+                self.module_execution_result.execution_status = True
+                self.module_execution_result.execution_info = f"Txn sent"
+                self.module_execution_result.transaction_hash = hex(txn_hash)
+                return self.module_execution_result
 
         except Exception as e:
             err_msg = f"Error while sending deploy txn: {e}"
             logger.error(err_msg)
-            current_log_action.is_success = False
-            current_log_action.status = err_msg
-            return False
+
+            self.module_execution_result.execution_info = err_msg
+            return self.module_execution_result

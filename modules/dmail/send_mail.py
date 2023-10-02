@@ -6,6 +6,7 @@ from modules.base import ModuleBase
 from modules.dmail.random_generator import generate_random_profile
 from src.schemas.dmail_profile import DmailProfileSchema
 from contracts.dmail.main import DmailContracts
+from src.schemas.action_models import ModuleExecutionResult
 
 if TYPE_CHECKING:
     from src.schemas.tasks.dmail import DmailSendMailTask
@@ -52,14 +53,15 @@ class DmailSendMail(ModuleBase):
 
         return [mail_call]
 
-    async def send_txn(self) -> bool:
+    async def send_txn(self) -> ModuleExecutionResult:
         """
         Send dmail transaction
         :return:
         """
         txn_payload_calls = await self.build_txn_payload_calls()
         if txn_payload_calls is None:
-            return False
+            self.module_execution_result.execution_info = "Failed to build transaction payload calls"
+            return self.module_execution_result
 
         txn_info_message = f"Send mail (Dmail). Receiver: {self.profile.email}. Theme: {self.profile.theme}"
 

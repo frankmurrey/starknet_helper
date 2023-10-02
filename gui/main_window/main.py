@@ -9,7 +9,7 @@ from gui.main_window.frames import SidebarFrame
 from gui.wallet_right_window.right_frame import RightFrame
 
 from utils.repr.misc import print_logo
-from utils.misc import mingw_installed
+from src.templates.templates import Templates
 
 
 def run_gui():
@@ -46,12 +46,7 @@ class MainWindow(customtkinter.CTk):
 
     def on_start(self):
         configure_logger()
-
-        if mingw_installed() is False:
-            logger.error("MinGW is not installed, please install it and try again")
-            logger.error("https://starknetpy.readthedocs.io/en/latest/installation.html#windows")
-            exit(1)
-
+        Templates().create_not_found_temp_files()
         print_logo()
 
     def on_closing(self):

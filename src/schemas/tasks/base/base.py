@@ -20,14 +20,15 @@ class TaskBase(BaseModel):
     task_id: UUID = Field(default_factory=uuid4)
     task_status: enums.TaskStatus = enums.TaskStatus.CREATED
 
-    max_fee: int
     forced_gas_limit: bool = False
+    max_fee: int
 
     # GLOBALS
     wait_for_receipt: bool = False
     txn_wait_timeout_sec: int = 60
 
     reverse_action: bool = False
+    retries: int = 1
 
     min_delay_sec: float = 1
     max_delay_sec: float = 2
@@ -39,7 +40,10 @@ class TaskBase(BaseModel):
         return f""
 
     @validator("max_fee", pre=True)
-    def validate_max_fee_pre(cls, value):
+    def validate_max_fee_pre(cls, value, values):
+
+        if values["forced_gas_limit"] is False:
+            return 0
 
         value = validation.get_converted_to_int(value, "Max Fee")
         value = validation.get_positive(value, "Max Fee", include_zero=False)
@@ -70,5 +74,12 @@ class TaskBase(BaseModel):
 
         value = validation.get_converted_to_float(value, "Max Delay")
         value = validation.get_greater(value, values["min_delay_sec"], "Max Delay")
+
+        return value
+
+    @validator("retries", pre=True)
+    def validate_retries_pre(cls, value):
+        value = validation.get_converted_to_int(value, "Retries")
+        value = validation.get_positive(value, "Retries")
 
         return value

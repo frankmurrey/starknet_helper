@@ -219,4 +219,3 @@ class AppConfigFrame(customtkinter.CTkFrame):
                 title="Config validation error", message=error_messages
             )
             return None
-

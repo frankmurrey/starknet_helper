@@ -1,4 +1,4 @@
-from src.schemas.configs.app_config import AppConfigSchema
+from src.schemas.app_config import AppConfigSchema
 
 
-APP_CONFIG: dict = AppConfigSchema().model_dump()
+APP_CONFIG: dict = AppConfigSchema().dict()

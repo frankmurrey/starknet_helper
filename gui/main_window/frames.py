@@ -2,26 +2,31 @@ import customtkinter
 import webbrowser
 
 from src import paths
-from gui.modules.swap import SwapTab
+from gui.main_window.tools_window import ToolsWindow
+from gui.main_window.settings_window import SettingsWindow
 
 from PIL import Image
 
 
 class SidebarFrame(customtkinter.CTkFrame):
-    def __init__(self, master):
-        super().__init__(master)
+    def __init__(
+            self,
+            master,
+            **kwargs):
+        super().__init__(master, **kwargs)
         self.master = master
 
-        self.frame = customtkinter.CTkFrame(
-            master=self,
-            width=150,
-            height=900,
-            corner_radius=0
+        self.tools_window = None
+        self.settings_window = None
+
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure((0, 1, 2, 3, 4, 5, 6, 7, 8), weight=0)
+        self.grid_rowconfigure(9, weight=1)
+        self.grid(
+            row=0,
+            column=0,
+            sticky="nsw"
         )
-        self.frame.grid(row=0,
-                        column=0,
-                        sticky="nsw"
-                        )
         self.tabview = customtkinter.CTkTabview(
             self,
             width=400,
@@ -31,10 +36,10 @@ class SidebarFrame(customtkinter.CTkFrame):
         logo_image = customtkinter.CTkImage(
             light_image=Image.open(paths.LIGHT_MODE_LOGO_IMG),
             dark_image=Image.open(paths.DARK_MODE_LOGO_IMG),
-            size=(150, 85)
+            size=(150, 90)
         )
         self.logo_label = customtkinter.CTkLabel(
-            self.frame,
+            self,
             image=logo_image,
             text=""
         )
@@ -44,71 +49,47 @@ class SidebarFrame(customtkinter.CTkFrame):
             padx=20,
             pady=(20, 10)
         )
-        self.wallets_button = customtkinter.CTkButton(
-            self.frame,
-            text="Wallets",
-            font=customtkinter.CTkFont(
-                size=14,
-                weight="bold"
-            ),
-            width=140,
-            anchor="c"
+        self.tools_button = customtkinter.CTkButton(
+            self,
+            text="Tools",
+            command=self.tools_button_event,
+            font=customtkinter.CTkFont(size=12, weight="bold")
         )
-        self.wallets_button.grid(
+        self.tools_button.grid(
             row=1,
             column=0,
-            padx=20,
-            pady=(20, 0)
+            padx=25,
+            pady=(10, 20),
+            sticky="w"
         )
 
-        self.swaps_button = customtkinter.CTkButton(
-            self.frame,
-            text="Swaps",
-            font=customtkinter.CTkFont(
-                size=14,
-                weight="bold"
-            ),
-            width=140,
-            anchor="c",
-            command=self.swaps_button_event
+        self.settings_button = customtkinter.CTkButton(
+            self,
+            text="Settings",
+            font=customtkinter.CTkFont(size=12, weight="bold"),
+            command=self.settings_button_event
         )
-        self.swaps_button.grid(
+        self.settings_button.grid(
             row=2,
             column=0,
-            padx=20,
-            pady=(20, 0)
-        )
-
-        self.liquidity_button = customtkinter.CTkButton(
-            self.frame,
-            text="Liquidity",
-            font=customtkinter.CTkFont(
-                size=14,
-                weight="bold"
-            ),
-            width=140,
-            anchor="c",
-            command=self.liquidity_button_event
-        )
-        self.liquidity_button.grid(
-            row=3,
-            column=0,
-            padx=20,
-            pady=(20, 0)
+            padx=25,
+            pady=(0, 20),
+            sticky="w"
         )
 
         self.appearance_mode_label = customtkinter.CTkLabel(
-            self.frame,
+            self,
             text="Appearance Mode:",
             anchor="w")
         self.appearance_mode_label.grid(
             row=9,
             column=0,
             padx=20,
-            pady=(0, 75)
+            pady=(0, 80),
+            sticky="s"
         )
         self.appearance_mode_optionemenu = customtkinter.CTkOptionMenu(
-            self.frame,
+            self,
             values=["Dark", "Light", "System"],
             command=self.change_appearance_mode_event
         )
@@ -116,7 +97,8 @@ class SidebarFrame(customtkinter.CTkFrame):
             row=9,
             column=0,
             padx=20,
-            pady=(0, 20)
+            pady=(0, 50),
+            sticky="s"
         )
 
         link_font = customtkinter.CTkFont(
@@ -124,8 +106,8 @@ class SidebarFrame(customtkinter.CTkFrame):
             underline=True
         )
         self.github_button = customtkinter.CTkButton(
-            self.frame,
-            text="Github origin",
+            self,
+            text="v1.0.0 Github origin",
             font=link_font,
             width=140,
             anchor="c",
@@ -138,7 +120,8 @@ class SidebarFrame(customtkinter.CTkFrame):
             row=9,
             column=0,
             padx=20,
-            pady=(40, 0)
+            pady=(0, 10),
+            sticky="s"
         )
 
     def change_appearance_mode_event(self, new_appearance_mode: str):
@@ -159,21 +142,21 @@ class SidebarFrame(customtkinter.CTkFrame):
         self.master.modules_frame.tabview.add(module_name.title())
         self.master.modules_frame.tabview.set(module_name.title())
 
-    def swaps_button_event(self):
-        tab_name = "Swap"
-        try:
-            self.add_new_module_tab(tab_name)
-            SwapTab(
-                tabview=self.master.modules_frame.tabview,
-                tab_name=tab_name
-            )
+    def tools_button_event(self):
+        if self.tools_window is None or not self.tools_window.winfo_exists():
+            self.tools_window = ToolsWindow(self)
+            self.tools_window.geometry("450x900+1505+100")
+            self.tools_window.resizable(False, False)
+        else:
+            self.tools_window.focus()
 
-        except ValueError:
-            self.master.modules_frame.tabview.set(tab_name)
+    def settings_button_event(self):
+        if self.settings_window is None or not self.settings_window.winfo_exists():
+            self.settings_window = SettingsWindow(self)
+            self.settings_window.geometry("450x900+1505+100")
+            self.settings_window.resizable(False, False)
+        else:
+            self.settings_window.focus()
 
-    def liquidity_button_event(self):
-        try:
-            self.master.modules_frame.tabview.add("Liquidity")
-            self.master.modules_frame.tabview.set("Liquidity")
-        except ValueError:
-            self.master.modules_frame.tabview.set("Liquidity")
+
+

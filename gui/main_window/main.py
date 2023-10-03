@@ -1,37 +1,55 @@
 import customtkinter
-import webbrowser
 
-from utlis.file_manager import FileManager
-from src.storage import Storage
-from src import paths
+from loguru import logger
+
+from src.tasks_executor import tasks_executor
+from src.logger import configure_logger
+
 from gui.main_window.frames import SidebarFrame
-from gui.modules.frames import ModulesFrame
-from gui.wallet_window.main import WalletsWindow
+from gui.wallet_right_window.right_frame import RightFrame
 
-from tkinter import messagebox, filedialog
-from PIL import Image
+from utils.repr.misc import print_logo
+from src.templates.templates import Templates
 
 
 def run_gui():
     window = MainWindow()
-    window.mainloop()
+    try:
+        window.mainloop()
+    except KeyboardInterrupt:
+        tasks_executor.kill()
+        window.destroy()
+        window.quit()
 
 
 class MainWindow(customtkinter.CTk):
     def __init__(self):
         super().__init__()
+        self.on_start()
+
+        self.resizable(False, False)
         self.title("StarkNet Helper by @frankmurrey")
 
-        self.geometry(f"{1600}x{850}+100+100")
+        self.geometry(f"{1400}x{900}+100+100")
 
         self.grid_rowconfigure(0, weight=1)
-        self.grid_columnconfigure(1, weight=1)
-        self.grid_columnconfigure(2, weight=0)
+        self.grid_columnconfigure(0, weight=0)
+        self.grid_columnconfigure(1, weight=0)
+
         self.sidebar_frame = SidebarFrame(self)
         self.sidebar_frame.grid(row=0, column=0, sticky="nsew")
 
-        self.right_frame = WalletsWindow(self)
-        self.modules_frame = ModulesFrame(self)
+        self.right_frame = RightFrame(self)
 
+        tasks_executor.run()
+        self.protocol("WM_DELETE_WINDOW", self.on_closing)
 
+    def on_start(self):
+        configure_logger()
+        Templates().create_not_found_temp_files()
+        print_logo()
 
+    def on_closing(self):
+        tasks_executor.kill()
+        self.destroy()
+        self.quit()

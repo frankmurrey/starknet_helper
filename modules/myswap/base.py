@@ -1,14 +1,16 @@
 from typing import Union
+from typing import TYPE_CHECKING
 
 from contracts.base import TokenBase
-from contracts.tokens.main import Tokens
-from modules.base import StarkBase
+from modules.base import SwapModuleBase
 from modules.myswap.math import get_amount_in_from_reserves
+from contracts.myswap.main import MySwapContracts
 
-from loguru import logger
+if TYPE_CHECKING:
+    from src.schemas.tasks.myswap import MySwapTask
 
 
-class MySwapBase(StarkBase):
+class MySwapBase(SwapModuleBase):
     pools: dict = {
         1: ['ETH', 'USDC'],
         2: ['DAI', 'ETH'],
@@ -20,17 +22,37 @@ class MySwapBase(StarkBase):
         8: ['ORDS', 'ETH'],
     }
 
+    task: 'MySwapTask'
+
     def __init__(
             self,
-            account):
-        super().__init__(client=account.client)
+            account,
+            task):
+
+        super().__init__(
+            account=account,
+            task=task,
+        )
         self._account = account
 
-        self.tokens = Tokens()
+        self.my_swap_contracts = MySwapContracts()
+        self.router_contract = self.get_contract(
+            address=self.my_swap_contracts.router_address,
+            abi=self.my_swap_contracts.router_abi,
+            provider=account
+        )
 
-    def get_pool_id(self,
-                    coin_x_symbol: str,
-                    coin_y_symbol: str) -> Union[int, None]:
+    def get_pool_id(
+            self,
+            coin_x_symbol: str,
+            coin_y_symbol: str
+    ) -> Union[int, None]:
+        """
+        Get pool id from pool name
+        :param coin_x_symbol:
+        :param coin_y_symbol:
+        :return:
+        """
         coin_x = coin_x_symbol.upper()
         coin_y = coin_y_symbol.upper()
 
@@ -40,8 +62,12 @@ class MySwapBase(StarkBase):
 
         return None
 
-    async def get_token_pair_for_pool(self,
-                                      pool_id: int) -> Union[list, None]:
+    async def get_token_pair_for_pool(self, pool_id: int) -> Union[list, None]:
+        """
+        Get token pair for pool
+        :param pool_id:
+        :return:
+        """
         if pool_id not in self.pools.keys():
             return None
 
@@ -54,13 +80,22 @@ class MySwapBase(StarkBase):
         if coin_x_obj is None or coin_y_obj is None:
             return None
 
-        return [coin_x_obj.contract_address, coin_y_obj.contract_address]
+        return [coin_x_obj.contract_address,
+                coin_y_obj.contract_address]
 
     async def get_pool_reserves_data(
             self,
             coin_x_symbol: str,
             coin_y_symbol: str,
-            router_contract) -> Union[dict, None]:
+            router_contract
+    ) -> Union[dict, None]:
+        """
+        Get pool reserves data from router
+        :param coin_x_symbol:
+        :param coin_y_symbol:
+        :param router_contract:
+        :return:
+        """
         pool_id = self.get_pool_id(
             coin_x_symbol=coin_x_symbol,
             coin_y_symbol=coin_y_symbol
@@ -93,7 +128,15 @@ class MySwapBase(StarkBase):
             self,
             coin_x_address: str,
             coin_y_address: str,
-            reserves_data):
+            reserves_data
+    ) -> Union[dict, None]:
+        """
+        Get sorted reserves
+        :param coin_x_address:
+        :param coin_y_address:
+        :param reserves_data:
+        :return:
+        """
 
         token_x_reserve = reserves_data.get(self.i16(coin_x_address))
         token_y_reserve = reserves_data.get(self.i16(coin_y_address))
@@ -115,21 +158,33 @@ class MySwapBase(StarkBase):
             coin_x_obj: TokenBase,
             coin_y_obj: TokenBase,
             slippage: int
-    ):
+    ) -> Union[int, None]:
+        """
+        Get amount in wei from reserves data
+        :param reserves_data:
+        :param amount_out_wei: amount out from balance
+        :param coin_x_obj:
+        :param coin_y_obj:
+        :param slippage:
+        :return:
+        """
 
-        sorted_reserves = await self.get_sorted_reserves(coin_x_address=coin_x_obj.contract_address,
-                                                         coin_y_address=coin_y_obj.contract_address,
-                                                         reserves_data=reserves_data)
+        sorted_reserves = await self.get_sorted_reserves(
+            coin_x_address=coin_x_obj.contract_address,
+            coin_y_address=coin_y_obj.contract_address,
+            reserves_data=reserves_data
+        )
         if sorted_reserves is None:
             return None
 
-        amount_in_wei = get_amount_in_from_reserves(amount_out=amount_out_wei,
-                                                    reserve_x=sorted_reserves[coin_x_obj.contract_address],
-                                                    reserve_y=sorted_reserves[coin_y_obj.contract_address])
+        amount_in_wei = get_amount_in_from_reserves(
+            amount_out=amount_out_wei,
+            reserve_x=sorted_reserves[coin_x_obj.contract_address],
+            reserve_y=sorted_reserves[coin_y_obj.contract_address]
+        )
         fee = sorted_reserves['fee']
 
         amount_in_after_slippage = amount_in_wei * (1 - (slippage / 100))
         amount_in_after_dao_fee = amount_in_after_slippage * (1 - (fee / 100000))
 
         return int(amount_in_after_dao_fee)
-

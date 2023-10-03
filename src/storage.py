@@ -4,9 +4,9 @@ from typing import List
 from loguru import logger
 
 from src import paths
-from src.schemas.configs.app_config import AppConfigSchema
+from src.schemas.app_config import AppConfigSchema
 from src.schemas.logs import WalletActionSchema
-from utlis.file_manager import FileManager
+from utils.file_manager import FileManager
 
 
 class Storage:
@@ -15,20 +15,21 @@ class Storage:
     class __Singleton:
 
         def __init__(self):
-            self.__wallets_data = FileManager.get_wallets_from_files()
             self.__app_config: AppConfigSchema = self.__load_app_config()
-            self.__wallet_balances = []
+            self.__wallets_data = []
 
         def set_wallets_data(self, value):
             self.__wallets_data = value
 
+        def add_wallet_data(self, value):
+            self.__wallets_data.append(value)
+
+        def clear_wallets_data(self):
+            self.__wallets_data.clear()
+
         @property
         def wallets_data(self):
             return self.__wallets_data
-
-        @property
-        def wallet_balances(self) -> List:
-            return self.__wallet_balances
 
         @property
         def app_config(self) -> AppConfigSchema:
@@ -41,12 +42,6 @@ class Storage:
             except Exception as e:
                 logger.error(f"Error while loading app config: {e}")
                 logger.exception(e)
-
-        def append_wallet_balance(self, value):
-            self.__wallet_balances.append(value)
-
-        def reset_wallet_balances(self):
-            self.__wallet_balances = []
 
         def update_app_config(self, config: AppConfigSchema):
             self.__app_config = config
@@ -71,6 +66,13 @@ class ActionStorage:
             self.all_actions = []
             self.current_action: WalletActionSchema = WalletActionSchema()
             self.current_logs_dir = None
+            self.current_active_wallet = None
+
+        def set_current_active_wallet(self, wallet_data):
+            self.current_active_wallet = wallet_data
+
+        def get_current_active_wallet(self):
+            return self.current_active_wallet
 
         def add_action(self, action_data: WalletActionSchema):
             if Storage().app_config.preserve_logs is False:
@@ -92,6 +94,7 @@ class ActionStorage:
 
         def set_current_logs_dir(self, new_logs_dir):
             if not os.path.exists(new_logs_dir):
+                logger.error(f"Logs dir \"{new_logs_dir}\" does not exist")
                 return
 
             self.current_logs_dir = new_logs_dir

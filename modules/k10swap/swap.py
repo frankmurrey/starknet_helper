@@ -1,77 +1,50 @@
 import time
-import random
 from typing import Union
-
-from contracts.tokens.main import Tokens
-from contracts.k10swap.main import K10SwapContracts
-
-from modules.base import StarkBase
-
-from src.schemas.configs.k10swap import K10SwapConfigSchema
+from typing import TYPE_CHECKING
 
 from starknet_py.net.account.account import Account
-
 from loguru import logger
+from starknet_py.serialization import TupleDataclass
+
+from contracts.k10swap.main import K10SwapContracts
+from src.schemas.action_models import ModuleExecutionResult
+from modules.base import SwapModuleBase
+from utils.get_delay import get_delay
 
 
-class K10Swap(StarkBase):
-    config: K10SwapConfigSchema
+if TYPE_CHECKING:
+    from src.schemas.tasks.k10swap import K10SwapTask
+
+
+class K10Swap(SwapModuleBase):
+    task: 'K10SwapTask'
     account: Account
 
-    def __init__(self,
-                 account,
-                 config):
-        super().__init__(client=account.client)
+    def __init__(
+            self,
+            account,
+            task: 'K10SwapTask'
+    ):
 
-        self.config = config
+        super().__init__(
+            account=account,
+            task=task,
+        )
+
+        self.task = task
         self.account = account
 
-        self.tokens = Tokens()
         self.k10_swap_contracts = K10SwapContracts()
         self.router_contract = self.get_contract(address=self.k10_swap_contracts.router_address,
                                                  abi=self.k10_swap_contracts.router_abi,
                                                  provider=account)
 
-        self.coin_x = self.tokens.get_by_name(self.config.coin_to_swap)
-        self.coin_y = self.tokens.get_by_name(self.config.coin_to_receive)
-
-    async def get_amount_out_from_balance(self):
-        wallet_token_balance_wei = await self.get_token_balance(token_address=self.coin_x.contract_address,
-                                                                account=self.account)
-
-        if wallet_token_balance_wei == 0:
-            logger.error(f"Wallet {self.coin_x.symbol.upper()} balance = 0")
-            return None
-
-        token_decimals = await self.get_token_decimals(contract_address=self.coin_x.contract_address,
-                                                       abi=self.coin_x.abi,
-                                                       provider=self.account)
-
-        wallet_token_balance_decimals = wallet_token_balance_wei / 10 ** token_decimals
-
-        if self.config.use_all_balance is True:
-            amount_out_wei = wallet_token_balance_wei
-
-        elif self.config.send_percent_balance is True:
-            percent = random.randint(self.config.min_amount_out, self.config.max_amount_out) / 100
-            amount_out_wei = int(wallet_token_balance_wei * percent)
-
-        elif wallet_token_balance_decimals < self.config.max_amount_out:
-            amount_out_wei = self.get_random_amount_out_of_token(min_amount=self.config.min_amount_out,
-                                                                 max_amount=wallet_token_balance_decimals,
-                                                                 decimals=token_decimals)
-
-        else:
-            amount_out_wei = self.get_random_amount_out_of_token(
-                min_amount=self.config.min_amount_out,
-                max_amount=self.config.max_amount_out,
-                decimals=token_decimals
-            )
-
-        return amount_out_wei
-
-    async def get_amount_in(self,
-                            amount_in_wei):
+    async def get_amounts_in(self, amount_in_wei: int) -> Union[TupleDataclass, None]:
+        """
+        Get amount in wei from router function
+        :param amount_in_wei:
+        :return:
+        """
         path = [int(self.coin_x.contract_address, 16),
                 int(self.coin_y.contract_address, 16)]
 
@@ -88,59 +61,147 @@ class K10Swap(StarkBase):
             return None
 
     async def build_txn_payload_data(self) -> Union[dict, None]:
-        amount_x_wei = await self.get_amount_out_from_balance()
-        coin_x_decimals = await self.get_token_decimals(contract_address=self.coin_x.contract_address,
-                                                        abi=self.coin_x.abi,
-                                                        provider=self.account)
-        amount_x_decimals = amount_x_wei / 10 ** coin_x_decimals
-
+        """
+        Build the transaction payload data for the swap type transaction.
+        :return:
+        """
+        amount_x_wei = await self.calculate_amount_out_from_balance(coin_x=self.coin_x)
         if amount_x_wei is None:
             return None
 
-        amounts_in_wei = await self.get_amount_in(amount_x_wei)
+        amounts_in_wei = await self.get_amounts_in(amount_x_wei)
         if amounts_in_wei is None:
             return None
 
         amount_y_wei = amounts_in_wei.amounts[1]
-        amount_in_wei_with_slippage = int(amount_y_wei * (1 - (self.config.slippage / 100)))
-        coin_y_decimals = await self.get_token_decimals(contract_address=self.coin_y.contract_address,
-                                                        abi=self.coin_y.abi,
-                                                        provider=self.account)
-        amount_y_decimals = amount_y_wei / 10 ** coin_y_decimals
+        amount_in_wei_with_slippage = int(amount_y_wei * (1 - (self.task.slippage / 100)))
 
-        approve_call = self.build_token_approve_call(token_addr=self.coin_x.contract_address,
-                                                     spender=hex(self.router_contract.address),
-                                                     amount_wei=int(amount_x_wei))
+        approve_call = self.build_token_approve_call(
+            token_addr=self.coin_x.contract_address,
+            spender=hex(self.router_contract.address),
+            amount_wei=int(amount_x_wei)
+        )
 
         swap_deadline = int(time.time() + 1000)
-        swap_call = self.build_call(to_addr=self.router_contract.address,
-                                    func_name='swapExactTokensForTokens',
-                                    call_data=[amount_x_wei,
-                                               0,
-                                               amount_in_wei_with_slippage,
-                                               0,
-                                               2,
-                                               self.i16(self.coin_x.contract_address),
-                                               self.i16(self.coin_y.contract_address),
-                                               self.account.address,
-                                               swap_deadline])
+        swap_call = self.build_call(
+            to_addr=self.router_contract.address,
+            func_name='swapExactTokensForTokens',
+            call_data=[amount_x_wei,
+                       0,
+                       amount_in_wei_with_slippage,
+                       0,
+                       2,
+                       self.i16(self.coin_x.contract_address),
+                       self.i16(self.coin_y.contract_address),
+                       self.account.address,
+                       swap_deadline]
+        )
         calls = [approve_call, swap_call]
 
         return {
             'calls': calls,
-            'amount_x_decimals': amount_x_decimals,
-            'amount_y_decimals': amount_y_decimals,
+            'amount_x_decimals': amount_x_wei / 10 ** self.token_x_decimals,
+            'amount_y_decimals': amount_y_wei / 10 ** self.token_y_decimals,
         }
 
-    async def send_swap_txn(self):
+    async def build_reverse_txn_payload_data(self) -> Union[dict, None]:
+        """
+        Build the transaction payload data for the reverse swap type transaction, if reverse action is enabled in task.
+        :return:
+        """
+        wallet_y_balance_wei = await self.get_token_balance(
+            token_address=self.coin_y.contract_address,
+            account=self.account
+        )
+        if wallet_y_balance_wei == 0:
+            logger.error(f"Wallet {self.coin_y.symbol.upper()} balance = 0")
+
+        if self.initial_balance_y_wei is None:
+            logger.error(f"Error while getting initial balance of {self.coin_y.symbol.upper()}")
+            return None
+
+        amount_out_y_wei = wallet_y_balance_wei - self.initial_balance_y_wei
+        if amount_out_y_wei <= 0:
+            logger.error(f"Wallet {self.coin_y.symbol.upper()} balance less than initial balance")
+            return None
+
+        amounts_in_wei = await self.get_amounts_in(amount_out_y_wei)
+        if amounts_in_wei is None:
+            return None
+
+        amount_in_x_wei = amounts_in_wei.amounts[0]
+        amount_in_wei_with_slippage = int(amount_in_x_wei * (1 - (self.task.slippage / 100)))
+
+        approve_call = self.build_token_approve_call(
+            token_addr=self.coin_y.contract_address,
+            spender=hex(self.router_contract.address),
+            amount_wei=int(amount_out_y_wei)
+        )
+
+        swap_deadline = int(time.time() + 1000)
+
+        swap_call = self.build_call(
+            to_addr=self.router_contract.address,
+            func_name='swapExactTokensForTokens',
+            call_data=[amount_out_y_wei,
+                       0,
+                       amount_in_wei_with_slippage,
+                       0,
+                       2,
+                       self.i16(self.coin_y.contract_address),
+                       self.i16(self.coin_x.contract_address),
+                       self.account.address,
+                       swap_deadline]
+        )
+
+        calls = [approve_call, swap_call]
+
+        return {
+            'calls': calls,
+            'amount_x_decimals': amount_out_y_wei / 10 ** self.token_x_decimals,
+            'amount_y_decimals': amount_in_x_wei / 10 ** self.token_y_decimals,
+        }
+
+    async def send_txn(self) -> ModuleExecutionResult:
+        """
+        Send swap type transaction
+        :return:
+        """
+        await self.set_fetched_tokens_data()
+
+        if self.check_local_tokens_data() is False:
+            self.module_execution_result.execution_info = f"Failed to fetch local tokens data"
+            return self.module_execution_result
+
         txn_payload_data = await self.build_txn_payload_data()
         if txn_payload_data is None:
-            return False
+            self.module_execution_result.execution_info = f"Failed to build transaction payload data"
+            return self.module_execution_result
 
         txn_status = await self.send_swap_type_txn(
             account=self.account,
-            config=self.config,
             txn_payload_data=txn_payload_data
         )
+
+        if txn_status is False:
+            self.module_execution_result.execution_info = f"Failed to send swap type txn"
+            return self.module_execution_result
+
+        if self.task.reverse_action is True:
+            delay = get_delay(self.task.min_delay_sec, self.task.max_delay_sec)
+            logger.info(f"Waiting {delay} seconds before reverse action")
+            time.sleep(delay)
+
+            reverse_txn_payload_data = await self.build_reverse_txn_payload_data()
+            if reverse_txn_payload_data is None:
+                self.module_execution_result.execution_info = f"Failed to build reverse transaction payload data"
+                return self.module_execution_result
+
+            reverse_txn_status = await self.send_swap_type_txn(
+                account=self.account,
+                txn_payload_data=reverse_txn_payload_data
+            )
+
+            return reverse_txn_status
 
         return txn_status

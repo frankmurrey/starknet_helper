@@ -297,6 +297,7 @@ class TasksExecutor:
                 time.sleep(0.1)
 
     def push_wallets(self, wallets: List[WalletData], shuffle: bool = False):
+        print(shuffle)
         """
         Push wallets to queue
         Args:

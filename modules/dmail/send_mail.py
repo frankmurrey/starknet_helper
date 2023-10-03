@@ -7,6 +7,7 @@ from modules.dmail.random_generator import generate_random_profile
 from src.schemas.dmail_profile import DmailProfileSchema
 from contracts.dmail.main import DmailContracts
 from src.schemas.action_models import ModuleExecutionResult
+from utils.sha256 import sha256_hash
 
 if TYPE_CHECKING:
     from src.schemas.tasks.dmail import DmailSendMailTask
@@ -42,12 +43,14 @@ class DmailSendMail(ModuleBase):
         Build transaction payload calls
         :return:
         """
+        to_email = sha256_hash(self.profile.email)[:31]
+        theme = sha256_hash(self.profile.theme)[:31]
         mail_call = self.build_call(
             to_addr=self.router_contract.address,
             func_name='transaction',
             call_data=[
-                self.profile.email,
-                self.profile.theme
+                to_email,
+                theme
             ]
         )
 

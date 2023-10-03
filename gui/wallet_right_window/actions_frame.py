@@ -310,7 +310,7 @@ class ActionsFrame(customtkinter.CTkFrame):
         tasks_executor.start_tasks_processing()
         tasks_executor.push_wallets(
             wallets=wallets,
-            shuffle=self.run_settings_frame.shuffle_wallets_checkbox.get()
+            shuffle=bool(self.run_settings_frame.shuffle_wallets_checkbox.get())
         )
 
         tasks_executor.push_tasks(
@@ -522,6 +522,13 @@ class ButtonActionsFrame(customtkinter.CTkFrame):
 
     def save_actions_cfg_button_event(self):
         actions = self.parent.actions
+        run_settings_frame = self.parent.run_settings_frame
+        cfg = run_settings_frame.build_config()
+
+        data = {
+            "actions": actions,
+            "run_settings_config": cfg
+        }
 
         if not actions:
             tkinter.messagebox.showerror(
@@ -535,7 +542,7 @@ class ButtonActionsFrame(customtkinter.CTkFrame):
             title="Save actions config",
             filetypes=(("pickle files", "*.pkl"),)
         )
-        FileManager.save_to_pickle_file(actions, file_path)
+        FileManager.save_to_pickle_file(data, file_path)
 
     def upload_actions_cfg_button_event(self):
         file_path = tkinter.filedialog.askopenfilename(
@@ -545,8 +552,18 @@ class ButtonActionsFrame(customtkinter.CTkFrame):
         if not file_path:
             return
 
-        actions = FileManager.read_from_pickle_file(file_path)
-        if not actions:
+        data = FileManager.read_from_pickle_file(file_path)
+
+        if not data:
+            tkinter.messagebox.showerror(
+                title="Error",
+                message="Can't read actions config file"
+            )
+            return
+
+        actions = data.get("actions")
+        run_settings_config = data.get("run_settings_config")
+        if not actions or not run_settings_config:
             tkinter.messagebox.showerror(
                 title="Error",
                 message="Can't read actions config file"
@@ -554,6 +571,7 @@ class ButtonActionsFrame(customtkinter.CTkFrame):
             return
 
         self.parent.set_actions(actions)
+        self.parent.run_settings_frame.upload_from_config(run_settings_config)
 
 
 # TODO: АЙДИШНИКИ НА КНОПКИ ВЫНЕСТИ В КОНСТАНТЫ ИЛИ В КЛАССЫ И ПОТОМ ИМПОРТИРОВАТЬ ИХ В КЛАССЫ ГДЕ ОНИ ИСПОЛЬЗУЮТСЯ ИЛИ ВООБЩЕ ВЫНЕСТИ В КОНСТАНТЫ В ОТДЕЛЬНЫЙ ФАЙЛ И ИМПОРТИРОВАТЬ ИХ ВО ВСЕ КЛАССЫ
@@ -735,6 +753,9 @@ class RunSettingsFrame(customtkinter.CTkFrame):
                                             start_index=1,
                                             step_size=1,
                                             width=105)
+        self.retries_spinbox.entry.configure(
+            textvariable=Variable(value=3)
+        )
         self.retries_spinbox.grid(
             row=5,
             column=1,
@@ -742,6 +763,65 @@ class RunSettingsFrame(customtkinter.CTkFrame):
             pady=0,
             sticky="w"
         )
+
+    def build_config(self):
+        run_settings_cfg = {
+            "test_mode": self.test_mode_checkbox.get(),
+            "min_delay_sec": self.min_delay_entry_spinbox.entry.get(),
+            "max_delay_sec": self.max_delay_entry_spinbox.entry.get(),
+            "wait_for_receipt": self.wait_for_receipt_checkbox.get(),
+            "txn_wait_timeout_sec": self.txn_wait_timeout_seconds_spinbox.entry.get(),
+            "shuffle_wallets": self.shuffle_wallets_checkbox.get(),
+            "retries": self.retries_spinbox.entry.get()
+        }
+
+        return run_settings_cfg
+
+    def upload_from_config(self, run_settings_cfg: dict):
+        try:
+            if not run_settings_cfg:
+                return
+
+            if run_settings_cfg["test_mode"]:
+                self.test_mode_checkbox.select()
+                self.test_mode_checkbox_event()
+            else:
+                self.test_mode_checkbox.deselect()
+                self.test_mode_checkbox_event()
+
+            if run_settings_cfg["shuffle_wallets"]:
+                self.shuffle_wallets_checkbox.select()
+                self.shuffle_wallets_checkbox_event()
+            else:
+                self.shuffle_wallets_checkbox.deselect()
+                self.shuffle_wallets_checkbox_event()
+
+            self.min_delay_entry_spinbox.entry.configure(
+                textvariable=Variable(value=run_settings_cfg["min_delay_sec"])
+            )
+            self.max_delay_entry_spinbox.entry.configure(
+                textvariable=Variable(value=run_settings_cfg["max_delay_sec"])
+            )
+
+            if run_settings_cfg['wait_for_receipt']:
+                self.wait_for_receipt_checkbox.select()
+                self.wait_for_txn_checkbox_event()
+                self.txn_wait_timeout_seconds_spinbox.entry.configure(
+                    textvariable=Variable(value=run_settings_cfg["txn_wait_timeout_sec"])
+                )
+            else:
+                self.wait_for_receipt_checkbox.deselect()
+                self.wait_for_txn_checkbox_event()
+
+            self.retries_spinbox.entry.configure(
+                textvariable=Variable(value=run_settings_cfg["retries"])
+            )
+
+        except Exception as e:
+            tkinter.messagebox.showerror(
+                title="Error",
+                message=str(e)
+            )
 
     def wait_for_txn_checkbox_event(self):
         if self.wait_for_receipt_checkbox.get():

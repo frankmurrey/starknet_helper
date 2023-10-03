@@ -28,7 +28,7 @@ class TaskBase(BaseModel):
     txn_wait_timeout_sec: int = 60
 
     reverse_action: bool = False
-    retries: int = 1
+    retries: int = 3
 
     min_delay_sec: float = 1
     max_delay_sec: float = 2

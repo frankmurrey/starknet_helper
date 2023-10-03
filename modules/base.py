@@ -507,14 +507,16 @@ class ModuleBase:
             retries = 1
 
         for i in range(retries):
-            result = await self.send_txn()
             logger.info(f"Sending txn, attempt {i + 1}/{retries}")
+
+            result = await self.send_txn()
+            if self.task.test_mode is True:
+                return result
 
             if result.execution_status is True:
                 return result
 
-        if self.task.test_mode is True:
-            return result
+            time.sleep(1)
         else:
             logger.error(f"Failed to send txn after {retries} attempts")
             return result

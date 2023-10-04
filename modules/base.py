@@ -536,6 +536,10 @@ class ModuleBase:
             logger.info(f"Attempt {i + 1}/{retries}")
 
             result = await self.send_txn()
+
+            if result.retry_needed is False:
+                return result
+
             if self.task.test_mode is True:
                 return result
 
@@ -576,7 +580,7 @@ class ModuleBase:
         gas_price_status = await self.gas_price_check_loop(
             target_price_wei=target_gas_price_wei,
             time_out_sec=time_out_sec,
-            is_timeout_needed=is_timeout_needed
+            is_timeout_needed=is_timeout_needed,
         )
 
         status, gas_price = gas_price_status

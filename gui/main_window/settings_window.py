@@ -230,6 +230,7 @@ class AppConfigFrame(customtkinter.CTkFrame):
                 is_gas_price_wait_timeout_needed=self.is_timeout_needed_checkbox.get()
             )
             Storage().update_app_config(app_config)
+            self.app_config = app_config
             try:
                 FileManager.write_data_to_json_file(
                     file_path=paths.APP_CONFIG_FILE,

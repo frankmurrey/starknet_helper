@@ -1,4 +1,7 @@
+import os
+
 from src.storage import ActionStorage
+
 import pandas as pd
 from loguru import logger
 
@@ -42,6 +45,9 @@ def write_generated_wallets_to_xlsx(
         path: str,
         data: list[dict]
 ):
+    if not os.path.exists(path):
+        return
+
     datapd = {
         "Mn": [],
         "Pk": [],

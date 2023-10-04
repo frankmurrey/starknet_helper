@@ -1,4 +1,5 @@
 from typing import Callable, Union
+from tkinter import Variable
 
 from gui.modules.swap import SwapTab
 
@@ -111,3 +112,26 @@ class FloatSpinbox(customtkinter.CTkFrame):
         self.entry.delete(0, "end")
         self.entry.insert(0, str(int(value)))
 
+    def set_normal_state(self, value: float):
+        self.entry.configure(
+            state="normal",
+            fg_color="gray16",
+            textvariable=Variable(value=value)
+        )
+        self.add_button.configure(
+            state="normal")
+
+        self.subtract_button.configure(
+            state="normal")
+
+    def set_disabled_state(self):
+        self.entry.configure(
+            state="disabled",
+            fg_color="#3f3f3f",
+            textvariable=Variable(value="")
+        )
+        self.add_button.configure(
+            state="disabled")
+
+        self.subtract_button.configure(
+            state="disabled")

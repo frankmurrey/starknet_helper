@@ -8,6 +8,6 @@ from src import enums
 
 
 class TransferTask(TransferTaskBase):
-    module_name = enums.ModuleName.TRANSFER
-    module_type = enums.ModuleType.SEND
+    module_name: enums.ModuleName = enums.ModuleName.TRANSFER
+    module_type: enums.ModuleType = enums.ModuleType.SEND
     module: Callable = Field(default=Transfer)

@@ -124,18 +124,38 @@ class ModuleBase:
     async def gas_price_check_loop(
             self,
             target_price_wei: int,
-            time_out_sec: int
+            time_out_sec: int,
+            is_timeout_needed: bool
     ) -> tuple:
         """
         Checks the current gas price on Ethereum mainnet and waits until it is lower than the target price.
+        :param is_timeout_needed:
         :param target_price_wei:
         :param time_out_sec:
         :return:
         """
 
-        logger.info(f"Waiting for gas price to be lower than {target_price_wei / 10 ** 9} Gwei. "
-                    f"Timeout in {time_out_sec}s")
+        current_gas_price = await self.get_eth_mainnet_gas_price()
+        if current_gas_price is None:
+            logger.error(f"Error while getting gas price, waiting 1 min for rate limit to reset or change ETH RPC URL")
+            time.sleep(60)
+
+            current_gas_price = await self.get_eth_mainnet_gas_price()
+            if current_gas_price is None:
+                return False, current_gas_price
+
+
+        if current_gas_price <= target_price_wei:
+            return True, current_gas_price
+
+        msg = f"Waiting for gas price to be lower than {target_price_wei / 10 ** 9} Gwei. "
+        if is_timeout_needed is True:
+            msg += f"Timeout: {time_out_sec} sec."
+
+        logger.info(msg)
+
         start_time = time.time()
+        delay = config.DEFAULT_DELAY_SEC
         while True:
             current_gas_price = await self.get_eth_mainnet_gas_price()
             if current_gas_price is None:
@@ -144,10 +164,12 @@ class ModuleBase:
             if current_gas_price <= target_price_wei:
                 return True, current_gas_price
 
-            if time.time() - start_time > time_out_sec:
-                return False, current_gas_price
+            if is_timeout_needed is True:
+                delay *= 2
+                if time.time() - start_time > time_out_sec:
+                    return False, current_gas_price
 
-            time.sleep(config.DEFAULT_DELAY_SEC)
+            time.sleep(delay)
 
     def get_random_amount_out_of_token(
             self,
@@ -242,9 +264,11 @@ class ModuleBase:
                 provider=provider
             )
             decimals = await token_contract.functions['decimals'].call()
+
             return decimals.decimals
 
-        except ClientError:
+        except Exception as e:
+            logger.error(f"Error while getting token decimals: {e}")
             return None
 
     async def get_tokens_decimals_by_call(
@@ -408,7 +432,9 @@ class ModuleBase:
             return True, resp
 
         except Exception as ex:
+
             logger.error(f"Error while executing transaction: {ex}")
+
             return False, None
 
     async def get_estimated_transaction_fee(
@@ -507,7 +533,7 @@ class ModuleBase:
             retries = 1
 
         for i in range(retries):
-            logger.info(f"Sending txn, attempt {i + 1}/{retries}")
+            logger.info(f"Attempt {i + 1}/{retries}")
 
             result = await self.send_txn()
             if self.task.test_mode is True:
@@ -546,12 +572,22 @@ class ModuleBase:
         target_gas_price_gwei = self.storage.app_config.target_eth_mainnet_gas_price
         target_gas_price_wei = self.storage.app_config.target_eth_mainnet_gas_price * 10 ** 9
         time_out_sec = self.storage.app_config.time_to_wait_target_gas_price_sec
+        is_timeout_needed = self.storage.app_config.is_gas_price_wait_timeout_needed
         gas_price_status = await self.gas_price_check_loop(
             target_price_wei=target_gas_price_wei,
-            time_out_sec=time_out_sec
+            time_out_sec=time_out_sec,
+            is_timeout_needed=is_timeout_needed
         )
 
         status, gas_price = gas_price_status
+        if gas_price is None:
+            err_msg = f"Error while getting gas price. Aborting transaction."
+            logger.error(err_msg)
+
+            self.module_execution_result.execution_status = False
+            self.module_execution_result.execution_info = err_msg
+            return self.module_execution_result
+
         if status is False:
             err_msg = f"Gas price is too high ({gas_price / 10 ** 9} Gwei) after {time_out_sec}. Aborting transaction."
             logger.error(err_msg)

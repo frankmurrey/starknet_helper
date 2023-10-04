@@ -1,5 +1,6 @@
+## StarkNet Helper
 
-StarkNet Helper is a python project with user-friendly interface, which allows you to interact with different StarkNet onchain projects and protocols using your multi amount of wallets.
+It's a python project with user-friendly interface, which allows you to interact with different StarkNet onchain projects and protocols using your multi amount of wallets.
 
 ![](gui/images/post.png)
 

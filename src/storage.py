@@ -98,6 +98,7 @@ class ActionStorage:
                 return
 
             self.current_logs_dir = new_logs_dir
+            logger.info(f"Current logs dir set to {new_logs_dir}")
 
         def get_current_logs_dir(self):
             return self.current_logs_dir

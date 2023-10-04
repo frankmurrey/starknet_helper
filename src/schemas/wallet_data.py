@@ -1,7 +1,5 @@
-from typing import Union, Optional
 from typing import Callable, Optional
 from uuid import UUID, uuid4
-from src import enums
 
 
 from pydantic import BaseModel
@@ -14,6 +12,7 @@ from src import exceptions
 from src.schemas.proxy_data import ProxyData
 from utils.key_manager.key_manager import get_argent_addr_from_private_key
 from utils.key_manager.key_manager import get_braavos_addr_from_private_key
+from utils.key_manager.key_manager import pad_hex_with_zeros
 from utils.proxy import parse_proxy_data
 import config
 
@@ -57,10 +56,17 @@ class WalletData(BaseModel):
     @property
     def address(self) -> str:
         if self.type == enums.PrivateKeyType.argent:
-            return hex(get_argent_addr_from_private_key(private_key=self.private_key,
-                                                        cairo_version=self.cairo_version))
+            addr = hex(get_argent_addr_from_private_key(
+                private_key=self.private_key,
+                cairo_version=self.cairo_version)
+            )
+            return pad_hex_with_zeros(addr, config.STARK_KEY_LENGTH)
+
         elif self.type == enums.PrivateKeyType.braavos:
-            return hex(get_braavos_addr_from_private_key(private_key=self.private_key,
-                                                         cairo_version=self.cairo_version))
+            addr = hex(get_braavos_addr_from_private_key(
+                private_key=self.private_key,
+                cairo_version=self.cairo_version)
+            )
+            return pad_hex_with_zeros(addr, config.STARK_KEY_LENGTH)
         else:
             raise exceptions.AppValidationError(f"Bad private key type: {self.type}")

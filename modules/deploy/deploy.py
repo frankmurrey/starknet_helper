@@ -96,12 +96,10 @@ class Deploy(ModuleBase):
             err_msg = f"Account already deployed."
             logger.warning(err_msg)
             self.module_execution_result.execution_info = err_msg
+            self.module_execution_result.retry_needed = False
             return self.module_execution_result
 
         logger.warning(f"Action: Deploy {self.key_type.title()} account")
-        current_log_action: WalletActionSchema = ActionStorage().get_current_action()
-        current_log_action.module_name = self.task.module_name.value
-        current_log_action.action_type = self.task.module_type.value
 
         signed_deploy_txn = await self.build_deploy_txn()
         if signed_deploy_txn is None:
@@ -113,8 +111,10 @@ class Deploy(ModuleBase):
         target_gas_price_gwei = self.storage.app_config.target_eth_mainnet_gas_price
         target_gas_price_wei = target_gas_price_gwei * 10 ** 9
         time_out_sec = self.storage.app_config.time_to_wait_target_gas_price_sec
+        is_timeout_needed = self.storage.app_config.is_gas_price_wait_timeout_needed
         gas_price_status = await self.gas_price_check_loop(target_price_wei=target_gas_price_wei,
-                                                           time_out_sec=time_out_sec)
+                                                           time_out_sec=time_out_sec,
+                                                           is_timeout_needed=is_timeout_needed)
         status, gas_price = gas_price_status
         if status is False:
             err_msg = f"Gas price is too high ({gas_price / 10 ** 9} Gwei) after {time_out_sec}. Aborting transaction."
@@ -188,7 +188,7 @@ class Deploy(ModuleBase):
 
                 self.module_execution_result.execution_status = True
                 self.module_execution_result.execution_info = f"Txn success, status: {txn_status}"
-                self.module_execution_result.transaction_hash = hex(txn_hash)
+                self.module_execution_result.hash = hex(txn_hash)
 
                 return self.module_execution_result
 
@@ -197,7 +197,7 @@ class Deploy(ModuleBase):
 
                 self.module_execution_result.execution_status = True
                 self.module_execution_result.execution_info = f"Txn sent"
-                self.module_execution_result.transaction_hash = hex(txn_hash)
+                self.module_execution_result.hash = hex(txn_hash)
                 return self.module_execution_result
 
         except Exception as e:

@@ -132,9 +132,6 @@ class TasksExecutor:
                 if not len(self.wallets_to_process) or not len(self.tasks_to_process):
                     continue
 
-                ActionStorage().reset_all_actions()
-                ActionStorage().create_and_set_new_logs_dir()
-
                 is_stop = False
 
                 for wallet_index, wallet in enumerate(self.wallets_to_process):
@@ -152,6 +149,10 @@ class TasksExecutor:
 
                         if is_stop:
                             break
+
+                        if task_index == 0 and task.test_mode is False:
+                            ActionStorage().reset_all_actions()
+                            ActionStorage().create_and_set_new_logs_dir()
 
                         task.task_status = enums.TaskStatus.PROCESSING
                         self.started_tasks_queue.put_nowait((task, wallet))

@@ -45,7 +45,7 @@ def write_generated_wallets_to_xlsx(
         path: str,
         data: list[dict]
 ):
-    if not os.path.exists(path):
+    if not path:
         return
 
     datapd = {

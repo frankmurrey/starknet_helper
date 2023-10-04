@@ -124,18 +124,32 @@ class ModuleBase:
     async def gas_price_check_loop(
             self,
             target_price_wei: int,
-            time_out_sec: int
+            time_out_sec: int,
+            is_timeout_needed: bool
     ) -> tuple:
         """
         Checks the current gas price on Ethereum mainnet and waits until it is lower than the target price.
+        :param is_timeout_needed:
         :param target_price_wei:
         :param time_out_sec:
         :return:
         """
 
-        logger.info(f"Waiting for gas price to be lower than {target_price_wei / 10 ** 9} Gwei. "
-                    f"Timeout in {time_out_sec}s")
+        current_gas_price = await self.get_eth_mainnet_gas_price()
+        if current_gas_price is None:
+            return False, current_gas_price
+
+        if current_gas_price <= target_price_wei:
+            return True, current_gas_price
+
+        msg = f"Waiting for gas price to be lower than {target_price_wei / 10 ** 9} Gwei. "
+        if is_timeout_needed is True:
+            msg += f"Timeout: {time_out_sec} sec."
+
+        logger.info(msg)
+
         start_time = time.time()
+        delay = config.DEFAULT_DELAY_SEC
         while True:
             current_gas_price = await self.get_eth_mainnet_gas_price()
             if current_gas_price is None:
@@ -144,10 +158,12 @@ class ModuleBase:
             if current_gas_price <= target_price_wei:
                 return True, current_gas_price
 
-            if time.time() - start_time > time_out_sec:
-                return False, current_gas_price
+            if is_timeout_needed is True:
+                delay *= 2
+                if time.time() - start_time > time_out_sec:
+                    return False, current_gas_price
 
-            time.sleep(config.DEFAULT_DELAY_SEC)
+            time.sleep(delay)
 
     def get_random_amount_out_of_token(
             self,
@@ -507,7 +523,7 @@ class ModuleBase:
             retries = 1
 
         for i in range(retries):
-            logger.info(f"Sending txn, attempt {i + 1}/{retries}")
+            logger.info(f"Attempt {i + 1}/{retries}")
 
             result = await self.send_txn()
             if self.task.test_mode is True:
@@ -546,9 +562,11 @@ class ModuleBase:
         target_gas_price_gwei = self.storage.app_config.target_eth_mainnet_gas_price
         target_gas_price_wei = self.storage.app_config.target_eth_mainnet_gas_price * 10 ** 9
         time_out_sec = self.storage.app_config.time_to_wait_target_gas_price_sec
+        is_timeout_needed = self.storage.app_config.is_gas_price_wait_timeout_needed
         gas_price_status = await self.gas_price_check_loop(
             target_price_wei=target_gas_price_wei,
-            time_out_sec=time_out_sec
+            time_out_sec=time_out_sec,
+            is_timeout_needed=is_timeout_needed
         )
 
         status, gas_price = gas_price_status

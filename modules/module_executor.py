@@ -1,6 +1,7 @@
 import time
 from datetime import datetime
 from typing import Union, Optional
+from uuid import UUID, uuid4
 
 import aiohttp.typedefs
 from loguru import logger
@@ -114,8 +115,8 @@ class ModuleExecutor:
                 )
 
             if proxy_set_up_status is False:
-                action_logger = ActionLogger(action_data=action_log_data)
-                action_logger.log_error()
+                action_logger = ActionLogger()
+                action_logger.log_error(action_data=action_log_data)
                 return False
 
         self.action_storage.update_current_action(action_data=action_log_data)

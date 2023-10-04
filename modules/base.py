@@ -258,9 +258,11 @@ class ModuleBase:
                 provider=provider
             )
             decimals = await token_contract.functions['decimals'].call()
+
             return decimals.decimals
 
-        except ClientError:
+        except Exception as e:
+            logger.error(f"Error while getting token decimals: {e}")
             return None
 
     async def get_tokens_decimals_by_call(
@@ -414,6 +416,8 @@ class ModuleBase:
         :param cairo_version:
         :return: bool, response
         """
+        print(auto_estimate)
+        print(max_fee)
         try:
             resp = await account.execute(
                 calls=calls,

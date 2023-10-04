@@ -102,6 +102,8 @@ class Generator:
                 private_key=private_key,
                 cairo_version=cairo_version
             )
+
+            addr = hex(addr)
             if len(addr) < config.STARK_KEY_LENGTH:
                 addr = pad_hex_with_zeros(addr, config.STARK_KEY_LENGTH)
 
@@ -168,7 +170,7 @@ class Generator:
             {
                 'mnemonic': mnemonic,
                 'private_key': private_key,
-                'address': hex(address),
+                'address': address,
                 'public_key': hex(KeyPair.from_private_key(private_key).public_key)
             }
             for mnemonic, private_key, address in zip(mnemonics, private_keys, addresses)

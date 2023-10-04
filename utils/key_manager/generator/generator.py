@@ -132,6 +132,7 @@ class Generator:
                 private_key=private_key,
                 cairo_version=cairo_version
             )
+            addr = hex(addr)
             if len(addr) < config.STARK_KEY_LENGTH:
                 addr = pad_hex_with_zeros(addr, config.STARK_KEY_LENGTH)
 

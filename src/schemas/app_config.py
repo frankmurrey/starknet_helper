@@ -11,6 +11,7 @@ class AppConfigSchema(BaseModel):
     rpc_url: str = "https://starknet-mainnet.public.blastapi.io"
     eth_mainnet_rpc_url: str = "https://rpc.ankr.com/eth"
     target_eth_mainnet_gas_price: Union[int, float] = 20
+    is_gas_price_wait_timeout_needed: bool = False
     time_to_wait_target_gas_price_sec: Union[int, float] = 360
     wallets_amount_to_execute_in_test_mode: int = 3
     last_wallet_version: str = "0.3.0"
@@ -37,7 +38,10 @@ class AppConfigSchema(BaseModel):
         return value
 
     @validator('time_to_wait_target_gas_price_sec', pre=True)
-    def time_to_wait_target_gas_price_sec_must_be_valid(cls, value):
+    def time_to_wait_target_gas_price_sec_must_be_valid(cls, value, values):
+        if values['is_gas_price_wait_timeout_needed'] is False:
+            return 0
+
         value = validation.get_converted_to_int(value, "Time to wait")
         value = validation.get_positive(value, "Time to wait", include_zero=True)
 

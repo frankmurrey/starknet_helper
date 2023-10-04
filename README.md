@@ -3,6 +3,8 @@ StarkNet Helper is a python project with user-friendly interface, which allows y
 
 ![](gui/images/post.png)
 
+![Static Badge](https://img.shields.io/badge/donate-franky?logo=ethereum&labelColor=%23202785&color=%23424eed%20&link=https%3A%2F%2Ffranky-murrey.gitbook.io%2Fstarknet-helper%2Fsupport)
+
 | `run_gui.py` - to run the program
 
 
@@ -16,8 +18,6 @@ The **official** docs and guide info here:
 Developed in collab with [Kumushik](https://github.com/preposition17)
 
 ## Contacts and help
-
-![Static Badge](https://img.shields.io/badge/donate-franky?logo=ethereum&labelColor=%23202785&color=%23424eed%20&link=https%3A%2F%2Ffranky-murrey.gitbook.io%2Fstarknet-helper%2Fsupport)
 
 [Official Telegram channel](https://t.me/frank_murrey)
 

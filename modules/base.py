@@ -137,7 +137,13 @@ class ModuleBase:
 
         current_gas_price = await self.get_eth_mainnet_gas_price()
         if current_gas_price is None:
-            return False, current_gas_price
+            logger.error(f"Error while getting gas price, waiting 1 min for rate limit to reset or change ETH RPC URL")
+            time.sleep(60)
+
+            current_gas_price = await self.get_eth_mainnet_gas_price()
+            if current_gas_price is None:
+                return False, current_gas_price
+
 
         if current_gas_price <= target_price_wei:
             return True, current_gas_price
@@ -416,8 +422,6 @@ class ModuleBase:
         :param cairo_version:
         :return: bool, response
         """
-        print(auto_estimate)
-        print(max_fee)
         try:
             resp = await account.execute(
                 calls=calls,
@@ -428,7 +432,9 @@ class ModuleBase:
             return True, resp
 
         except Exception as ex:
+
             logger.error(f"Error while executing transaction: {ex}")
+
             return False, None
 
     async def get_estimated_transaction_fee(
@@ -574,6 +580,14 @@ class ModuleBase:
         )
 
         status, gas_price = gas_price_status
+        if gas_price is None:
+            err_msg = f"Error while getting gas price. Aborting transaction."
+            logger.error(err_msg)
+
+            self.module_execution_result.execution_status = False
+            self.module_execution_result.execution_info = err_msg
+            return self.module_execution_result
+
         if status is False:
             err_msg = f"Gas price is too high ({gas_price / 10 ** 9} Gwei) after {time_out_sec}. Aborting transaction."
             logger.error(err_msg)

@@ -142,7 +142,7 @@ class TasksExecutor:
 
                     print_wallet_execution(wallet, wallet_index)
 
-                    self.sleep(0.1)
+                    time.sleep(0.1)
 
                     for task_index, task in enumerate(self.tasks_to_process):
                         task: TaskBase
@@ -196,7 +196,17 @@ class TasksExecutor:
                             continue_datetime = datetime.now() + timedelta(seconds=time_to_sleep)
                             logger.info(f"Time to sleep for {time_to_sleep} seconds..., "
                                         f"continue at {continue_datetime}")
-                            self.sleep(time_to_sleep)
+
+                            wakeup_time = time.time() + time_to_sleep
+
+                            while time.time() < wakeup_time:
+                                if self.is_killed():
+                                    break
+
+                                if self.is_stopped():
+                                    break
+
+                                time.sleep(0.1)
 
                         else:
                             logger.success(f"All wallets and tasks completed!")
@@ -217,23 +227,6 @@ class TasksExecutor:
 
         self.wallets_to_process = []
         self.tasks_to_process = []
-
-    def sleep(self, secs: float):
-        """
-        Sleep for some time
-        Args:
-            secs: time to sleep
-        """
-        wakeup_time = time.time() + secs
-
-        while time.time() < wakeup_time:
-            if self.is_killed():
-                break
-
-            if self.is_stopped():
-                break
-
-            time.sleep(0.1)
 
     def is_killed(self, clear: bool = False):
         if self.kill_event.is_set():

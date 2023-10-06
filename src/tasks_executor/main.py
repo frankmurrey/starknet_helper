@@ -201,9 +201,11 @@ class TasksExecutor:
 
                             while time.time() < wakeup_time:
                                 if self.is_killed():
+                                    is_stop = True
                                     break
 
                                 if self.is_stopped():
+                                    is_stop = True
                                     break
 
                                 time.sleep(0.1)

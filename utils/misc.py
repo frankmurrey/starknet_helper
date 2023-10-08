@@ -1,22 +1,6 @@
 import re
-import subprocess
 
 from typing import Union
-
-
-def mingw_installed() -> bool:
-    try:
-
-        exec_result = (
-            subprocess.check_output(["gcc", "--version"])
-            .decode("utf-8")
-            .lower()
-        )
-
-        return "mingw" in exec_result
-
-    except FileNotFoundError:
-        return False
 
 
 def detect_separator(

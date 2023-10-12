@@ -852,8 +852,11 @@ class SwapModuleBase(ModuleBase):
 
         module_name = self.task.module_name.title()
 
-        out_decimals = round(txn_payload_data['amount_x_decimals'], 4)
-        in_decimals = round(txn_payload_data['amount_y_decimals'], 4)
+        out_decimals = (txn_payload_data['amount_x_decimals'] if is_reverse is False
+                        else txn_payload_data['amount_y_decimals'])
+
+        in_decimals = (txn_payload_data['amount_y_decimals'] if is_reverse is False
+                       else txn_payload_data['amount_x_decimals'])
 
         coin_x_symbol = self.task.coin_x.upper() if is_reverse is False else self.task.coin_x.upper()
         coin_y_symbol = self.task.coin_y.upper() if is_reverse is False else self.task.coin_y.upper()

@@ -14,385 +14,192 @@ from src import enums
 from modules.module_executor import ModuleExecutor
 from src.schemas.tasks.base.base import TaskBase
 from src.schemas.wallet_data import WalletData
-from src.tasks_executor.queue import clear_queue
-from src.logger import configure_logger
 from src.storage import ActionStorage
+from src.tasks_executor.event_manager import TasksExecEventManager
 from utils.repr.misc import print_wallet_execution
 
 
 class TasksExecutor:
-    __instance = None
+    def __init__(self):
+        self.processing_process: Optional[mp.Process] = None
+        self.event_manager: Optional[TasksExecEventManager] = TasksExecEventManager()
 
-    def __new__(cls, *args, **kwargs):
-        if cls.__instance is None:
-            cls.__instance = super(TasksExecutor, cls).__new__(cls, *args, **kwargs)
-
-        return cls.__instance
-
-    def __init__(
+    async def process_task(
             self,
-            on_wallet_started: Optional[Callable[[WalletData], None]] = None,
-            on_task_started: Optional[Callable[[TaskBase, WalletData], None]] = None,
-            on_task_completed: Optional[Callable[[TaskBase, WalletData], None]] = None,
-            on_wallet_completed: Optional[Callable[[WalletData], None]] = None
+            task: "TaskBase",
+            task_index: int,
+            wallet: "WalletData",
+
+            is_last_task: bool = False,
     ):
-        self.running = False
-        self.main_process: Optional[mp.Process] = None
-        self.started_thread: Optional[th.Thread] = None
-        self.completed_thread: Optional[th.Thread] = None
-
-        self.start_event = mp.Event()
-        self.stop_event = mp.Event()
-        self.kill_event = mp.Event()
-
-        self.wallets_queue = mp.Queue()
-        self.tasks_queue = mp.Queue()
-
-        self.started_wallets_queue = mp.Queue()
-        self.started_tasks_queue = mp.Queue()
-
-        self.completed_wallets_queue = mp.Queue()
-        self.completed_tasks_queue = mp.Queue()
-
-        self._on_wallet_started = (
-            on_wallet_started if on_wallet_started is not None
-            else self.pseudo_completed_callback
-        )
-
-        self._on_task_started = (
-            on_task_started if on_task_started is not None
-            else self.pseudo_completed_callback
-        )
-
-        self._on_task_completed = (
-            on_task_completed if on_task_completed is not None
-            else self.pseudo_completed_callback
-        )
-        self._on_wallet_completed = (
-            on_wallet_completed if on_wallet_completed is not None
-            else self.pseudo_completed_callback
-        )
-
-        self.wallets_to_process = []
-        self.tasks_to_process = []
-
-    def pseudo_completed_callback(self, *args, **kwargs):
-        pass
-
-    def on_wallet_started(self, callback: Callable[[WalletData], None]):
-        self._on_wallet_started = callback
-
-    def on_task_started(self, callback: Callable[[TaskBase, WalletData], None]):
-        self._on_task_started = callback
-
-    def on_task_completed(self, callback: Callable[[TaskBase, WalletData], None]):
-        self._on_task_completed = callback
-
-    def on_wallet_completed(self, callback: Callable[[WalletData], None]):
-        self._on_wallet_completed = callback
-
-    def process_task(self, task: "TaskBase", wallet: "WalletData", ):
         """
-        Process a task, executing on task receiving
+        Process a task
         Args:
             task: task to process
+            task_index: index of task
             wallet: wallet for task
+            is_last_task: is current task the last
         """
+
+        if task_index == 0 and task.test_mode is False:
+            ActionStorage().reset_all_actions()
+            ActionStorage().create_and_set_new_logs_dir()
+
+        task.task_status = enums.TaskStatus.PROCESSING
+        self.event_manager.set_task_started(task, wallet)
+
         logger.debug(f"Processing task: {task.task_id} with wallet: {wallet.name}")
         module_executor = ModuleExecutor(task=task, wallet=wallet)
-        return asyncio.run(module_executor.start())
 
-    def loop(self):
+        task_result = await module_executor.start()
+
+        task.task_status = enums.TaskStatus.SUCCESS if task_result else enums.TaskStatus.FAILED
+        self.event_manager.set_task_completed(task, wallet)
+
+        if not task_result or task.test_mode:
+            time_to_sleep = config.DEFAULT_DELAY_SEC
+        else:
+            time_to_sleep = random.randint(
+                task.min_delay_sec,
+                task.max_delay_sec
+            )
+
+        if not is_last_task:
+            continue_datetime = datetime.now() + timedelta(seconds=time_to_sleep)
+            logger.info(f"Time to sleep for {time_to_sleep} seconds... "
+                        f"Continue at {continue_datetime.strftime('%H:%M:%S')}")
+            await asyncio.sleep(time_to_sleep)
+        else:
+            logger.success(f"All wallets and tasks completed!")
+
+    async def process_wallet(
+            self,
+            wallet: "WalletData",
+            wallet_index: int,
+            tasks: List["TaskBase"],
+
+            is_last_wallet: bool = False
+    ):
         """
-        Main loop
-        """
-        configure_logger()
-        logger.debug("Starting main loop")
-
-        while self.running:
-            try:
-                self.start_event.wait()
-
-                try:
-                    self.wallets_to_process = self.wallets_queue.get_nowait()
-                except queue.Empty:
-                    time.sleep(0.1)
-
-                try:
-                    self.tasks_to_process = self.tasks_queue.get_nowait()
-                except queue.Empty:
-                    time.sleep(0.1)
-
-                if self.is_killed(clear=True):
-                    break
-
-                if self.is_stopped(clear=True):
-                    break
-
-                if not len(self.wallets_to_process) or not len(self.tasks_to_process):
-                    continue
-
-                is_stop = False
-
-                for wallet_index, wallet in enumerate(self.wallets_to_process):
-                    if is_stop:
-                        break
-
-                    self.started_wallets_queue.put_nowait(wallet)
-
-                    print_wallet_execution(wallet, wallet_index)
-
-                    self.sleep(0.1)
-
-                    for task_index, task in enumerate(self.tasks_to_process):
-                        task: TaskBase
-
-                        if is_stop:
-                            break
-
-                        if task_index == 0 and task.test_mode is False:
-                            ActionStorage().reset_all_actions()
-                            ActionStorage().create_and_set_new_logs_dir()
-
-                        task.task_status = enums.TaskStatus.PROCESSING
-                        self.started_tasks_queue.put_nowait((task, wallet))
-
-                        logger.debug(f"Processing task: {task.task_id}")
-
-                        task_result = self.process_task(
-                            task=task,
-                            wallet=wallet
-                        )
-
-                        if self.is_killed():
-                            is_stop = True
-                            break
-
-                        if self.is_stopped():
-                            is_stop = True
-                            break
-
-                        if task_result:
-                            task.task_status = enums.TaskStatus.SUCCESS
-                        else:
-                            task.task_status = enums.TaskStatus.FAILED
-
-                        self.completed_tasks_queue.put_nowait((task, wallet))
-
-                        if not task_result or task.test_mode:
-                            time_to_sleep = config.DEFAULT_DELAY_SEC
-                        else:
-                            time_to_sleep = random.randint(
-                                task.min_delay_sec,
-                                task.max_delay_sec
-                            )
-
-                        is_last = all([
-                            wallet_index == len(self.wallets_to_process) - 1,
-                            task_index == len(self.tasks_to_process) - 1
-                        ])
-
-                        if not is_last:
-                            continue_datetime = datetime.now() + timedelta(seconds=time_to_sleep)
-                            logger.info(f"Time to sleep for {time_to_sleep} seconds..., "
-                                        f"continue at {continue_datetime}")
-                            self.sleep(time_to_sleep)
-
-                        else:
-                            logger.success(f"All wallets and tasks completed!")
-
-                    self.completed_wallets_queue.put_nowait(wallet)
-
-                self.wallets_to_process = []
-                self.tasks_to_process = []
-                self.stop_tasks_processing()
-
-            except KeyboardInterrupt:
-                self.running = False
-                break
-
-            except Exception as ex:
-                logger.error(ex)
-                logger.exception(ex)
-
-        self.wallets_to_process = []
-        self.tasks_to_process = []
-
-    def sleep(self, secs: float):
-        """
-        Sleep for some time
+        Process a wallet
         Args:
-            secs: time to sleep
+            wallet: wallet to process
+            wallet_index: index of wallet
+            tasks: list of tasks to process
+            is_last_wallet: is current wallet the last
         """
-        wakeup_time = time.time() + secs
+        self.event_manager.set_wallet_started(wallet)
 
-        while time.time() < wakeup_time:
-            if self.is_killed():
-                break
+        print_wallet_execution(wallet, wallet_index)
 
-            if self.is_stopped():
-                break
+        for task_index, task in enumerate(tasks):
+            await self.process_task(
+                task=task,
+                task_index=task_index,
+                wallet=wallet,
 
-            time.sleep(0.1)
+                is_last_task=(task_index == len(tasks) - 1) and is_last_wallet,
+            )
 
-    def is_killed(self, clear: bool = False):
-        if self.kill_event.is_set():
-            if clear:
-                self.kill_event.clear()
-            self.running = False
-            self.start_event.clear()
-            clear_queue(self.tasks_queue)
-            clear_queue(self.wallets_queue)
-            self.tasks_to_process = []
-            self.wallets_to_process = []
-            return True
-        return False
+        self.event_manager.set_wallet_completed(wallet)
 
-    def is_stopped(self, clear: bool = False):
-        if self.stop_event.is_set():
-            if clear:
-                self.stop_event.clear()
-            self.start_event.clear()
-            clear_queue(self.tasks_queue)
-            clear_queue(self.wallets_queue)
-            self.tasks_to_process = []
-            self.wallets_to_process = []
-            return True
-        return False
+    async def _start_processing_async(
+            self,
+            wallets: List["WalletData"],
+            tasks: List["TaskBase"],
+    ):
+        """
+        Start processing async
+        """
+
+        for wallet_index, wallet in enumerate(wallets):
+            await self.process_wallet(
+                wallet=wallet,
+                wallet_index=wallet_index,
+                tasks=tasks,
+
+                is_last_wallet=wallet_index == len(wallets) - 1
+            )
+
+    def _start_processing(
+        self,
+        wallets: List["WalletData"],
+        tasks: List["TaskBase"],
+    ):
+        """
+        Start processing
+        """
+        asyncio.run(self._start_processing_async(wallets, tasks))
 
     def is_running(self):
-        return self.start_event.is_set() and not self.stop_event.is_set()
-
-    def listen_for_started_items(self):
         """
-        Listen for started tasks and wallets
+        Is processing running
         """
-        while self.running:
-            try:
-                started_task, current_wallet = self.started_tasks_queue.get_nowait()
-                self._on_task_started(started_task, current_wallet)
-            except queue.Empty:
-                time.sleep(0.1)
+        if isinstance(self.processing_process, mp.Process):
+            is_alive = self.processing_process.is_alive()
+            if not is_alive:
+                self.processing_process = None
+            return is_alive
 
-            try:
-                started_wallet = self.started_wallets_queue.get_nowait()
-                self._on_wallet_started(started_wallet)
-            except queue.Empty:
-                time.sleep(0.1)
+        return self.processing_process is not None
 
-    def listen_for_completed_items(self):
+    def process(
+            self,
+            wallets: List["WalletData"],
+            tasks: List["TaskBase"],
+
+            shuffle_wallets: bool = False,
+            shuffle_tasks: bool = False,
+    ):
         """
-        Listen for completed tasks and wallets
-        """
-        while self.running:
-            try:
-                completed_task, current_wallet = self.completed_tasks_queue.get_nowait()
-                self._on_task_completed(completed_task, current_wallet)
-            except queue.Empty:
-                time.sleep(0.1)
-
-            try:
-                completed_wallet = self.completed_wallets_queue.get_nowait()
-                self._on_wallet_completed(completed_wallet)
-            except queue.Empty:
-                time.sleep(0.1)
-
-    def push_wallets(self, wallets: List[WalletData], shuffle: bool = False):
-        """
-        Push wallets to queue
-        Args:
-            wallets: wallets to push
-            shuffle: whether to shuffle
-        """
-
-        if shuffle:
-            random.shuffle(wallets)
-
-        self.wallets_queue.put(wallets)
-
-    def push_tasks(self, tasks: List[TaskBase], shuffle: bool = False):
-        """
-        Push tasks to tasks executor
-        Args:
-            tasks: tasks to push
-            shuffle: whether to shuffle
-        """
-
-        if shuffle:
-            random.shuffle(tasks)
-
-        self.tasks_queue.put(tasks)
-
-    def stop_tasks_processing(self):
-        """
-        Stop tasks processing
-        """
-        self.stop_event.set()
-        self.start_event.clear()
-
-    def start_tasks_processing(self):
-        """
-        Start tasks processing
-        """
-        self.stop_event.clear()
-        self.start_event.set()
-        logger.info("Running tasks processing")
-
-    def run(self):
-        """
-        Run tasks executor
+        Process
         """
         logger.debug("Starting tasks executor")
 
-        self.running = True
+        if shuffle_wallets:
+            random.shuffle(wallets)
 
-        _on_wallet_started = self._on_wallet_started
-        _on_task_started = self._on_task_started
+        if shuffle_tasks:
+            random.shuffle(tasks)
 
-        _on_task_completed = self._on_task_completed
-        _on_wallet_completed = self._on_wallet_completed
+        self.processing_process = mp.Process(target=self._start_processing, args=(wallets, tasks))
+        self.processing_process.start()
+        self.event_manager.start()
 
-        self._on_wallet_started = self.pseudo_completed_callback
-        self._on_task_started = self.pseudo_completed_callback
-
-        self._on_task_completed = self.pseudo_completed_callback
-        self._on_wallet_completed = self.pseudo_completed_callback
-
-        self.main_process = mp.Process(target=self.loop)
-        self.main_process.start()
-        # self.start_event.set()
-
-        self._on_wallet_started = _on_wallet_started
-        self._on_task_started = _on_task_started
-
-        self._on_task_completed = _on_task_completed
-        self._on_wallet_completed = _on_wallet_completed
-
-        self.started_thread = th.Thread(target=self.listen_for_started_items)
-        self.started_thread.start()
-
-        self.completed_thread = th.Thread(target=self.listen_for_completed_items)
-        self.completed_thread.start()
-
-    def kill(self):
+    def stop(self):
         """
-        Kill tasks executor
+        Stop
         """
-        logger.debug("Killing tasks executor")
+        self.event_manager.stop()
 
-        self.wallets_to_process = []
-        self.tasks_to_process = []
+        if isinstance(self.processing_process, mp.Process):
+            self.processing_process.terminate()
 
-        self.running = False
-        self.kill_event.set()
+        if self.processing_process:
+            self.processing_process.terminate()
+
+        self.processing_process = None
 
 
 tasks_executor = TasksExecutor()
 
 
 if __name__ == '__main__':
-    tasks_executor.run()
+    from uuid import uuid4
 
-    time.sleep(5)
+    wallets = [WalletData(private_key="0xbd910e6b3a04f879602656546b97291ca035cd46a01b812ef6bc66c97f75b477") for _ in range(2)]
+    tasks = [TaskBase(
+        task_id=uuid4(),
+        test_mode=True,
+        max_fee=1,
+        module_name="test",
+        module_type="test",
+    ) for _ in range(2)]
 
-    tasks_executor.kill()
+    tasks_executor.process(wallets, tasks)
+
+    while True:
+        print(tasks_executor.processing_process)
+        print(tasks_executor.is_running())
+
+        time.sleep(1)

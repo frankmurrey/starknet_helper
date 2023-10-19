@@ -13,7 +13,7 @@ It's a python project with user-friendly interface, which allows you to interact
 
 The **official** docs and guide info here:
 
-**➡️ https://franky-murrey.gitbook.io/starknet-helper/**.
+**➡️ https://franky-murrey.gitbook.io/aptos-helper/**.
 
 Developed in collab with [Kumushik](https://github.com/preposition17)
 
@@ -31,4 +31,4 @@ Developed in collab with [Kumushik](https://github.com/preposition17)
 
 EVM - `0xA7579FF5783e8bD48E5002a294A0b1054F820760`
 
-Stark - `0x062d04705B96734eba8622667E9Bc8fec78C77e4c5878B2c72eA84702C17db3b`
+Aptos - `0xa673abe0e02def0bf6915eb91bbc9172b6f56662150c069f4cd44adcecf9c8f3`

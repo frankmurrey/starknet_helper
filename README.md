@@ -23,7 +23,7 @@ Developed in collab with [Kumushik](https://github.com/preposition17)
 
 [Telegram chat](https://t.me/+e0uxgVUZPHo4Mzcy)
 
-[Personal DM](https://t.me/shnubjack)
+[Personal DM](https://t.me/frankmurrey)
 
 ## Support
 

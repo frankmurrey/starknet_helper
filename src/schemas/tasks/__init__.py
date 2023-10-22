@@ -22,3 +22,8 @@ from .sithswap import SithSwapRemoveLiquidityTask
 from .test import TestTask
 from .zklend import ZkLendSupplyTask
 from .zklend import ZkLendWithdrawTask
+from .fibrous import FibrousSwapTask
+from .orbiter import OrbiterBridgeTask
+
+from .random_task.swap import RandomSwapTask
+from .random_task.liquidity import RandomAddLiquidityTask

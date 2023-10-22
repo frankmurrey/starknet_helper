@@ -30,7 +30,7 @@ class Deploy(ModuleBase):
             task: 'DeployTask',
     ):
         super().__init__(
-            client=account.client,
+            account=account,
             task=task
         )
 
@@ -183,7 +183,7 @@ class Deploy(ModuleBase):
 
                 txn_status = txn_receipt.execution_status.value if txn_receipt.execution_status is not None else None
                 logger.success(f"Txn success, status: {txn_status} "
-                               f"(Actual fee: {txn_receipt.actual_fee / 10 ** 18}. "
+                               f"(Actual fee: {txn_receipt.actual_fee / 10 ** 18}). "
                                f"Txn Hash: {hex(txn_hash)})")
 
                 self.module_execution_result.execution_status = True

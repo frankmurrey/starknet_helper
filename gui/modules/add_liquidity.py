@@ -11,6 +11,7 @@ from pydantic.error_wrappers import ValidationError
 from src import enums
 from contracts.tokens.main import Tokens
 from gui.modules.txn_settings_frame import TxnSettingFrame
+from gui.objects import ComboWithRandomCheckBox
 from src.schemas.tasks.base.add_liquidity import AddLiquidityTaskBase
 from src.schemas import tasks
 
@@ -51,18 +52,22 @@ class AddLiquidityTab:
         )
 
     def get_config_schema(self) -> Union[Callable, None]:
-        swap_protocol = self.liquidity_frame.protocol_combo.get().lower()
-        if swap_protocol == enums.ModuleName.JEDI_SWAP:
-            return tasks.JediSwapAddLiquidityTask
-
-        elif swap_protocol == enums.ModuleName.SITHSWAP:
-            return tasks.SithSwapAddLiquidityTask
-
-        elif swap_protocol == enums.ModuleName.MY_SWAP:
-            return tasks.MySwapAddLiquidityTask
+        swap_protocol = self.liquidity_frame.protocol_combo.get_value().lower()
+        if self.liquidity_frame.protocol_combo.get_checkbox_value():
+            return tasks.RandomAddLiquidityTask
 
         else:
-            return None
+            if swap_protocol == enums.ModuleName.SITHSWAP:
+                return tasks.SithSwapAddLiquidityTask
+
+            elif swap_protocol == enums.ModuleName.MY_SWAP:
+                return tasks.MySwapAddLiquidityTask
+
+            elif swap_protocol == enums.ModuleName.JEDI_SWAP:
+                return tasks.JediSwapAddLiquidityTask
+
+            else:
+                return None
 
     def build_config_data(self):
         config_schema = self.get_config_schema()
@@ -73,14 +78,16 @@ class AddLiquidityTab:
         try:
             config_data: AddLiquidityTaskBase = config_schema(
                 coin_x=self.liquidity_frame.coin_x_combobox.get(),
-                coin_y=self.liquidity_frame.coin_y_combobox.get(),
+                coin_y=self.liquidity_frame.coin_y_combobox.get_value(),
+                random_y_coin=self.liquidity_frame.coin_y_combobox.get_checkbox_value(),
                 use_all_balance=self.liquidity_frame.use_all_balance_x_checkbox.get(),
                 send_percent_balance=self.liquidity_frame.send_percent_balance_x_checkbox.get(),
                 min_amount_out=self.liquidity_frame.min_amount_out_x_entry.get(),
                 max_amount_out=self.liquidity_frame.max_amount_out_x_entry.get(),
                 slippage=self.liquidity_frame.slippage_entry.get(),
                 max_fee=self.txn_settings_frame.max_fee_entry.get(),
-                forced_gas_limit=self.txn_settings_frame.forced_gas_limit_check_box.get()
+                forced_gas_limit=self.txn_settings_frame.forced_gas_limit_check_box.get(),
+                reverse_action=self.liquidity_frame.reverse_action_checkbox.get(),
             )
 
             return config_data
@@ -119,18 +126,18 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
             sticky='w'
         )
 
-        self.protocol_combo = customtkinter.CTkComboBox(
+        self.protocol_combo = ComboWithRandomCheckBox(
             self,
-            values=self.protocol_options,
-            width=120,
-            command=self.protocol_change_event
-        )
-        self.protocol_combo.grid(
-            row=1,
-            column=0,
-            padx=20,
-            pady=0,
-            sticky="w"
+            grid={
+                "row": 1,
+                "column": 0,
+                "padx": 20,
+                "pady": 0,
+                "sticky": "w"
+            },
+            options=self.protocol_options,
+            combo_command=self.protocol_change_event,
+            text="Random protocol",
         )
 
         self.coin_x_label = customtkinter.CTkLabel(
@@ -138,7 +145,7 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
             text="Coin X:"
         )
         self.coin_x_label.grid(
-            row=2,
+            row=3,
             column=0,
             padx=20,
             pady=(10, 0),
@@ -152,7 +159,7 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
             command=self.update_coin_options
         )
         self.coin_x_combobox.grid(
-            row=3,
+            row=4,
             column=0,
             padx=20,
             pady=(0, 0),
@@ -164,24 +171,30 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
             text="Coin Y:"
         )
         self.coin_y_label.grid(
-            row=2,
+            row=3,
             column=1,
             padx=20,
             pady=(10, 0),
             sticky="w"
         )
 
-        self.coin_y_combobox = customtkinter.CTkComboBox(
+        self.coin_y_combobox = ComboWithRandomCheckBox(
             self,
-            values=self.coin_y_options,
-            width=120
+            grid={"row": 4, "column": 1, "padx": 20, "pady": 0, "sticky": "w"},
+            options=self.coin_y_options,
+            text="Random Y coin",
         )
-        self.coin_y_combobox.grid(
-            row=3,
-            column=1,
-            padx=20,
-            pady=(0, 0),
-            sticky="w"
+
+        self.reverse_action_checkbox = customtkinter.CTkCheckBox(
+            self,
+            text="Make reverse action",
+            onvalue=True,
+            offvalue=False,
+            checkbox_width=18,
+            checkbox_height=18,
+        )
+        self.reverse_action_checkbox.grid(
+            row=5, column=0, padx=20, pady=(5, 0), sticky="w"
         )
 
         self.min_amount_out_x_label = customtkinter.CTkLabel(
@@ -189,7 +202,7 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
             text="Min Amount Out X:"
         )
         self.min_amount_out_x_label.grid(
-            row=4,
+            row=6,
             column=0,
             padx=20,
             pady=(10, 0),
@@ -201,7 +214,7 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
             width=120
         )
         self.min_amount_out_x_entry.grid(
-            row=5,
+            row=7,
             column=0,
             padx=20,
             pady=(0, 20),
@@ -213,7 +226,7 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
             text="Max Amount Out X:"
         )
         self.max_amount_out_x_label.grid(
-            row=4,
+            row=6,
             column=1,
             padx=20,
             pady=(10, 0),
@@ -225,7 +238,7 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
             width=120
         )
         self.max_amount_out_x_entry.grid(
-            row=5,
+            row=7,
             column=1,
             padx=20,
             pady=(0, 20),
@@ -242,7 +255,7 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
             command=self.use_all_balance_checkbox_event
         )
         self.use_all_balance_x_checkbox.grid(
-            row=6,
+            row=8,
             column=0,
             padx=20,
             pady=(0, 0),
@@ -260,7 +273,7 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
         )
 
         self.send_percent_balance_x_checkbox.grid(
-            row=7,
+            row=9,
             column=0,
             padx=20,
             pady=(5, 10),
@@ -272,7 +285,7 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
             text="Slippage (%):",
         )
         self.slippage_label.grid(
-            row=8,
+            row=10,
             column=0,
             padx=20,
             pady=(5, 0),
@@ -285,7 +298,7 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
             textvariable=Variable(value=2)
         )
         self.slippage_entry.grid(
-            row=9,
+            row=11,
             column=0,
             padx=20,
             pady=(0, 20),
@@ -303,7 +316,7 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
     @property
     def protocol_coin_options(self) -> list:
         tokens = Tokens()
-        protocol = self.protocol_combo.get()
+        protocol = self.protocol_combo.get_value()
         return [token.symbol.upper() for token in tokens.get_tokens_by_protocol(protocol)]
 
     @property
@@ -322,8 +335,8 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
         self.coin_x_combobox.configure(values=coin_to_swap_options)
 
         coin_to_receive_options = self.coin_y_options
-        self.coin_y_combobox.configure(values=coin_to_receive_options)
-        self.coin_y_combobox.set(coin_to_receive_options[1])
+        self.coin_y_combobox.combobox.configure(values=coin_to_receive_options)
+        self.coin_y_combobox.combobox.set(coin_to_receive_options[1])
 
     def protocol_change_event(self, protocol=None):
         coin_to_swap_options = self.coin_x_options
@@ -331,8 +344,8 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
         self.coin_x_combobox.set(coin_to_swap_options[1])
 
         coin_to_receive_options = self.coin_y_options
-        self.coin_y_combobox.configure(values=coin_to_receive_options)
-        self.coin_y_combobox.set(coin_to_receive_options[1])
+        self.coin_y_combobox.combobox.configure(values=coin_to_receive_options)
+        self.coin_y_combobox.combobox.set(coin_to_receive_options[1])
 
     def use_all_balance_checkbox_event(self):
         if self.use_all_balance_x_checkbox.get():

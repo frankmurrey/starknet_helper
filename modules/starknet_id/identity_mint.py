@@ -27,7 +27,7 @@ class IdentityMint(ModuleBase):
     ):
 
         super().__init__(
-            client=account.client,
+            account=account,
             task=task,
         )
 

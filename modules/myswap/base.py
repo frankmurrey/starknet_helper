@@ -2,7 +2,7 @@ from typing import Union
 from typing import TYPE_CHECKING
 
 from contracts.base import TokenBase
-from modules.base import SwapModuleBase
+from modules.base import ModuleBase
 from modules.myswap.math import get_amount_in_from_reserves
 from contracts.myswap.main import MySwapContracts
 
@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from src.schemas.tasks.myswap import MySwapTask
 
 
-class MySwapBase(SwapModuleBase):
+class MySwapBase(ModuleBase):
     pools: dict = {
         1: ['ETH', 'USDC'],
         2: ['DAI', 'ETH'],
@@ -33,7 +33,6 @@ class MySwapBase(SwapModuleBase):
             account=account,
             task=task,
         )
-        self._account = account
 
         self.my_swap_contracts = MySwapContracts()
         self.router_contract = self.get_contract(

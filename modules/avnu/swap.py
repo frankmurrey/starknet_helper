@@ -10,7 +10,7 @@ from modules.base import SwapModuleBase
 from contracts.avnu.main import AvnuContracts
 from contracts.base import TokenBase
 from utils.get_delay import get_delay
-from src.schemas.action_models import ModuleExecutionResult
+from src.schemas.action_models import ModuleExecutionResult, TransactionPayloadData
 
 if TYPE_CHECKING:
     from src.schemas.tasks.avnu import AvnuSwapTask
@@ -30,13 +30,14 @@ class AvnuSwap(SwapModuleBase):
             task=task,
         )
 
-        self.account = account
         self.task = task
 
         self.avnu_contracts = AvnuContracts()
-        self.router_contract = self.get_contract(address=self.avnu_contracts.router_address,
-                                                 abi=self.avnu_contracts.router_abi,
-                                                 provider=account)
+        self.router_contract = self.get_contract(
+            address=self.avnu_contracts.router_address,
+            abi=self.avnu_contracts.router_abi,
+            provider=account
+        )
 
     async def get_quotes(
             self,
@@ -111,7 +112,7 @@ class AvnuSwap(SwapModuleBase):
             logger.error(f"Failed to get call data")
             return None
 
-    async def build_txn_payload_data(self) -> Union[dict, None]:
+    async def build_txn_payload_data(self) -> Union[TransactionPayloadData, None]:
         """
         Builds payload data for swap type transaction
         :return:
@@ -147,13 +148,13 @@ class AvnuSwap(SwapModuleBase):
                                     func_name='multi_route_swap',
                                     call_data=call_data_decoded)
 
-        return {
-            'calls': [approve_call, swap_call],
-            'amount_x_decimals': amount_out_wei / 10 ** self.token_x_decimals,
-            'amount_y_decimals': amount_in_wei / 10 ** self.token_y_decimals,
-        }
+        return TransactionPayloadData(
+            calls=[approve_call, swap_call],
+            amount_x_decimals=amount_out_wei / 10 ** self.token_x_decimals,
+            amount_y_decimals=amount_in_wei / 10 ** self.token_y_decimals,
+        )
 
-    async def build_reverse_txn_payload_data(self) -> Union[dict, None]:
+    async def build_reverse_txn_payload_data(self) -> Union[TransactionPayloadData, None]:
         """
         Builds payload data for reverse swap type transaction, if reverse action is enabled in task
         :return:
@@ -210,13 +211,11 @@ class AvnuSwap(SwapModuleBase):
                                                ]
                                     )
 
-        calls = [approve_call, swap_call]
-
-        return {
-            'calls': calls,
-            'amount_x_decimals': amount_out_wei / 10 ** self.token_y_decimals,
-            'amount_y_decimals': amount_out_wei / 10 ** self.token_x_decimals,
-        }
+        return TransactionPayloadData(
+            calls=[approve_call, swap_call],
+            amount_x_decimals=amount_out_wei / 10 ** self.token_y_decimals,
+            amount_y_decimals=amount_out_wei / 10 ** self.token_x_decimals,
+        )
 
     async def send_txn(self) -> ModuleExecutionResult:
         """

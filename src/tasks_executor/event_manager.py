@@ -1,6 +1,5 @@
 import time
 import queue
-import warnings
 import threading as th
 import multiprocessing as mp
 from typing import Optional
@@ -15,7 +14,6 @@ from src.internal_queue import InternalQueue
 
 
 def state_setter(obj: "TasksExecEventManager", state: dict):
-    print(obj)
     obj.running = state["running"]
 
     obj.wallets_started_queue = state["wallets_started_queue"]

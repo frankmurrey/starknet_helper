@@ -21,7 +21,7 @@ class ZkLendSupply(ModuleBase):
             account,
             task: 'ZkLendSupplyTask'):
         super().__init__(
-            client=account.client,
+            account=account,
             task=task,
         )
 

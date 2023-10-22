@@ -5,16 +5,17 @@ from typing import TYPE_CHECKING
 from starknet_py.net.account.account import Account
 from loguru import logger
 
-from src.schemas.action_models import ModuleExecutionResult
+from src.schemas.action_models import ModuleExecutionResult, TransactionPayloadData
 from contracts.myswap.main import MySwapContracts
 from modules.myswap.base import MySwapBase
+from modules.base import SwapModuleBase
 from utils.get_delay import get_delay
 
 if TYPE_CHECKING:
     from src.schemas.tasks.myswap import MySwapTask
 
 
-class MySwap(MySwapBase):
+class MySwap(MySwapBase, SwapModuleBase):
     task: 'MySwapTask'
     account: Account
 
@@ -38,7 +39,7 @@ class MySwap(MySwapBase):
             provider=account
         )
 
-    async def build_txn_payload_data(self) -> Union[dict, None]:
+    async def build_txn_payload_data(self) -> Union[TransactionPayloadData, None]:
         """
         Build the transaction payload data for the swap type transaction.
         :return:
@@ -82,13 +83,13 @@ class MySwap(MySwapBase):
         )
         calls = [approve_call, swap_call]
 
-        return {
-            "calls": calls,
-            "amount_x_decimals": amount_out_wei / 10 ** self.token_x_decimals,
-            "amount_y_decimals": amount_in_wei / 10 ** self.token_y_decimals
-        }
+        return TransactionPayloadData(
+            calls=calls,
+            amount_x_decimals=amount_out_wei / 10 ** self.token_x_decimals,
+            amount_y_decimals=amount_in_wei / 10 ** self.token_y_decimals
+        )
 
-    async def build_reverse_txn_payload_data(self) -> Union[dict, None]:
+    async def build_reverse_txn_payload_data(self) -> Union[TransactionPayloadData, None]:
         """
         Build the transaction payload data for the reverse swap type transaction, if reverse action is enabled in task.
         :return:
@@ -146,11 +147,11 @@ class MySwap(MySwapBase):
 
         calls = [approve_call, swap_call]
 
-        return {
-            "calls": calls,
-            "amount_x_decimals": amount_out_y_wei / 10 ** self.token_x_decimals,
-            "amount_y_decimals": amount_in_x_wei / 10 ** self.token_y_decimals
-        }
+        return TransactionPayloadData(
+            calls=calls,
+            amount_x_decimals=amount_out_y_wei / 10 ** self.token_x_decimals,
+            amount_y_decimals=amount_in_x_wei / 10 ** self.token_y_decimals
+        )
 
     async def send_txn(self) -> ModuleExecutionResult:
         """

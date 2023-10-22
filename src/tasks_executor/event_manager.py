@@ -15,7 +15,6 @@ from src.internal_queue import InternalQueue
 
 
 def state_setter(obj: "TasksExecEventManager", state: dict):
-    print(obj)
     obj.running = state["running"]
 
     obj.wallets_started_queue = state["wallets_started_queue"]

@@ -14,6 +14,8 @@ class ModuleType(str, Enum):
     SEND_MAIL = "send_mail"
     TEST = "test"
     SEND = "send"
+    BRIDGE = "bridge"
+    TRANSFER = "transfer"
 
 
 class ModuleName(str, Enum):
@@ -29,6 +31,9 @@ class ModuleName(str, Enum):
     DEPLOY = "deploy"
     UPGRADE = "upgrade"
     TRANSFER = "transfer"
+    RANDOM = "random"
+    FIBROUS = "fibrous"
+    ORBITER = "orbiter"
 
 
 class PrivateKeyType(str, Enum):
@@ -47,3 +52,7 @@ class WalletStatus(str, Enum):
     active = "active"
     completed = "completed"
     inactive = "inactive"
+
+
+class MiscTypes(str, Enum):
+    RANDOM = "random"

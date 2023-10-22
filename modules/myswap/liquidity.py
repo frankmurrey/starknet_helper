@@ -1,19 +1,22 @@
+import time
 from typing import Union
 from typing import TYPE_CHECKING
 
 from loguru import logger
 from starknet_py.net.client_errors import ClientError
 
+from modules.base import LiquidityModuleBase
 from modules.myswap.base import MySwapBase
 from modules.myswap.math import calc_output_burn_liquidity
-from src.schemas.action_models import ModuleExecutionResult
+from src.schemas.action_models import ModuleExecutionResult, TransactionPayloadData
+from utils.get_delay import get_delay
 
 if TYPE_CHECKING:
     from src.schemas.tasks.myswap import MySwapAddLiquidityTask
     from src.schemas.tasks.myswap import MySwapRemoveLiquidityTask
 
 
-class MySwapAddLiquidity(MySwapBase):
+class MySwapAddLiquidity(MySwapBase, LiquidityModuleBase):
 
     task: 'MySwapAddLiquidityTask'
 
@@ -28,7 +31,6 @@ class MySwapAddLiquidity(MySwapBase):
         )
 
         self.task = task
-        self.account = account
 
     async def get_amounts_out(self) -> Union[dict, None]:
         """
@@ -63,7 +65,7 @@ class MySwapAddLiquidity(MySwapBase):
             self.coin_y.contract_address: amount_out_y_wei
         }
 
-    async def build_txn_payload_data(self) -> Union[dict, None]:
+    async def build_txn_payload_data(self) -> Union[TransactionPayloadData, None]:
         """
         Build transaction payload data
         :return:
@@ -166,11 +168,11 @@ class MySwapAddLiquidity(MySwapBase):
 
         calls = [approve_call_0, approve_call_1, add_liq_call]
 
-        return {
-            "calls": calls,
-            token_pair[0]: amount_0_decimals,
-            token_pair[1]: amount_1_decimals
-        }
+        return TransactionPayloadData(
+            calls=calls,
+            token_pair_0=amount_0_decimals,
+            token_pair_1=amount_1_decimals
+        )
 
     async def send_txn(self) -> ModuleExecutionResult:
         await self.set_fetched_tokens_data()
@@ -179,32 +181,40 @@ class MySwapAddLiquidity(MySwapBase):
             self.module_execution_result.execution_info = f"Failed to fetch local tokens data"
             return self.module_execution_result
 
-        txn_payload_data: dict = await self.build_txn_payload_data()
+        txn_payload_data = await self.build_txn_payload_data()
         if txn_payload_data is None:
             self.module_execution_result.execution_info = f"Failed to build transaction payload data"
             return self.module_execution_result
 
-        txn_calls = txn_payload_data['calls']
-        amount_out_x_decimals = txn_payload_data[self.coin_x.contract_address]
-        amount_out_y_decimals = txn_payload_data[self.coin_y.contract_address]
-
-        txn_info_message = (
-            f"Add Liquidity (MySwap) | "
-            f"{round(amount_out_x_decimals, 5)} ({self.coin_x.symbol.upper()}) "
-            f"+ {round(amount_out_y_decimals, 5)} ({self.coin_y.symbol.upper()}). "
-            f"Slippage: {self.task.slippage}%."
-        )
-
-        txn_status = await self.simulate_and_send_transfer_type_transaction(
+        txn_status = await self.send_liquidity_type_txn(
             account=self.account,
-            calls=txn_calls,
-            txn_info_message=txn_info_message
+            txn_payload_data=txn_payload_data,
         )
+
+        if not txn_status.execution_status:
+            return txn_status
+
+        if self.task.reverse_action is True:
+            delay = get_delay(self.task.min_delay_sec, self.task.max_delay_sec)
+            logger.info(f"Waiting {delay} seconds before reverse action")
+            time.sleep(delay)
+
+            old_task = self.task.dict(exclude={"module_name",
+                                               "module_type",
+                                               "module"})
+            new_task = self.task.reverse_action_task(**old_task)
+            reverse_action_module = MySwapRemoveLiquidity(
+                account=self.account,
+                task=new_task
+            )
+            reverse_txn_status = await reverse_action_module.send_txn()
+
+            return reverse_txn_status
 
         return txn_status
 
 
-class MySwapRemoveLiquidity(MySwapBase):
+class MySwapRemoveLiquidity(MySwapBase, LiquidityModuleBase):
 
     task: 'MySwapRemoveLiquidityTask'
 
@@ -299,7 +309,7 @@ class MySwapRemoveLiquidity(MySwapBase):
             token1_address: output[1]
         }
 
-    async def build_txn_payload_data(self) -> Union[dict, None]:
+    async def build_txn_payload_data(self) -> Union[TransactionPayloadData, None]:
         """
         Build transaction payload data for remove liquidity
         :return:
@@ -378,11 +388,11 @@ class MySwapRemoveLiquidity(MySwapBase):
 
         calls = [approve_call, remove_liq_call]
 
-        return {
-            "calls": calls,
-            token_pair[0]: amount_out_x_decimals,
-            token_pair[1]: amount_out_1_decimals
-        }
+        return TransactionPayloadData(
+            calls=calls,
+            token_pair_0=amount_out_x_decimals,
+            token_pair_1=amount_out_1_decimals
+        )
 
     async def send_txn(self) -> ModuleExecutionResult:
         """
@@ -395,26 +405,14 @@ class MySwapRemoveLiquidity(MySwapBase):
             self.module_execution_result.execution_info = f"Failed to fetch local tokens data"
             return self.module_execution_result
 
-        txn_payload: dict = await self.build_txn_payload_data()
+        txn_payload = await self.build_txn_payload_data()
         if txn_payload is None:
             self.module_execution_result.execution_info = f"Failed to build transaction payload data"
             return self.module_execution_result
 
-        txn_calls = txn_payload['calls']
-        amount_out_x_decimals = txn_payload[self.coin_x.contract_address]
-        amount_out_y_decimals = txn_payload[self.coin_y.contract_address]
-
-        txn_info_message = (
-            f"Remove Liquidity (MySwap). "
-            f"{round(amount_out_x_decimals, 5)} ({self.coin_x.symbol.upper()}) + "
-            f"{round(amount_out_y_decimals, 5)} ({self.coin_y.symbol.upper()}). "
-            f"Slippage: {self.task.slippage}%."
-        )
-
-        txn_status = await self.simulate_and_send_transfer_type_transaction(
+        txn_status = await self.send_liquidity_type_txn(
             account=self.account,
-            calls=txn_calls,
-            txn_info_message=txn_info_message,
+            txn_payload_data=txn_payload,
         )
 
         return txn_status

@@ -1,8 +1,6 @@
 import time
 import random
-import queue
 import asyncio
-import threading as th
 import multiprocessing as mp
 from datetime import datetime, timedelta
 from typing import Optional, List, Callable
@@ -17,6 +15,7 @@ from src.schemas.wallet_data import WalletData
 from src.storage import ActionStorage
 from src.tasks_executor.event_manager import TasksExecEventManager
 from utils.repr.misc import print_wallet_execution
+from src.logger import configure_logger
 
 
 class TasksExecutor:
@@ -27,7 +26,7 @@ class TasksExecutor:
     async def process_task(
             self,
             task: "TaskBase",
-            task_index: int,
+            wallet_index: int,
             wallet: "WalletData",
 
             is_last_task: bool = False,
@@ -36,12 +35,12 @@ class TasksExecutor:
         Process a task
         Args:
             task: task to process
-            task_index: index of task
+            wallet_index: index of wallet_
             wallet: wallet for task
             is_last_task: is current task the last
         """
 
-        if task_index == 0 and task.test_mode is False:
+        if wallet_index == 0 and task.test_mode is False:
             ActionStorage().reset_all_actions()
             ActionStorage().create_and_set_new_logs_dir()
 
@@ -95,7 +94,7 @@ class TasksExecutor:
         for task_index, task in enumerate(tasks):
             await self.process_task(
                 task=task,
-                task_index=task_index,
+                wallet_index=wallet_index,
                 wallet=wallet,
 
                 is_last_task=(task_index == len(tasks) - 1) and is_last_wallet,
@@ -111,7 +110,7 @@ class TasksExecutor:
         """
         Start processing async
         """
-
+        configure_logger()
         for wallet_index, wallet in enumerate(wallets):
             await self.process_wallet(
                 wallet=wallet,
@@ -182,24 +181,3 @@ class TasksExecutor:
 
 
 tasks_executor = TasksExecutor()
-
-
-if __name__ == '__main__':
-    from uuid import uuid4
-
-    wallets = [WalletData(private_key="0xbd910e6b3a04f879602656546b97291ca035cd46a01b812ef6bc66c97f75b477") for _ in range(2)]
-    tasks = [TaskBase(
-        task_id=uuid4(),
-        test_mode=True,
-        max_fee=1,
-        module_name="test",
-        module_type="test",
-    ) for _ in range(2)]
-
-    tasks_executor.process(wallets, tasks)
-
-    while True:
-        print(tasks_executor.processing_process)
-        print(tasks_executor.is_running())
-
-        time.sleep(1)

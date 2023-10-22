@@ -1,6 +1,7 @@
 import re
 from typing import Union
 
+
 def detect_separator(
         filename: str,
         possible_delimiters: list[str]
@@ -33,5 +34,3 @@ def decode_wallet_version(version: int) -> str:
     final_version = version_string.lstrip("\x00")
 
     return final_version
-
-

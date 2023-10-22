@@ -5,9 +5,11 @@ from loguru import logger
 from starknet_py.net.client_errors import ClientError
 from starknet_py.net.account.account import Account
 
+from modules.base import LiquidityModuleBase
 from modules.sithswap.base import SithBase
 from modules.sithswap.math import calc_output_burn_liquidity
-from src.schemas.action_models import ModuleExecutionResult
+from src.schemas.action_models import ModuleExecutionResult, TransactionPayloadData
+from utils.get_delay import get_delay
 
 
 if TYPE_CHECKING:
@@ -15,7 +17,7 @@ if TYPE_CHECKING:
     from src.schemas.tasks.sithswap import SithSwapRemoveLiquidityTask
 
 
-class SithSwapAddLiquidity(SithBase):
+class SithSwapAddLiquidity(SithBase, LiquidityModuleBase):
     task: 'SithSwapAddLiquidityTask'
 
     def __init__(
@@ -30,7 +32,6 @@ class SithSwapAddLiquidity(SithBase):
         )
 
         self.task = task
-        self.account: Account = account
 
     async def get_amounts_out_data(self) -> Union[dict, None]:
         """
@@ -75,15 +76,15 @@ class SithSwapAddLiquidity(SithBase):
             'pool_addr': pool_addr
         }
 
-    async def build_txn_payload_data(
-            self,
-            amounts_out_data: dict
-    ):
+    async def build_txn_payload_calls(self) -> Union[TransactionPayloadData, None]:
         """
         Build the transaction payload data for the add liquidity transaction.
-        :param amounts_out_data:
         :return:
         """
+        amounts_out_data: dict = await self.get_amounts_out_data()
+        if amounts_out_data is None:
+            return None
+
         sorted_pair: list = await self.get_sorted_tokens(
             pool_addr=amounts_out_data['pool_addr'],
             pool_abi=self.sith_swap_contracts.pool_abi)
@@ -135,7 +136,11 @@ class SithSwapAddLiquidity(SithBase):
 
         calls = [approve_call_0, approve_call_1, add_liquidity_call]
 
-        return calls
+        return TransactionPayloadData(
+            calls=calls,
+            amount_x_decimals=amounts_out_data['amount_x_decimals'],
+            amount_y_decimals=amounts_out_data['amount_y_decimals']
+        )
 
     async def send_txn(self) -> ModuleExecutionResult:
         await self.set_fetched_tokens_data()
@@ -144,33 +149,41 @@ class SithSwapAddLiquidity(SithBase):
             self.module_execution_result.execution_info = f"Failed to fetch local tokens data"
             return self.module_execution_result
 
-        amounts_out_data: dict = await self.get_amounts_out_data()
-        if amounts_out_data is None:
-            self.module_execution_result.execution_info = f"Failed to get amounts out data"
+        txn_payload_data = await self.build_txn_payload_calls()
+        if txn_payload_data is None:
+            self.module_execution_result.execution_info = f"Failed to build transaction payload calls"
             return self.module_execution_result
 
-        txn_calls = await self.build_txn_payload_data(amounts_out_data=amounts_out_data)
-        if txn_calls is None:
-            self.module_execution_result.execution_info = f"Failed to build transaction payload data"
-            return self.module_execution_result
-
-        txn_info_message = (
-            f"Add Liquidity (SithSwap) | "
-            f"{round(amounts_out_data['amount_x_decimals'], 4)} ({self.coin_x.symbol.upper()}) + "
-            f"{round(amounts_out_data['amount_y_decimals'], 4)} ({self.coin_y.symbol.upper()}). "
-            f"Slippage: {self.task.slippage}%."
-        )
-
-        txn_status = await self.simulate_and_send_transfer_type_transaction(
+        txn_status = await self.send_liquidity_type_txn(
             account=self.account,
-            calls=txn_calls,
-            txn_info_message=txn_info_message
+            txn_payload_data=txn_payload_data,
         )
+
+        if not txn_status.execution_status:
+            return txn_status
+
+        if self.task.reverse_action is True:
+            delay = get_delay(self.task.min_delay_sec, self.task.max_delay_sec)
+            logger.info(f"Waiting {delay} seconds before reverse action")
+            time.sleep(delay)
+
+            old_task = self.task.dict(exclude={"module_name",
+                                               "module_type",
+                                               "module"})
+            new_task = self.task.reverse_action_task(**old_task)
+
+            reverse_action_module = SithSwapRemoveLiquidity(
+                account=self.account,
+                task=new_task
+            )
+            reverse_txn_status = await reverse_action_module.send_txn()
+
+            return reverse_txn_status
 
         return txn_status
 
 
-class SithSwapRemoveLiquidity(SithBase):
+class SithSwapRemoveLiquidity(SithBase, LiquidityModuleBase):
     task: 'SithSwapRemoveLiquidityTask'
 
     def __init__(
@@ -210,7 +223,7 @@ class SithSwapRemoveLiquidity(SithBase):
             logger.error(f"Can't get LP supply for {lp_addr}")
             return None
 
-    async def build_txn_payload_data(self):
+    async def build_txn_payload_data(self) -> Union[TransactionPayloadData, None]:
         """
         Build the transaction payload data for the remove liquidity transaction.
         :return:
@@ -310,11 +323,11 @@ class SithSwapRemoveLiquidity(SithBase):
 
         calls = [approve_call, remove_liq_call]
 
-        return {
-            'amount_x_decimals': amount_in_x_decimals,
-            'amount_y_decimals': amount_in_y_decimals,
-            'calls': calls
-        }
+        return TransactionPayloadData(
+            calls=calls,
+            amount_x_decimals=amount_in_x_decimals,
+            amount_y_decimals=amount_in_y_decimals
+        )
 
     async def send_txn(self) -> ModuleExecutionResult:
         await self.set_fetched_tokens_data()
@@ -328,15 +341,9 @@ class SithSwapRemoveLiquidity(SithBase):
             self.module_execution_result.execution_info = f"Failed to build transaction payload data"
             return self.module_execution_result
 
-        txn_calls = amounts_out_data['calls']
-
-        txn_info_message = (f"Remove Liquidity (SithSwap) | "
-                            f"{round(amounts_out_data['amount_x_decimals'], 4)} ({self.coin_x.symbol.upper()}) + "
-                            f"{round(amounts_out_data['amount_y_decimals'], 4)} ({self.coin_y.symbol.upper()}). "
-                            f"Slippage: {self.task.slippage}%.")
-
-        txn_status = await self.simulate_and_send_transfer_type_transaction(account=self.account,
-                                                                            calls=txn_calls,
-                                                                            txn_info_message=txn_info_message, )
+        txn_status = await self.send_liquidity_type_txn(
+            account=self.account,
+            txn_payload_data=amounts_out_data
+        )
 
         return txn_status

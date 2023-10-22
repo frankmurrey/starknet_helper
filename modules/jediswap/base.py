@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 from loguru import logger
 
 from contracts.base import TokenBase
+from modules.base import ModuleBase
 from modules.base import SwapModuleBase
 from contracts.jediswap.main import JediSwapContracts
 
@@ -11,7 +12,7 @@ if TYPE_CHECKING:
     from src.schemas.tasks.jediswap import JediSwapTask
 
 
-class JediSwapBase(SwapModuleBase):
+class JediSwapBase(ModuleBase):
     task: 'JediSwapTask'
 
     def __init__(
@@ -36,8 +37,6 @@ class JediSwapBase(SwapModuleBase):
             abi=self.jedi_contracts.factory_abi,
             provider=account
         )
-
-        self._account = account
 
     async def get_amount_in(
             self,

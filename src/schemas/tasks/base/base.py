@@ -21,13 +21,14 @@ class TaskBase(BaseModel):
     task_status: enums.TaskStatus = enums.TaskStatus.CREATED
 
     forced_gas_limit: bool = False
-    max_fee: int
+    max_fee: Optional[int]
 
     # GLOBALS
     wait_for_receipt: bool = False
     txn_wait_timeout_sec: int = 60
 
     reverse_action: bool = False
+    reverse_action_task: Optional[Callable] = None
     retries: int = 3
 
     min_delay_sec: float = 1

@@ -6,7 +6,8 @@ from starknet_py.net.account.account import Account
 from loguru import logger
 
 from modules.jediswap.base import JediSwapBase
-from src.schemas.action_models import ModuleExecutionResult
+from modules.base import SwapModuleBase
+from src.schemas.action_models import ModuleExecutionResult, TransactionPayloadData
 from utils.get_delay import get_delay
 
 
@@ -14,13 +15,15 @@ if TYPE_CHECKING:
     from src.schemas.tasks.jediswap import JediSwapTask
 
 
-class JediSwap(JediSwapBase):
+class JediSwap(JediSwapBase, SwapModuleBase):
     task: 'JediSwapTask'
     account: Account
 
-    def __init__(self,
-                 account,
-                 task: 'JediSwapTask', ):
+    def __init__(
+            self,
+            account,
+            task: 'JediSwapTask',
+    ):
         super().__init__(
             account=account,
             task=task,
@@ -29,7 +32,7 @@ class JediSwap(JediSwapBase):
         self.task = task
         self.account = account
 
-    async def build_txn_payload_data(self) -> Union[dict, None]:
+    async def build_txn_payload_data(self) -> Union[TransactionPayloadData, None]:
         """
         Build the transaction payload data for the swap type transaction.
         :return:
@@ -70,13 +73,13 @@ class JediSwap(JediSwapBase):
                        swap_deadline]
         )
         calls = [approve_call, swap_call]
-        return {
-            'calls': calls,
-            'amount_x_decimals': amount_out_wei / 10 ** self.token_x_decimals,
-            'amount_y_decimals': amount_in_wei / 10 ** self.token_y_decimals,
-        }
+        return TransactionPayloadData(
+            calls=calls,
+            amount_x_decimals=amount_out_wei / 10 ** self.token_x_decimals,
+            amount_y_decimals=amount_in_wei / 10 ** self.token_y_decimals
+        )
 
-    async def build_reverse_txn_payload_data(self) -> Union[dict, None]:
+    async def build_reverse_txn_payload_data(self) -> Union[TransactionPayloadData, None]:
         """
         Build the transaction payload data for the reverse swap type transaction, if reverse action is enabled in task.
         :return:
@@ -132,11 +135,11 @@ class JediSwap(JediSwapBase):
 
         calls = [approve_call, swap_call]
 
-        return {
-            'calls': calls,
-            'amount_x_decimals': amount_out_y_wei / 10 ** self.token_y_decimals,
-            'amount_y_decimals': amount_in_wei / 10 ** self.token_x_decimals,
-        }
+        return TransactionPayloadData(
+            calls=calls,
+            amount_x_decimals=amount_out_y_wei / 10 ** self.token_y_decimals,
+            amount_y_decimals=amount_in_wei / 10 ** self.token_x_decimals
+        )
 
     async def send_txn(self) -> ModuleExecutionResult:
         """

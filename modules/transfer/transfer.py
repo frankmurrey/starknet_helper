@@ -23,7 +23,7 @@ class Transfer(ModuleBase):
     ):
 
         super().__init__(
-            client=account.client,
+            account=account,
             task=task,
         )
 
@@ -217,7 +217,7 @@ class Transfer(ModuleBase):
 
         txn_info_message = (
             f"Transfer {round(payload_data['amount_x_decimals'], 4)} {self.coin_x.symbol.upper()}, "
-            f"recipient: {self.wallet_data.address}"
+            f"recipient: {self.wallet_data.pair_address}"
         )
 
         txn_status = await self.simulate_and_send_transfer_type_transaction(

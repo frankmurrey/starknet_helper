@@ -26,11 +26,11 @@ class ActionsFrame(customtkinter.CTkFrame):
             **kwargs):
         super().__init__(master, **kwargs)
 
-        tasks_executor.on_wallet_started(self.on_wallet_started)
-        tasks_executor.on_task_started(self.on_task_started)
+        tasks_executor.event_manager.on_wallet_started(self.on_wallet_started)
+        tasks_executor.event_manager.on_task_started(self.on_task_started)
 
-        tasks_executor.on_task_completed(self.on_task_completed)
-        tasks_executor.on_wallet_completed(self.on_wallet_completed)
+        tasks_executor.event_manager.on_task_completed(self.on_task_completed)
+        tasks_executor.event_manager.on_wallet_completed(self.on_wallet_completed)
 
         self.master = master
         self.wallets_table: WalletsTable = self.master.wallets_table
@@ -295,32 +295,28 @@ class ActionsFrame(customtkinter.CTkFrame):
             )
             return
 
-        yesno = tkinter.messagebox.askyesno(
+        is_start = tkinter.messagebox.askyesno(
             title="Start",
             message="Are you sure you want to start?",
             icon="warning"
         )
-        if not yesno:
+        if not is_start:
             return
 
         if bool(self.run_settings_frame.test_mode_checkbox.get()):
             amount = self.app_config.wallets_amount_to_execute_in_test_mode
             wallets = wallets[:amount]
 
-        tasks_executor.start_tasks_processing()
-        tasks_executor.push_wallets(
+        tasks_executor.process(
             wallets=wallets,
-            shuffle=bool(self.run_settings_frame.shuffle_wallets_checkbox.get())
-        )
-
-        tasks_executor.push_tasks(
             tasks=self.tasks,
-            shuffle=False
+            shuffle_wallets=bool(self.run_settings_frame.shuffle_wallets_checkbox.get()),
+            shuffle_tasks=bool(self.run_settings_frame.shuffle_task_checkbox.get()),
         )
 
     def on_stop_button_click(self):
-        logger.critical("Tasks processing will be stopped after current task")
-        tasks_executor.stop_tasks_processing()
+        logger.critical("Stopped tasks processing")
+        tasks_executor.stop()
 
 
 class TableTopFrame(customtkinter.CTkFrame):
@@ -513,9 +509,13 @@ class ButtonActionsFrame(customtkinter.CTkFrame):
         )
 
     def add_action_button_event(self):
+        geometry = "500x900+1505+100"
+        if self.winfo_screenwidth() <= 1600:
+            geometry = "500x900+1000+100"
+
         if self.actions_top_level_window is None or not self.actions_top_level_window.winfo_exists():
             self.actions_top_level_window = InteractionTopLevelWindow(parent=self.master)
-            self.actions_top_level_window.geometry("500x900+1505+100")
+            self.actions_top_level_window.geometry(geometry)
             self.actions_top_level_window.resizable(False, False)
         else:
             self.actions_top_level_window.focus()
@@ -574,7 +574,6 @@ class ButtonActionsFrame(customtkinter.CTkFrame):
         self.parent.run_settings_frame.upload_from_config(run_settings_config)
 
 
-# TODO: АЙДИШНИКИ НА КНОПКИ ВЫНЕСТИ В КОНСТАНТЫ ИЛИ В КЛАССЫ И ПОТОМ ИМПОРТИРОВАТЬ ИХ В КЛАССЫ ГДЕ ОНИ ИСПОЛЬЗУЮТСЯ ИЛИ ВООБЩЕ ВЫНЕСТИ В КОНСТАНТЫ В ОТДЕЛЬНЫЙ ФАЙЛ И ИМПОРТИРОВАТЬ ИХ ВО ВСЕ КЛАССЫ
 class RunSettingsFrame(customtkinter.CTkFrame):
     def __init__(
             self,
@@ -625,8 +624,27 @@ class RunSettingsFrame(customtkinter.CTkFrame):
             offvalue=False
         )
         self.shuffle_wallets_checkbox.grid(
+            row=0,
+            column=1,
+            padx=20,
+            pady=(20, 10),
+            sticky="ew"
+        )
+
+        self.shuffle_task_checkbox = customtkinter.CTkCheckBox(
+            self,
+            text="Shuffle tasks",
+            text_color="#F47174",
+            font=customtkinter.CTkFont(size=12, weight="bold"),
+            checkbox_width=18,
+            checkbox_height=18,
+            command=self.shuffle_task_checkbox_event,
+            onvalue=True,
+            offvalue=False
+        )
+        self.shuffle_task_checkbox.grid(
             row=1,
-            column=0,
+            column=1,
             padx=20,
             pady=(0, 10),
             sticky="ew"
@@ -864,5 +882,15 @@ class RunSettingsFrame(customtkinter.CTkFrame):
             )
         else:
             self.shuffle_wallets_checkbox.configure(
+                text_color="#F47174"
+            )
+
+    def shuffle_task_checkbox_event(self):
+        if self.shuffle_task_checkbox.get():
+            self.shuffle_task_checkbox.configure(
+                text_color="#6fc276"
+            )
+        else:
+            self.shuffle_task_checkbox.configure(
                 text_color="#F47174"
             )

@@ -7,7 +7,7 @@ from loguru import logger
 from starknet_py.serialization import TupleDataclass
 
 from contracts.k10swap.main import K10SwapContracts
-from src.schemas.action_models import ModuleExecutionResult
+from src.schemas.action_models import ModuleExecutionResult, TransactionPayloadData
 from modules.base import SwapModuleBase
 from utils.get_delay import get_delay
 
@@ -35,9 +35,11 @@ class K10Swap(SwapModuleBase):
         self.account = account
 
         self.k10_swap_contracts = K10SwapContracts()
-        self.router_contract = self.get_contract(address=self.k10_swap_contracts.router_address,
-                                                 abi=self.k10_swap_contracts.router_abi,
-                                                 provider=account)
+        self.router_contract = self.get_contract(
+            address=self.k10_swap_contracts.router_address,
+            abi=self.k10_swap_contracts.router_abi,
+            provider=account
+        )
 
     async def get_amounts_in(self, amount_in_wei: int) -> Union[TupleDataclass, None]:
         """
@@ -60,7 +62,7 @@ class K10Swap(SwapModuleBase):
             logger.error(f'Error while getting amount in: {e}')
             return None
 
-    async def build_txn_payload_data(self) -> Union[dict, None]:
+    async def build_txn_payload_data(self) -> Union[TransactionPayloadData, None]:
         """
         Build the transaction payload data for the swap type transaction.
         :return:
@@ -97,14 +99,13 @@ class K10Swap(SwapModuleBase):
                        swap_deadline]
         )
         calls = [approve_call, swap_call]
+        return TransactionPayloadData(
+            calls=calls,
+            amount_x_decimals=amount_x_wei / 10 ** self.token_x_decimals,
+            amount_y_decimals=amount_y_wei / 10 ** self.token_y_decimals
+        )
 
-        return {
-            'calls': calls,
-            'amount_x_decimals': amount_x_wei / 10 ** self.token_x_decimals,
-            'amount_y_decimals': amount_y_wei / 10 ** self.token_y_decimals,
-        }
-
-    async def build_reverse_txn_payload_data(self) -> Union[dict, None]:
+    async def build_reverse_txn_payload_data(self) -> Union[TransactionPayloadData, None]:
         """
         Build the transaction payload data for the reverse swap type transaction, if reverse action is enabled in task.
         :return:
@@ -155,12 +156,11 @@ class K10Swap(SwapModuleBase):
         )
 
         calls = [approve_call, swap_call]
-
-        return {
-            'calls': calls,
-            'amount_x_decimals': amount_out_y_wei / 10 ** self.token_x_decimals,
-            'amount_y_decimals': amount_in_x_wei / 10 ** self.token_y_decimals,
-        }
+        return TransactionPayloadData(
+            calls=calls,
+            amount_x_decimals=amount_out_y_wei / 10 ** self.token_x_decimals,
+            amount_y_decimals=amount_in_x_wei / 10 ** self.token_y_decimals
+        )
 
     async def send_txn(self) -> ModuleExecutionResult:
         """

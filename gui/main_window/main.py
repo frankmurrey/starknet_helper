@@ -1,6 +1,6 @@
-import customtkinter
+import sys
 
-from loguru import logger
+import customtkinter
 
 from src.tasks_executor import tasks_executor
 from src.logger import configure_logger
@@ -17,9 +17,7 @@ def run_gui():
     try:
         window.mainloop()
     except KeyboardInterrupt:
-        tasks_executor.kill()
-        window.destroy()
-        window.quit()
+        window.on_closing()
 
 
 class MainWindow(customtkinter.CTk):
@@ -41,7 +39,6 @@ class MainWindow(customtkinter.CTk):
 
         self.right_frame = RightFrame(self)
 
-        tasks_executor.run()
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
 
     def on_start(self):
@@ -50,6 +47,8 @@ class MainWindow(customtkinter.CTk):
         print_logo()
 
     def on_closing(self):
-        tasks_executor.kill()
+        tasks_executor.stop()
         self.destroy()
         self.quit()
+
+        sys.exit()

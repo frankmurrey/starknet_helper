@@ -21,6 +21,8 @@ class FileManager:
 
     @staticmethod
     def save_to_pickle_file(data, file_path):
+        if not file_path:
+            return None
         try:
             with open(file_path, "wb") as file:
                 pickle.dump(data, file)
@@ -121,6 +123,8 @@ class FileManager:
             data: Union[dict, list],
             raise_exception: bool = False
     ) -> None:
+        if not file_path:
+            return None
         try:
             with open(file_path, "w") as file:
                 json.dump(data, file, indent=4, default=str)

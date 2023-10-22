@@ -16,10 +16,11 @@ from loguru import logger
 from utils.key_manager.key_manager import get_key_pair_from_pk
 from utils.key_manager.key_manager import get_argent_addr_from_private_key
 from utils.key_manager.key_manager import get_braavos_addr_from_private_key
-from src.schemas.action_models import ModuleExecutionResult
+from src.schemas.action_models import ModuleExecutionResult, TransactionPayloadData
 from src.gecko_pricer import GeckoPricer
 from src.storage import Storage
 from src import paths
+from src import enums
 from utils.file_manager import FileManager
 from utils.misc import decode_wallet_version
 from contracts.tokens.main import Tokens
@@ -28,7 +29,8 @@ import config
 
 if TYPE_CHECKING:
     from src.schemas.tasks.base.swap import SwapTaskBase
-    from starknet_py.net.full_node_client import FullNodeClient
+    from src.schemas.tasks.base.add_liquidity import AddLiquidityTaskBase
+    from src.schemas.tasks.base.remove_liquidity import RemoveLiquidityTaskBase
     from src.schemas.tasks.base import TaskBase
 
 
@@ -37,21 +39,23 @@ class ModuleBase:
 
     def __init__(
             self,
-            client: 'FullNodeClient',
+            account: Account,
             task: 'TaskBase'
     ):
-
-        self.client = client
+        self.account = account
+        self.client = account.client
         self.chain_id = StarknetChainId.MAINNET
-        self.gecko_pricer = GeckoPricer(client=client)
+        self.gecko_pricer = GeckoPricer(client=self.client)
         self.storage = Storage()
         self.tokens = Tokens()
 
         self.task = task
         self.module_execution_result = ModuleExecutionResult()
 
-    def i16(self,
-            hex_d: str):
+    def i16(
+            self,
+            hex_d: str
+    ):
         return int(hex_d, 16)
 
     async def get_cairo_version_for_txn_execution(
@@ -143,7 +147,6 @@ class ModuleBase:
             current_gas_price = await self.get_eth_mainnet_gas_price()
             if current_gas_price is None:
                 return False, current_gas_price
-
 
         if current_gas_price <= target_price_wei:
             return True, current_gas_price
@@ -263,9 +266,17 @@ class ModuleBase:
                 abi=abi,
                 provider=provider
             )
-            decimals = await token_contract.functions['decimals'].call()
+            res = await token_contract.functions['decimals'].call()
+            res_dict = res.as_dict()
 
-            return decimals.decimals
+            decimals = res_dict.get('decimals')
+            if decimals is None:
+
+                decimals = res_dict.get('res')
+                if decimals is None:
+                    return None
+
+            return decimals
 
         except Exception as e:
             logger.error(f"Error while getting token decimals: {e}")
@@ -514,7 +525,8 @@ class ModuleBase:
                 auto_estimate=auto_estimate if auto_estimate is True else None
             )
 
-        except ClientError:
+        except ClientError as ex:
+            logger.exception(ex)
             return None
 
     async def try_send_txn(
@@ -713,7 +725,7 @@ class ModuleBase:
 
             logger.success(
                 f"Txn success, status: {txn_status} "
-                f"(Actual fee: {txn_receipt.actual_fee / 10 ** 18}. "
+                f"(Actual fee: {txn_receipt.actual_fee / 10 ** 18}). "
                 f"Txn Hash: {hex(txn_hash)})"
             )
 
@@ -740,17 +752,194 @@ class SwapModuleBase(ModuleBase):
             account,
             task: 'SwapTaskBase'
     ):
-        super().__init__(client=account.client, task=task)
+        super().__init__(account=account, task=task)
+        self.account: Account = account
+
+        if not self.task.coin_y == enums.MiscTypes.RANDOM:
+
+            self.coin_x = self.tokens.get_by_name(self.task.coin_x)
+            self.coin_y = self.tokens.get_by_name(self.task.coin_y)
+
+            self.initial_balance_x_wei = None
+            self.initial_balance_y_wei = None
+
+            self.token_x_decimals = None
+            self.token_y_decimals = None
+
+    async def set_fetched_tokens_data(self):
+        """
+        Fetches initial balances and token decimals for both tokens.
+        :return:
+        """
+        self.initial_balance_x_wei = await self.get_token_balance(
+            token_address=self.coin_x.contract_address,
+            account=self.account
+        )
+        self.initial_balance_y_wei = await self.get_token_balance(
+            token_address=self.coin_y.contract_address,
+            account=self.account
+        )
+
+        self.token_x_decimals = await self.get_token_decimals(
+            contract_address=self.coin_x.contract_address,
+            abi=self.coin_x.abi,
+            provider=self.account
+        )
+        self.token_y_decimals = await self.get_token_decimals(
+            contract_address=self.coin_y.contract_address,
+            abi=self.coin_y.abi,
+            provider=self.account
+        )
+
+    def check_local_tokens_data(self) -> bool:
+        """
+        Checks if token decimals are fetched.
+        :return:
+        """
+        if self.token_x_decimals is None or self.token_y_decimals is None:
+            logger.error(f"Token decimals not fetched")
+            return False
+
+    async def calculate_amount_out_from_balance(
+            self,
+            coin_x: TokenBase
+    ) -> Union[int, None]:
+        """
+        Returns random amount out of token x balance.
+        :param coin_x:
+        :return:
+        """
+
+        if self.initial_balance_x_wei == 0:
+            logger.error(f"Wallet {coin_x.symbol.upper()} balance = 0")
+            return None
+
+        wallet_token_x_balance_decimals = self.initial_balance_x_wei / 10 ** self.token_x_decimals
+
+        if self.task.use_all_balance is True:
+            amount_out_wei = self.initial_balance_x_wei
+
+        elif self.task.send_percent_balance is True:
+            percent = random.randint(
+                int(self.task.min_amount_out), int(self.task.max_amount_out)
+            ) / 100
+            amount_out_wei = int(self.initial_balance_x_wei * percent)
+
+        elif wallet_token_x_balance_decimals < self.task.min_amount_out:
+            logger.error(
+                f"Wallet {coin_x.symbol.upper()} balance less than min amount out, "
+                f"balance: {wallet_token_x_balance_decimals}, min amount out: {self.task.min_amount_out}"
+            )
+            return None
+
+        elif wallet_token_x_balance_decimals < self.task.max_amount_out:
+            amount_out_wei = self.get_random_amount_out_of_token(
+                min_amount=self.task.min_amount_out,
+                max_amount=wallet_token_x_balance_decimals,
+                decimals=self.token_x_decimals
+            )
+
+        else:
+            amount_out_wei = self.get_random_amount_out_of_token(
+                min_amount=self.task.min_amount_out,
+                max_amount=self.task.max_amount_out,
+                decimals=self.token_x_decimals
+            )
+
+        return amount_out_wei
+
+    async def send_swap_type_txn(
+            self,
+            account: Account,
+            txn_payload_data: TransactionPayloadData,
+            is_reverse: bool = False
+    ) -> ModuleExecutionResult:
+        """
+        Sends a swap type transaction.
+        :param account:
+        :param txn_payload_data:
+        :param is_reverse:
+        :return:
+        """
+
+        self.task: 'SwapTaskBase'
+        self.account = account
+
+        module_name = self.task.module_name.title()
+
+        out_decimals = txn_payload_data.amount_x_decimals
+        in_decimals = txn_payload_data.amount_y_decimals
+
+        coin_x_symbol = self.task.coin_x.upper() if is_reverse is False else self.task.coin_x.upper()
+        coin_y_symbol = self.task.coin_y.upper() if is_reverse is False else self.task.coin_y.upper()
+
+        slippage: Union[float, int] = self.task.slippage
+
+        txn_info_message = f"Swap ({module_name}) | " \
+                           f"{out_decimals} ({coin_x_symbol}) -> " \
+                           f"{in_decimals} ({coin_y_symbol}). " \
+                           f"Slippage: {slippage}%."
+
+        if self.task.compare_with_cg_price is True:
+            coin_x_cg_id = self.tokens.get_cg_id_by_name(coin_x_symbol)
+            coin_y_cg_id = self.tokens.get_cg_id_by_name(coin_y_symbol)
+            if coin_x_cg_id is None or coin_y_cg_id is None:
+                logger.error(
+                    f"Error while getting CoinGecko IDs for {coin_x_symbol.upper()} and {coin_y_symbol.upper()}")
+
+                return self.module_execution_result
+
+            max_price_difference_percent: Union[float, int] = self.task.max_price_difference_percent
+            swap_price_validation_data = await self.gecko_pricer.is_target_price_valid(
+                x_token_id=coin_x_cg_id.lower(),
+                y_token_id=coin_y_cg_id.lower(),
+                x_amount=txn_payload_data.amount_x_decimals,
+                y_amount=txn_payload_data.amount_y_decimals,
+                max_price_difference_percent=max_price_difference_percent
+            )
+
+            is_price_valid, price_data = swap_price_validation_data
+            if is_price_valid is False:
+                logger.error(f"Swap rate is not valid ({module_name}). "
+                             f"Gecko rate: {price_data['gecko_price']}, "
+                             f"Swap rate: {price_data['target_price']}")
+
+                return self.module_execution_result
+
+            logger.info(f"Swap rate is valid ({module_name}). "
+                        f"Gecko rate: {price_data['gecko_price']}, "
+                        f"Swap rate: {price_data['target_price']}.")
+
+        txn_status = await self.simulate_and_send_transfer_type_transaction(
+            account=account,
+            calls=txn_payload_data.calls,
+            txn_info_message=txn_info_message
+        )
+
+        return txn_status
+
+
+class LiquidityModuleBase(ModuleBase):
+    task: Union['AddLiquidityTaskBase', 'RemoveLiquidityTaskBase']
+
+    def __init__(
+            self,
+            account,
+            task: Union['AddLiquidityTaskBase', 'RemoveLiquidityTaskBase']
+    ):
+        super().__init__(account=account, task=task)
         self._account = account
 
-        self.coin_x = self.tokens.get_by_name(self.task.coin_x)
-        self.coin_y = self.tokens.get_by_name(self.task.coin_y)
+        if not self.task.coin_y == enums.MiscTypes.RANDOM:
 
-        self.initial_balance_x_wei = None
-        self.initial_balance_y_wei = None
+            self.coin_x = self.tokens.get_by_name(self.task.coin_x)
+            self.coin_y = self.tokens.get_by_name(self.task.coin_y)
 
-        self.token_x_decimals = None
-        self.token_y_decimals = None
+            self.initial_balance_x_wei = None
+            self.initial_balance_y_wei = None
+
+            self.token_x_decimals = None
+            self.token_y_decimals = None
 
     async def set_fetched_tokens_data(self):
         """
@@ -834,71 +1023,40 @@ class SwapModuleBase(ModuleBase):
 
         return amount_out_wei
 
-    async def send_swap_type_txn(
+    async def send_liquidity_type_txn(
             self,
             account: Account,
-            txn_payload_data: dict,
+            txn_payload_data: TransactionPayloadData,
             is_reverse: bool = False
     ) -> ModuleExecutionResult:
         """
-        Sends a swap type transaction.
+        Sends a liquidity type transaction.
         :param account:
         :param txn_payload_data:
         :param is_reverse:
         :return:
         """
-
-        self.task: 'SwapTaskBase'
-
+        self.account = account
         module_name = self.task.module_name.title()
+        module_type = ("Add liquidity" if self.task.module_type == enums.ModuleType.LIQUIDITY_ADD
+                       else "Remove liquidity")
 
-        out_decimals = round(txn_payload_data['amount_x_decimals'], 4)
-        in_decimals = round(txn_payload_data['amount_y_decimals'], 4)
+        out_decimals = txn_payload_data.amount_x_decimals
+        in_decimals = txn_payload_data.amount_y_decimals
 
         coin_x_symbol = self.task.coin_x.upper() if is_reverse is False else self.task.coin_x.upper()
         coin_y_symbol = self.task.coin_y.upper() if is_reverse is False else self.task.coin_y.upper()
 
-        slippage: Union[float, int] = self.task.slippage
-
-        txn_info_message = f"Swap ({module_name}) | " \
-                           f"{out_decimals} ({coin_x_symbol}) -> " \
-                           f"{in_decimals} ({coin_y_symbol}). " \
-                           f"Slippage: {slippage}%."
-
-        if self.task.compare_with_cg_price is True:
-            coin_x_cg_id = self.tokens.get_cg_id_by_name(coin_x_symbol)
-            coin_y_cg_id = self.tokens.get_cg_id_by_name(coin_y_symbol)
-            if coin_x_cg_id is None or coin_y_cg_id is None:
-                logger.error(
-                    f"Error while getting CoinGecko IDs for {coin_x_symbol.upper()} and {coin_y_symbol.upper()}")
-
-                return self.module_execution_result
-
-            max_price_difference_percent: Union[float, int] = self.task.max_price_difference_percent
-            swap_price_validation_data = await self.gecko_pricer.is_target_price_valid(
-                x_token_id=coin_x_cg_id.lower(),
-                y_token_id=coin_y_cg_id.lower(),
-                x_amount=txn_payload_data['amount_x_decimals'],
-                y_amount=txn_payload_data['amount_y_decimals'],
-                max_price_difference_percent=max_price_difference_percent
-            )
-
-            is_price_valid, price_data = swap_price_validation_data
-            if is_price_valid is False:
-                logger.error(f"Swap rate is not valid ({module_name}). "
-                             f"Gecko rate: {price_data['gecko_price']}, "
-                             f"Swap rate: {price_data['target_price']}")
-
-                return self.module_execution_result
-
-            logger.info(f"Swap rate is valid ({module_name}). "
-                        f"Gecko rate: {price_data['gecko_price']}, "
-                        f"Swap rate: {price_data['target_price']}.")
+        txn_info_message = f"{module_type} ({module_name}) | " \
+                           f"{out_decimals} ({coin_x_symbol.upper()}) + " \
+                           f"{in_decimals} ({coin_y_symbol.symbol.upper()}). " \
+                           f"Slippage: {self.task.slippage}%."
 
         txn_status = await self.simulate_and_send_transfer_type_transaction(
             account=account,
-            calls=txn_payload_data['calls'],
+            calls=txn_payload_data.calls,
             txn_info_message=txn_info_message
         )
 
         return txn_status
+

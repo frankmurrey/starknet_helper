@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 from loguru import logger
 from starknet_py.net.client_errors import ClientError
 
-from modules.base import SwapModuleBase
+from modules.base import ModuleBase
 from contracts.base import TokenBase
 from contracts.tokens.main import Tokens
 from contracts.sithswap.main import SithSwapContracts
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from src.schemas.tasks.sithswap import SithSwapTask
 
 
-class SithBase(SwapModuleBase):
+class SithBase(ModuleBase):
     stable_coin_symbols: list = ['USDC', 'USDT', 'DAI']
 
     task: 'SithSwapTask'
@@ -30,7 +30,6 @@ class SithBase(SwapModuleBase):
             task=task,
         )
 
-        self._account = account
         self.tokens = Tokens()
         self.sith_swap_contracts = SithSwapContracts()
 
@@ -97,7 +96,7 @@ class SithBase(SwapModuleBase):
         try:
             pool_contract = self.get_contract(address=pool_addr,
                                               abi=pool_abi,
-                                              provider=self._account)
+                                              provider=self.account)
             response = await pool_contract.functions['getTokens'].call()
 
             return [response.token0,

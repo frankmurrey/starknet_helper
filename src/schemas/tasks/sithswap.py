@@ -16,13 +16,17 @@ class SithSwapTask(SwapTaskBase):
     module: Callable = Field(default=SithSwap)
 
 
-class SithSwapAddLiquidityTask(AddLiquidityTaskBase):
-    module_name: enums.ModuleName = enums.ModuleName.SITHSWAP
-    module_type: enums.ModuleType = enums.ModuleType.LIQUIDITY_ADD
-    module: Callable = Field(default=SithSwapAddLiquidity)
-
-
 class SithSwapRemoveLiquidityTask(RemoveLiquidityTaskBase):
     module_name: enums.ModuleName = enums.ModuleName.SITHSWAP
     module_type: enums.ModuleType = enums.ModuleType.LIQUIDITY_REMOVE
     module: Callable = Field(default=SithSwapRemoveLiquidity)
+
+
+class SithSwapAddLiquidityTask(AddLiquidityTaskBase):
+    module_name: enums.ModuleName = enums.ModuleName.SITHSWAP
+    module_type: enums.ModuleType = enums.ModuleType.LIQUIDITY_ADD
+    module: Callable = Field(default=SithSwapAddLiquidity)
+    reverse_action_task = Field(default=SithSwapRemoveLiquidityTask)
+
+    class Config:
+        arbitrary_types_allowed = True

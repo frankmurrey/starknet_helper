@@ -1,5 +1,5 @@
 from pydantic import Field
-from modules.random.swap import RandomSwap
+from modules.random_module.swap import RandomSwap
 
 
 from src import enums

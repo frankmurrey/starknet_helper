@@ -62,6 +62,17 @@ class ZkLendDir:
     ROUTER_ABI_FILE = os.path.join(_MAIN_DIR, "router.abi")
 
 
+class FibrousDir:
+    _MAIN_DIR = os.path.join(CONTRACTS_DIR, "fibrous")
+    ROUTER_ABI_FILE = os.path.join(_MAIN_DIR, "router.abi")
+
+
+class OrbiterDir:
+    _MAIN_DIR = os.path.join(CONTRACTS_DIR, "orbiter")
+    ROUTER_ABI_FILE = os.path.join(_MAIN_DIR, "router.abi")
+    BRIDGE_DATA_FILE = os.path.join(_MAIN_DIR, "bridge_data.json")
+
+
 class TempFiles:
     def __init__(self):
         self.TOKENS_JSON_FILE = os.path.join(CONTRACTS_DIR, "tokens.json")

@@ -1,4 +1,4 @@
-HFIXfrom typing import Union
+from typing import Union
 from typing import TYPE_CHECKING
 
 from contracts.base import TokenBase

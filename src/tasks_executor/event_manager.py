@@ -1,6 +1,5 @@
 import time
 import queue
-import warnings
 import threading as th
 import multiprocessing as mp
 from typing import Optional

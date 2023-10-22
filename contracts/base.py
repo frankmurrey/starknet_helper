@@ -1,3 +1,4 @@
+from utils.orbiter_utils import get_available_tokens_for_chain
 
 
 class TokenBase:
@@ -16,3 +17,16 @@ class TokenBase:
         self.abi = abi
 
         self.coin_gecko_id = coin_gecko_id
+
+
+class ChainBase:
+    def __init__(
+            self,
+            name: str,
+            orbiter_id: int,
+            supported_tokens: list = None
+    ):
+        self.name = name
+        self.orbiter_id = orbiter_id
+        self.supported_tokens = supported_tokens
+        self.orbiter_supported_tokens = get_available_tokens_for_chain(chain_id=self.orbiter_id)

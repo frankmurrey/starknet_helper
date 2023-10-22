@@ -1,12 +1,12 @@
 from pydantic import Field
-from modules.random.liquidity import RandomAddLiquidity
+from modules.random_module.liquidity import RandomAddLiquidity
 
 
 from src import enums
 from src.schemas.tasks import AddLiquidityTaskBase
 
 
-class RandomSwapTask(AddLiquidityTaskBase):
+class RandomAddLiquidityTask(AddLiquidityTaskBase):
     module_name = enums.ModuleName.RANDOM
     module_type = enums.ModuleType.SWAP
     module = Field(default=RandomAddLiquidity)

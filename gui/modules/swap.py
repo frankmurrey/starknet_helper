@@ -14,7 +14,7 @@ from src import enums
 from src.schemas import tasks
 
 
-SWAP_PROTOCOLS_DATA = {
+SWAP_TASKS = {
     enums.ModuleName.JEDI_SWAP: tasks.JediSwapTask,
     enums.ModuleName.SITHSWAP: tasks.SithSwapTask,
     enums.ModuleName.MY_SWAP: tasks.MySwapTask,
@@ -61,7 +61,7 @@ class SwapTab:
             return tasks.RandomSwapTask
 
         else:
-            return SWAP_PROTOCOLS_DATA.get(swap_protocol, None)
+            return SWAP_TASKS.get(swap_protocol, None)
 
     def build_config_data(self):
         config_schema = self.get_config_schema()
@@ -230,7 +230,7 @@ class SwapFrame(customtkinter.CTkFrame):
 
     @property
     def protocol_options(self) -> list:
-        return [name.upper() for name in SWAP_PROTOCOLS_DATA.keys()]
+        return [name.upper() for name in SWAP_TASKS.keys()]
 
     @property
     def protocol_coin_options(self) -> list:

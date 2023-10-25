@@ -24,6 +24,7 @@ from .zklend import ZkLendSupplyTask
 from .zklend import ZkLendWithdrawTask
 from .fibrous import FibrousSwapTask
 from .orbiter import OrbiterBridgeTask
+from .stark_bridge import StarkBridgeTask
 
 from .random_task.swap import RandomSwapTask
 from .random_task.liquidity import RandomAddLiquidityTask

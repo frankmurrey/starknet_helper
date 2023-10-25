@@ -2,18 +2,63 @@ import tkinter.messagebox
 from tkinter import Variable
 from typing import Callable, Union
 
-from gui.modules.swap import SwapTab
-from gui.modules.add_liquidity import AddLiquidityTab
-from gui.modules.remove_liquidity import RemoveLiquidityTab
-from gui.modules.supply import SupplyLendingTab
-from gui.modules.withdraw import WithdrawLendingTab
-from gui.modules.stark_id import StarkIdMintTab
-from gui.modules.dmail import DmailSendMailTab
-from gui.modules.deploy import DeployTab
-from gui.modules.upgrade import UpgradeTab
-from gui.modules.transfer import TransferTab
-
+from gui import modules
 import customtkinter
+
+from src import enums
+
+
+class Tab:
+    def __init__(
+            self,
+            tab,
+            spinbox_max_value: Union[int, float] = 100,
+            spinbox_start_value: Union[int, float] = 1,
+    ):
+        self.tab = tab
+        self.spinbox_max_value = spinbox_max_value
+        self.spinbox_start_value = spinbox_start_value
+
+
+TABS: dict = {
+    enums.TabName.SWAP: Tab(
+        tab=modules.SwapTab,
+    ),
+    enums.TabName.ADD_LIQUIDITY: Tab(
+        tab=modules.AddLiquidityTab,
+    ),
+    enums.TabName.REMOVE_LIQUIDITY: Tab(
+        tab=modules.RemoveLiquidityTab,
+        spinbox_max_value=1,
+    ),
+    enums.TabName.SUPPLY_LENDING: Tab(
+        tab=modules.SupplyLendingTab,
+    ),
+    enums.TabName.WITHDRAW_LENDING: Tab(
+        tab=modules.WithdrawLendingTab,
+        spinbox_max_value=1,
+    ),
+    enums.TabName.STARK_ID_MINT: Tab(
+        tab=modules.StarkIdMintTab,
+    ),
+    enums.TabName.DMAIL_SEND_MAIL: Tab(
+        tab=modules.DmailSendMailTab,
+    ),
+    enums.TabName.DEPLOY: Tab(
+        tab=modules.DeployTab,
+        spinbox_max_value=1,
+    ),
+    enums.TabName.UPGRADE: Tab(
+        tab=modules.UpgradeTab,
+        spinbox_max_value=1,
+    ),
+    enums.TabName.TRANSFER: Tab(
+        tab=modules.TransferTab,
+    ),
+    enums.TabName.BRIDGE: Tab(
+        tab=modules.BridgeTab,
+    ),
+}
 
 
 class InteractionTopLevelWindow(customtkinter.CTkToplevel):
@@ -75,101 +120,27 @@ class InteractionTopLevelWindow(customtkinter.CTkToplevel):
 
     def set_new_tab(
             self,
-            tab_name: str):
+            tab_name: str
+    ):
         if self.current_tab_name is not None:
             self.tabview.delete(self.current_tab_name)
 
         self.tabview.add(tab_name)
         self.tabview.set(tab_name)
 
-        if tab_name == "Swap":
-            self.current_tab = SwapTab(
-                self.tabview,
-                tab_name
-            )
-            self.current_tab_name = tab_name
-            self.chose_module_frame.float_spinbox.max_value = 100
-
-        elif tab_name == "Add Liquidity":
-            self.current_tab = AddLiquidityTab(
-                self.tabview,
-                tab_name
-            )
-            self.chose_module_frame.float_spinbox.max_value = 100
-            self.current_tab_name = tab_name
-
-        elif tab_name == "Remove Liquidity":
-            self.current_tab = RemoveLiquidityTab(
-                self.tabview,
-                tab_name
-            )
-            self.current_tab_name = tab_name
-            self.chose_module_frame.float_spinbox.max_value = 1
-            self.chose_module_frame.float_spinbox.entry.configure(textvariable=Variable(value=1))
-
-        elif tab_name == "Supply Lending":
-            self.current_tab = SupplyLendingTab(
-                self.tabview,
-                tab_name
-            )
-            self.current_tab_name = tab_name
-            self.chose_module_frame.float_spinbox.max_value = 100
-
-        elif tab_name == "Withdraw Lending":
-            self.current_tab = WithdrawLendingTab(
-                self.tabview,
-                tab_name
-            )
-            self.current_tab_name = tab_name
-            self.chose_module_frame.float_spinbox.max_value = 1
-            self.chose_module_frame.float_spinbox.entry.configure(textvariable=Variable(value=1))
-
-        elif tab_name == "Stark ID Mint":
-            self.current_tab = StarkIdMintTab(
-                self.tabview,
-                tab_name
-            )
-            self.current_tab_name = tab_name
-            self.chose_module_frame.float_spinbox.max_value = 100
-        elif tab_name == "Dmail Send Mail":
-            self.current_tab = DmailSendMailTab(
-                self.tabview,
-                tab_name
-            )
-            self.current_tab_name = tab_name
-            self.chose_module_frame.float_spinbox.max_value = 100
-
-        elif tab_name == "Deploy":
-            self.current_tab = DeployTab(
-                self.tabview,
-                tab_name
-            )
-            self.current_tab_name = tab_name
-            self.chose_module_frame.float_spinbox.max_value = 1
-            self.chose_module_frame.float_spinbox.entry.configure(textvariable=Variable(value=1))
-
-        elif tab_name == "Upgrade":
-            self.current_tab = UpgradeTab(
-                self.tabview,
-                tab_name
-            )
-            self.current_tab_name = tab_name
-            self.chose_module_frame.float_spinbox.max_value = 1
-            self.chose_module_frame.float_spinbox.entry.configure(textvariable=Variable(value=1))
-
-        elif tab_name == "Transfer":
-            self.current_tab = TransferTab(
-                self.tabview,
-                tab_name
-            )
-            self.current_tab_name = tab_name
-            self.chose_module_frame.float_spinbox.max_value = 100
+        tab: Tab = TABS[enums.TabName(tab_name)]
+        self.current_tab = tab.tab(
+            self.tabview,
+            tab_name
+        )
+        self.current_tab_name = tab_name
+        self.chose_module_frame.float_spinbox.max_value = tab.spinbox_max_value
 
     def set_default_tab(self):
         tab_name = self.chose_module_frame.modules_option_menu.get()
         self.tabview.add(tab_name.title())
         self.tabview.set(tab_name.title())
-        self.current_tab = DeployTab(
+        self.current_tab = modules.DeployTab(
             self.tabview,
             tab_name
         )
@@ -241,18 +212,7 @@ class ChoseModuleFrame(customtkinter.CTkFrame):
 
         self.modules_option_menu = customtkinter.CTkOptionMenu(
             self,
-            values=[
-                'Deploy',
-                'Upgrade',
-                'Swap',
-                'Transfer',
-                "Add Liquidity",
-                "Remove Liquidity",
-                "Supply Lending",
-                "Withdraw Lending",
-                "Stark ID Mint",
-                "Dmail Send Mail",
-            ],
+            values=self.tab_names,
             command=master.set_new_tab
         )
         self.modules_option_menu.grid(
@@ -284,6 +244,13 @@ class ChoseModuleFrame(customtkinter.CTkFrame):
             pady=(5, 20),
             sticky="w"
         )
+
+    @property
+    def tab_names(self) -> list:
+        tab: enums.TabName
+        values = [tab.value for tab in enums.TabName]
+
+        return values
 
 
 class FloatSpinbox(customtkinter.CTkFrame):

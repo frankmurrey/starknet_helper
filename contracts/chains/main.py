@@ -12,7 +12,7 @@ class Chains:
                 orbiter_id=9007
             ),
 
-            ChainBase(
+            ChainADDBase(
                 name="Ethereum",
                 orbiter_id=9001
             ),

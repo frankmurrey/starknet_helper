@@ -102,6 +102,9 @@ class CTkEntryWithLabel(customtkinter.CTkFrame):
     def set_text_changed_callback(self, callback: Callable):
         self.entry.bind("<KeyRelease>", lambda event: callback())
 
+    def set_click_callback(self, callback: Callable):
+        self.entry.bind("<Button-1>", lambda event: callback())
+
     def set_focus_in_callback(self, callback: Callable):
         self.on_focus_in = callback
 

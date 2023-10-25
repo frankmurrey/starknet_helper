@@ -28,7 +28,7 @@ class SupplyLendingTab:
             "sticky": "nsew"
         }
 
-        self.supply_frame = SupplyLending(
+        self.supply_frame = SupplyLendingFrame(
             master=self.tabview.tab(tab_name),
             grid=supply_frame_grid
         )
@@ -54,7 +54,9 @@ class SupplyLendingTab:
                 send_percent_balance=self.supply_frame.send_percent_balance_checkbox.get(),
                 enable_collateral=self.supply_frame.enable_collateral_checkbox.get(),
                 max_fee=self.txn_settings_frame.max_fee_entry.get(),
+                forced_gas_limit=self.txn_settings_frame.forced_gas_limit_check_box.get(),
             )
+
         except ValidationError as e:
             error_messages = "\n\n".join([error["msg"] for error in e.errors()])
             messagebox.showerror(
@@ -63,7 +65,7 @@ class SupplyLendingTab:
             return None
 
 
-class SupplyLending(customtkinter.CTkFrame):
+class SupplyLendingFrame(customtkinter.CTkFrame):
     def __init__(
             self,
             master,
@@ -140,7 +142,7 @@ class SupplyLending(customtkinter.CTkFrame):
 
         self.min_amount_out_entry = customtkinter.CTkEntry(
             master=self,
-            width=120
+            width=120,
         )
         self.min_amount_out_entry.grid(
             row=5,

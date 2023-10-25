@@ -34,6 +34,21 @@ class ModuleName(str, Enum):
     RANDOM = "random"
     FIBROUS = "fibrous"
     ORBITER = "orbiter"
+    STARK_BRIDGE = "starkgate"
+
+
+class TabName(str, Enum):
+    SWAP = "Swap"
+    ADD_LIQUIDITY = "Add Liquidity"
+    REMOVE_LIQUIDITY = "Remove Liquidity"
+    SUPPLY_LENDING = "Supply Lending"
+    WITHDRAW_LENDING = "Withdraw Lending"
+    STARK_ID_MINT = "Stark ID Mint"
+    DMAIL_SEND_MAIL = "Dmail Send Mail"
+    DEPLOY = "Deploy"
+    UPGRADE = "Upgrade"
+    TRANSFER = "Transfer"
+    BRIDGE = "Bridge"
 
 
 class PrivateKeyType(str, Enum):

@@ -73,6 +73,11 @@ class OrbiterDir:
     BRIDGE_DATA_FILE = os.path.join(_MAIN_DIR, "bridge_data.json")
 
 
+class StarkBridgeDir:
+    _MAIN_DIR = os.path.join(CONTRACTS_DIR, "stark_bridge")
+    ROUTER_ABI_FILE = os.path.join(_MAIN_DIR, "router.abi")
+
+
 class TempFiles:
     def __init__(self):
         self.TOKENS_JSON_FILE = os.path.join(CONTRACTS_DIR, "tokens.json")

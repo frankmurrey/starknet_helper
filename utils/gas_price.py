@@ -4,10 +4,12 @@ import httpx
 def get_eth_mainnet_gas_price(rpc_url: str):
     try:
         client = httpx.Client()
-        payload = {"jsonrpc": "2.0",
-                   "method": "eth_gasPrice",
-                   "params": [],
-                   "id": "1"}
+        payload = {
+            "jsonrpc": "2.0",
+            "method": "eth_gasPrice",
+            "params": [],
+            "id": "1"
+        }
 
         resp = client.post(url=rpc_url, json=payload)
 

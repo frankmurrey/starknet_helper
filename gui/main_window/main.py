@@ -26,6 +26,9 @@ class MainWindow(customtkinter.CTk):
         self.on_start()
 
         self.resizable(False, False)
+        if self.winfo_screenheight() < 950:
+            self.resizable(False, True)
+
         self.title("StarkNet Helper by @frankmurrey")
 
         self.geometry(f"{1400}x{900}+100+100")

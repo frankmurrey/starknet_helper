@@ -1049,7 +1049,7 @@ class LiquidityModuleBase(ModuleBase):
 
         txn_info_message = f"{module_type} ({module_name}) | " \
                            f"{out_decimals} ({coin_x_symbol.upper()}) + " \
-                           f"{in_decimals} ({coin_y_symbol.symbol.upper()}). " \
+                           f"{in_decimals} ({coin_y_symbol.upper()}). " \
                            f"Slippage: {self.task.slippage}%."
 
         txn_status = await self.simulate_and_send_transfer_type_transaction(

@@ -1,5 +1,6 @@
 import tkinter
-from tkinter import messagebox, Variable
+import asyncio
+from tkinter import messagebox
 
 import customtkinter
 
@@ -9,7 +10,7 @@ from src import paths
 from src.schemas.app_config import AppConfigSchema
 from utils.file_manager import FileManager
 from gui.modules.frames import FloatSpinbox
-from utils.gas_price import get_eth_mainnet_gas_price
+from utils.gas_price import GasPrice
 from gui import constants
 
 
@@ -70,23 +71,10 @@ class AppConfigFrame(customtkinter.CTkFrame):
         )
         self.stark_rpc_url_entry.grid(row=3, column=0, sticky="w", pady=(0, 15), padx=15)
 
-        self.eth_mainnet_rpc_url_label = customtkinter.CTkLabel(
-            master=self, text="ETH Mainnet RPC URL:", font=customtkinter.CTkFont(size=12, weight="bold")
+        self.target_gas_price_label = customtkinter.CTkLabel(
+            master=self, text="Target Stark Gas Price (Gwei):", font=customtkinter.CTkFont(size=12, weight="bold")
         )
-        self.eth_mainnet_rpc_url_label.grid(row=4, column=0, sticky="w", pady=(5, 0), padx=15)
-
-        self.eth_mainnet_rpc_url_entry = customtkinter.CTkEntry(
-            master=self,
-            width=280,
-            font=customtkinter.CTkFont(size=12),
-            textvariable=tkinter.StringVar(value=self.app_config.eth_mainnet_rpc_url),
-        )
-        self.eth_mainnet_rpc_url_entry.grid(row=5, column=0, sticky="w", pady=(0, 10), padx=15)
-
-        self.target_eth_mainnet_gas_price_label = customtkinter.CTkLabel(
-            master=self, text="Target ETH Mainnet Gas Price (Gwei):", font=customtkinter.CTkFont(size=12, weight="bold")
-        )
-        self.target_eth_mainnet_gas_price_label.grid(row=6, column=0, sticky="w", pady=(5, 0), padx=15)
+        self.target_gas_price_label.grid(row=4, column=0, sticky="w", pady=(5, 0), padx=15)
 
         self.target_eth_gas_price_spinbox = FloatSpinbox(
             master=self,
@@ -94,9 +82,9 @@ class AppConfigFrame(customtkinter.CTkFrame):
             width=110
         )
         self.target_eth_gas_price_spinbox.entry.configure(
-            textvariable=tkinter.Variable(value=self.app_config.target_eth_mainnet_gas_price)
+            textvariable=tkinter.Variable(value=self.app_config.target_gas_price)
         )
-        self.target_eth_gas_price_spinbox.grid(row=7, column=0, sticky="w", pady=(0, 10), padx=15)
+        self.target_eth_gas_price_spinbox.grid(row=5, column=0, sticky="w", pady=(0, 10), padx=15)
 
         self.current_gas_price_button = customtkinter.CTkButton(
             master=self,
@@ -107,12 +95,12 @@ class AppConfigFrame(customtkinter.CTkFrame):
             font=customtkinter.CTkFont(size=12, underline=True, weight="bold"),
             command=self.current_gas_price_button_event
         )
-        self.current_gas_price_button.grid(row=7, column=0, sticky="w", pady=(0, 10), padx=(140, 15))
+        self.current_gas_price_button.grid(row=5, column=0, sticky="w", pady=(0, 10), padx=(140, 15))
 
         self.max_time_to_wait_target_gas_price_label = customtkinter.CTkLabel(
             master=self, text="Time to wait target gas price (sec):", font=customtkinter.CTkFont(size=12, weight="bold")
         )
-        self.max_time_to_wait_target_gas_price_label.grid(row=8, column=0, sticky="w", pady=(5, 0), padx=15)
+        self.max_time_to_wait_target_gas_price_label.grid(row=6, column=0, sticky="w", pady=(5, 0), padx=15)
 
         self.max_time_to_wait_target_gas_price_spinbox = FloatSpinbox(
             master=self,
@@ -120,7 +108,7 @@ class AppConfigFrame(customtkinter.CTkFrame):
             start_index=self.app_config.time_to_wait_target_gas_price_sec,
             width=110
         )
-        self.max_time_to_wait_target_gas_price_spinbox.grid(row=9, column=0, sticky="w", pady=(0, 10), padx=15)
+        self.max_time_to_wait_target_gas_price_spinbox.grid(row=7, column=0, sticky="w", pady=(0, 10), padx=15)
 
         is_needed = self.app_config.is_gas_price_wait_timeout_needed
         self.is_timeout_needed_checkbox = customtkinter.CTkCheckBox(
@@ -141,14 +129,14 @@ class AppConfigFrame(customtkinter.CTkFrame):
             self.is_timeout_needed_checkbox.deselect()
             self.max_time_to_wait_target_gas_price_spinbox.set_disabled_state()
 
-        self.is_timeout_needed_checkbox.grid(row=10, column=0, sticky="w", pady=(0, 10), padx=15)
+        self.is_timeout_needed_checkbox.grid(row=8, column=0, sticky="w", pady=(0, 10), padx=15)
 
         self.wallets_amount_to_execute_in_test_mode_label = customtkinter.CTkLabel(
             master=self,
             text="Wallets amount to execute in test mode:",
             font=customtkinter.CTkFont(size=12, weight="bold")
         )
-        self.wallets_amount_to_execute_in_test_mode_label.grid(row=11, column=0, sticky="w", pady=(5, 0), padx=15)
+        self.wallets_amount_to_execute_in_test_mode_label.grid(row=9, column=0, sticky="w", pady=(5, 0), padx=15)
 
         self.wallets_amount_to_execute_in_test_mode_spinbox = FloatSpinbox(
             master=self,
@@ -160,7 +148,7 @@ class AppConfigFrame(customtkinter.CTkFrame):
             textvariable=tkinter.Variable(value=self.app_config.wallets_amount_to_execute_in_test_mode))
 
         self.wallets_amount_to_execute_in_test_mode_spinbox.grid(
-            row=12, column=0, sticky="w", pady=(0, 20), padx=15
+            row=10, column=0, sticky="w", pady=(0, 20), padx=15
         )
 
         self.save_button = customtkinter.CTkButton(
@@ -169,7 +157,7 @@ class AppConfigFrame(customtkinter.CTkFrame):
             font=customtkinter.CTkFont(size=12, weight="bold"),
             command=self.save_button_event
         )
-        self.save_button.grid(row=13, column=0, sticky="w", pady=15, padx=15)
+        self.save_button.grid(row=11, column=0, sticky="w", pady=15, padx=15)
 
     def is_timeout_needed_checkbox_event(self):
         if self.is_timeout_needed_checkbox.get():
@@ -194,12 +182,10 @@ class AppConfigFrame(customtkinter.CTkFrame):
             )
 
     def current_gas_price_button_event(self):
-        rpc_url = self.eth_mainnet_rpc_url_entry.get()
-        if not rpc_url:
-            messagebox.showerror("Error", "Please enter ETH Mainnet RPC URL")
-            return
+        gas_price = GasPrice(block_number="pending")
 
-        current_gas_price = get_eth_mainnet_gas_price(rpc_url=self.app_config.eth_mainnet_rpc_url)
+        current_gas_price = asyncio.run(gas_price.get_stark_block_gas_price())
+        current_gas_price = current_gas_price / 10 ** 9
         if current_gas_price is None:
             messagebox.showerror("Error", "Can't get current gas price")
             return
@@ -224,8 +210,7 @@ class AppConfigFrame(customtkinter.CTkFrame):
             app_config = AppConfigSchema(
                 preserve_logs=self.preserve_logs_checkbox.get(),
                 rpc_url=self.stark_rpc_url_entry.get(),
-                eth_mainnet_rpc_url=self.eth_mainnet_rpc_url_entry.get(),
-                target_eth_mainnet_gas_price=self.target_eth_gas_price_spinbox.get(),
+                target_gas_price=self.target_eth_gas_price_spinbox.get(),
                 time_to_wait_target_gas_price_sec=self.max_time_to_wait_target_gas_price_spinbox.get(),
                 wallets_amount_to_execute_in_test_mode=self.wallets_amount_to_execute_in_test_mode_spinbox.get(),
                 is_gas_price_wait_timeout_needed=self.is_timeout_needed_checkbox.get()

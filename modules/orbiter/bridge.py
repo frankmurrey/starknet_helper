@@ -150,7 +150,6 @@ class OrbiterBridge(ModuleBase):
         Builds transaction payload data
         :return:
         """
-
         if self.wallet_data.pair_address is None:
             logger.error(f"Pair EVM address not set")
             return None

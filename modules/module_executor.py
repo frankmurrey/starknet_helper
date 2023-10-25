@@ -1,7 +1,6 @@
 import time
 from datetime import datetime
 from typing import Union, Optional
-from uuid import UUID, uuid4
 
 import aiohttp.typedefs
 from loguru import logger
@@ -21,6 +20,7 @@ from src.custom_client_session import CustomSession
 
 from utils.key_manager.key_manager import get_key_pair_from_pk
 from utils.repr.module import print_module_config
+from utils.gas_price import GasPrice
 
 from src import enums
 import config as cfg
@@ -129,6 +129,35 @@ class ModuleExecutor:
         connector = aiohttp.TCPConnector(limit=10)
         custom_session = CustomSession(proxy=proxy_unit, connector=connector)
         client = FullNodeClient(node_url=base_url, session=custom_session)
+
+        if self.task.test_mode is False:
+            gas_price = GasPrice(
+                block_number=enums.BlockStatus.PENDING.value,
+                session=custom_session
+            )
+            status, gas_price = await gas_price.check_loop(
+                target_price_wei=self.app_config.target_gas_price * 10 ** 9,
+                time_out_sec=self.app_config.time_to_wait_target_gas_price_sec,
+                is_timeout_needed=self.app_config.is_gas_price_wait_timeout_needed
+            )
+
+            if gas_price is None:
+                logger.error(f"Error while getting gas price")
+                return False
+
+            if status is False:
+                logger.error(
+                    f"Gas price is too high ({gas_price / 10 ** 9} Gwei) after "
+                    f"{self.app_config.time_to_wait_target_gas_price_sec}. Aborting transaction."
+                )
+                return False
+
+            logger.info(
+                f"Gas price is under target value ({self.app_config.target_gas_price}), "
+                f"now = {gas_price / 10 ** 9} Gwei."
+            )
+        else:
+            logger.warning(f"Test mode is enabled, gas price check is skipped")
 
         account = Account(
             address=wallet_data.address,

@@ -11,6 +11,7 @@ from starknet_py.net.client_errors import ClientError
 from starknet_py.net.client_models import Call, TransactionReceipt
 from starknet_py.hash.selector import get_selector_from_name
 from starknet_py.net.http_client import HttpMethod
+from starknet_py.net.gateway_client import GatewayClient
 from loguru import logger
 
 from utils.key_manager.key_manager import get_key_pair_from_pk
@@ -565,7 +566,7 @@ class ModuleBase:
 
     async def send_txn(self):
         """
-        Abstract method for sending a transaction.
+        ABS method for sending a transaction.
         :return:
         """
         raise NotImplementedError
@@ -584,35 +585,6 @@ class ModuleBase:
         :return:
         """
         logger.warning(f"Action: {txn_info_message}")
-
-        target_gas_price_gwei = self.storage.app_config.target_eth_mainnet_gas_price
-        target_gas_price_wei = self.storage.app_config.target_eth_mainnet_gas_price * 10 ** 9
-        time_out_sec = self.storage.app_config.time_to_wait_target_gas_price_sec
-        is_timeout_needed = self.storage.app_config.is_gas_price_wait_timeout_needed
-        gas_price_status = await self.gas_price_check_loop(
-            target_price_wei=target_gas_price_wei,
-            time_out_sec=time_out_sec,
-            is_timeout_needed=is_timeout_needed,
-        )
-
-        status, gas_price = gas_price_status
-        if gas_price is None:
-            err_msg = f"Error while getting gas price. Aborting transaction."
-            logger.error(err_msg)
-
-            self.module_execution_result.execution_status = False
-            self.module_execution_result.execution_info = err_msg
-            return self.module_execution_result
-
-        if status is False:
-            err_msg = f"Gas price is too high ({gas_price / 10 ** 9} Gwei) after {time_out_sec}. Aborting transaction."
-            logger.error(err_msg)
-
-            self.module_execution_result.execution_status = False
-            self.module_execution_result.execution_info = err_msg
-            return self.module_execution_result
-
-        logger.info(f"Gas price is under target value ({target_gas_price_gwei}), now = {gas_price / 10 ** 9} Gwei.")
 
         cairo_version = await self.get_cairo_version_for_txn_execution(account=account)
         if cairo_version is None:

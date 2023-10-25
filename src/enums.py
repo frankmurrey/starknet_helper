@@ -71,3 +71,8 @@ class WalletStatus(str, Enum):
 
 class MiscTypes(str, Enum):
     RANDOM = "random"
+
+
+class BlockStatus(str, Enum):
+    PENDING = "pending"
+    LATEST = "latest"

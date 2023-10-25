@@ -140,7 +140,7 @@ class OrbiterBridge(ModuleBase):
                 decimals=token_x_decimals
             )
 
-        self.initial_balance_x_weii = balance_x_wei
+        self.initial_balance_x_wei = balance_x_wei
         self.token_x_decimals = token_x_decimals
 
         return amount_out_wei
@@ -150,6 +150,7 @@ class OrbiterBridge(ModuleBase):
         Builds transaction payload data
         :return:
         """
+
         if self.wallet_data.pair_address is None:
             logger.error(f"Pair EVM address not set")
             return None

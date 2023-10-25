@@ -44,7 +44,7 @@ class Chains:
             ),
 
             ChainBase(
-                name="Polygon zkEVM",
+                name="Polygon zk",
                 orbiter_id=9017
             ),
 

@@ -59,6 +59,9 @@ class WalletFrame(customtkinter.CTkFrame):
             self,
             address=self.wallet_data.address,
         )
+        self.address_entry.set_click_callback(
+            lambda: self.copy_to_clipboard(self.address_entry.address)
+        )
         self.address_entry.grid(row=2, column=0, padx=10, pady=0, sticky="w")
         self.private_key_entry.set_focus_in_callback(self.address_entry.show_full_text)
         self.private_key_entry.set_focus_out_callback(self.address_entry.hide_full_text)
@@ -78,15 +81,21 @@ class WalletFrame(customtkinter.CTkFrame):
         self.pair_address_entry.grid(row=3, column=0, padx=10, pady=0, sticky="w")
 
         # PROXY
+        proxy_placeholder = "user:pass:host:port"
         self.proxy_entry = objects.CTkEntryWithLabel(
             self,
             label_text="Proxy",
-            textvariable=tkinter.StringVar(
-                value=self.wallet_data.proxy.to_string() if isinstance(self.wallet_data.proxy, ProxyData) else ""
-            ),
             width=200,
         )
+        if isinstance(self.wallet_data.proxy, ProxyData):
+            self.proxy_entry.entry.configure(textvariable=tkinter.StringVar(value=self.wallet_data.proxy.to_string()))
+
+        else:
+            self.proxy_entry.entry.configure(placeholder_text=proxy_placeholder)
+
+        self.proxy_entry.entry.configure(placeholder_text=proxy_placeholder)
         self.proxy_entry.grid(row=4, column=0, padx=10, pady=0, sticky="w")
+
 
         # PRIVATE KEY TYPE
         self.private_key_type_radio_var = tkinter.StringVar(
@@ -212,6 +221,16 @@ class WalletFrame(customtkinter.CTkFrame):
             self.focus_force()
 
         self.on_wallet_save(wallet_data)
+
+    def copy_to_clipboard(self, value: str):
+        if not value:
+            return
+
+        self.clipboard_clear()
+        self.clipboard_append(value)
+        tkinter.messagebox.showinfo(title="Copied", message=f"Address copied to clipboard")
+
+        self.focus_force()
 
 
 class WalletWindow(customtkinter.CTkToplevel):

@@ -137,7 +137,6 @@ class StarkBridge(ModuleBase):
         Sends transaction.
         :return:
         """
-        await self.get_gas_price()
         txn_payload_data = await self.build_txn_payload_data()
         if txn_payload_data is None:
             self.module_execution_result.execution_info = f"Failed to build txn payload data"

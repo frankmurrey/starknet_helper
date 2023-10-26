@@ -50,6 +50,16 @@ class RightFrame(customtkinter.CTkFrame):
         )
         self.add_wallet_button.grid(row=0, column=1, padx=(0, 20), pady=10, sticky="wn")
 
+        self.save_button = customtkinter.CTkButton(
+            self.button_frame,
+            text="Save",
+            font=customtkinter.CTkFont(size=12, weight="bold"),
+            width=100,
+            height=30,
+            command=self.save_button_clicked,
+        )
+        self.save_button.grid(row=0, column=2, padx=(0, 20), pady=10, sticky="wn")
+
         self.remove_button = customtkinter.CTkButton(
             self.button_frame,
             text="Remove all",
@@ -60,15 +70,14 @@ class RightFrame(customtkinter.CTkFrame):
             height=30,
             command=self.remove_all_wallets,
         )
-
-        self.remove_button.grid(row=0, column=2, padx=0, pady=10, sticky="wn")
+        self.remove_button.grid(row=0, column=3, padx=0, pady=10, sticky="wn")
 
         self.selected_wallets_label = customtkinter.CTkLabel(
             self.button_frame,
             text="Selected: 0",
             font=customtkinter.CTkFont(size=12, weight="bold"),
         )
-        self.selected_wallets_label.grid(row=0, column=3, padx=20, pady=10, sticky="wn")
+        self.selected_wallets_label.grid(row=0, column=4, padx=20, pady=10, sticky="wn")
 
         self.actions_frame = ActionsFrame(self)
         self.actions_frame.grid(row=9, column=0, padx=20, pady=10, sticky="nsew")
@@ -159,3 +168,35 @@ class RightFrame(customtkinter.CTkFrame):
     def close_add_wallet_window(self):
         self.add_wallet_window.close()
         self.add_wallet_window = None
+
+    def save_button_clicked(self):
+        if not len(self.wallets):
+            return
+
+        wallets = [
+            ["name",
+            "private_key",
+            "pair_address",
+            "proxy",
+            "type"]
+        ]
+        for wallet in self.wallets:
+            wallets.append([
+                wallet.name if wallet.name else "",
+                wallet.private_key,
+                wallet.pair_address if wallet.pair_address else "",
+                wallet.proxy.to_string() if wallet.proxy else "",
+                wallet.type.value
+            ])
+
+        filepath = tkinter.filedialog.asksaveasfilename(
+            initialdir=paths.MAIN_DIR,
+            title="Save wallets",
+            filetypes=[("Text files", "*.csv")],
+            initialfile="accounts.csv",
+        )
+
+        if not filepath:
+            return
+
+        FileManager.write_data_to_csv(filepath, wallets)

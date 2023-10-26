@@ -1,3 +1,4 @@
+import asyncio
 import tkinter
 import tkinter.messagebox
 from typing import Callable, Union
@@ -8,12 +9,16 @@ from pydantic import ValidationError
 from src import enums
 from src.schemas.wallet_data import WalletData
 from src.schemas.proxy_data import ProxyData
+from src.proxy_manager import ProxyManager
 
-from gui import objects
+from gui import objects, constants
 from gui.wallet_right_window.wallet_window.empty_wallet_data import EmptyUiWalletData
 from gui.wallet_right_window.wallet_window.private_key_entry import PrivateKeyEntry
 from gui.wallet_right_window.wallet_window.address_entry import AddressEntry
 from gui.wallet_right_window.wallet_window.pair_address_entry import PairAddressEntry
+from gui.wallet_right_window.wallet_window.proxy_entry import ProxyEntry
+
+from utils.proxy import parse_proxy_data
 
 
 class WalletFrame(customtkinter.CTkFrame):
@@ -81,21 +86,30 @@ class WalletFrame(customtkinter.CTkFrame):
         self.pair_address_entry.grid(row=3, column=0, padx=10, pady=0, sticky="w")
 
         # PROXY
-        proxy_placeholder = "user:pass:host:port"
-        self.proxy_entry = objects.CTkEntryWithLabel(
+        proxy_placeholder = "http://user:pass:host:port"
+        self.proxy_entry = ProxyEntry(
             self,
-            label_text="Proxy",
-            width=200,
+            proxy=self.wallet_data.proxy.to_string() if isinstance(self.wallet_data.proxy, ProxyData) else ""
         )
-        if isinstance(self.wallet_data.proxy, ProxyData):
-            self.proxy_entry.entry.configure(textvariable=tkinter.StringVar(value=self.wallet_data.proxy.to_string()))
+        # if isinstance(self.wallet_data.proxy, ProxyData):
+        #     self.proxy_entry.entry.configure(textvariable=tkinter.StringVar(value=self.wallet_data.proxy.to_string()))
+        #
+        # else:
+        #     self.proxy_entry.entry.configure(placeholder_text=proxy_placeholder)
 
-        else:
-            self.proxy_entry.entry.configure(placeholder_text=proxy_placeholder)
-
-        self.proxy_entry.entry.configure(placeholder_text=proxy_placeholder)
         self.proxy_entry.grid(row=4, column=0, padx=10, pady=0, sticky="w")
 
+        self.proxy_check_button = customtkinter.CTkButton(
+            self,
+            text="Check proxy",
+            text_color="gray70",
+            fg_color='transparent',
+            width=100,
+            hover=False,
+            font=customtkinter.CTkFont(size=12, underline=True, weight="bold"),
+            command=self.check_proxy_button_event
+        )
+        self.proxy_check_button.grid(row=5, column=0, padx=0, pady=0, sticky="w")
 
         # PRIVATE KEY TYPE
         self.private_key_type_radio_var = tkinter.StringVar(
@@ -109,7 +123,7 @@ class WalletFrame(customtkinter.CTkFrame):
             value=enums.PrivateKeyType.argent.value,
             command=self.toggle_wallet_type,
         )
-        self.argent_radio_button.grid(row=5, column=0, padx=10, pady=(20, 10), sticky="w")
+        self.argent_radio_button.grid(row=6, column=0, padx=10, pady=(20, 10), sticky="w")
 
         self.braavos_radio_button = customtkinter.CTkRadioButton(
             self,
@@ -118,7 +132,7 @@ class WalletFrame(customtkinter.CTkFrame):
             value=enums.PrivateKeyType.braavos.value,
             command=self.toggle_wallet_type,
         )
-        self.braavos_radio_button.grid(row=5, column=0, padx=110, pady=(20, 10), sticky="w")
+        self.braavos_radio_button.grid(row=6, column=0, padx=110, pady=(20, 10), sticky="w")
 
         # CAIRO VERSION
         self.cairo_version_radio_var = tkinter.IntVar(value=self.wallet_data.cairo_version)
@@ -130,7 +144,7 @@ class WalletFrame(customtkinter.CTkFrame):
             value=0,
             command=self.toggle_cairo_version,
         )
-        self.cairo_version_radio_button_0.grid(row=6, column=0, padx=10, pady=10, sticky="w")
+        self.cairo_version_radio_button_0.grid(row=7, column=0, padx=10, pady=10, sticky="w")
 
         self.cairo_version_radio_button_1 = customtkinter.CTkRadioButton(
             self,
@@ -139,7 +153,7 @@ class WalletFrame(customtkinter.CTkFrame):
             value=1,
             command=self.toggle_cairo_version,
         )
-        self.cairo_version_radio_button_1.grid(row=6, column=0, padx=110, pady=10, sticky="w")
+        self.cairo_version_radio_button_1.grid(row=7, column=0, padx=110, pady=10, sticky="w")
 
         # ADD BUTTON
         self.add_button = customtkinter.CTkButton(
@@ -147,7 +161,7 @@ class WalletFrame(customtkinter.CTkFrame):
             text="Save",
             command=self.save_wallet_button_clicked,
         )
-        self.add_button.grid(row=7, column=0, padx=10, pady=10, sticky="ws")
+        self.add_button.grid(row=8, column=0, padx=10, pady=10, sticky="ws")
 
         self.__last_private_key_repr = ""
         self.__private_key = ""
@@ -232,6 +246,26 @@ class WalletFrame(customtkinter.CTkFrame):
 
         self.focus_force()
 
+    def check_proxy_button_event(self):
+        proxy_string = self.proxy_entry.text
+        proxy_data = parse_proxy_data(proxy_string)
+
+        if not proxy_data:
+            tkinter.messagebox.showerror("Error", "Invalid proxy")
+            self.focus_force()
+            return
+
+        pm = ProxyManager(proxy_data)
+
+        loop = asyncio.new_event_loop()
+        ip = loop.run_until_complete(pm.get_ip())
+        loop.close()
+
+        if ip is None:
+            self.proxy_check_button.configure(text="Invalid proxy", text_color=constants.ERROR_HEX)
+        else:
+            self.proxy_check_button.configure(text=f"Proxy valid: {ip}", text_color=constants.SUCCESS_HEX)
+
 
 class WalletWindow(customtkinter.CTkToplevel):
     def __init__(
@@ -243,7 +277,7 @@ class WalletWindow(customtkinter.CTkToplevel):
         super().__init__(master)
 
         self.title("Add wallet")
-        self.geometry("340x450")
+        self.geometry("340x470")
 
         self.after(10, self.focus_force)
 

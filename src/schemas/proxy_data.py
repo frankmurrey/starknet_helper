@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 class ProxyData(BaseModel):
     host: str
+    proxy_type: str
     port: Union[int, str]
     username: str = None
     password: str = None
@@ -12,7 +13,7 @@ class ProxyData(BaseModel):
     is_mobile: bool = False
 
     def to_string(self):
-        proxy_string = ""
+        proxy_string = f"{self.proxy_type}://"
         if self.is_mobile:
             proxy_string += "m$"
 
@@ -27,6 +28,3 @@ class ProxyData(BaseModel):
 
         return proxy_string
 
-
-if __name__ == '__main__':
-    print(ProxyData(host="", port="").to_string())

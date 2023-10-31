@@ -25,7 +25,12 @@ SWAP_TASKS = {
 
 
 class SwapTab:
-    def __init__(self, tabview, tab_name):
+    def __init__(
+            self,
+            tabview,
+            tab_name,
+            task: tasks.SwapTaskBase = None
+    ):
         self.tabview = tabview
         self.tab_name = tab_name
 
@@ -40,7 +45,9 @@ class SwapTab:
         }
 
         self.swap_frame = SwapFrame(
-            master=self.tabview.tab(tab_name), grid=swap_frame_grid
+            master=self.tabview.tab(tab_name),
+            grid=swap_frame_grid,
+            task=task
         )
 
         txn_settings_grid = {
@@ -52,16 +59,18 @@ class SwapTab:
         }
 
         self.txn_settings_frame = TxnSettingFrame(
-            master=self.tabview.tab(tab_name), grid=txn_settings_grid
+            master=self.tabview.tab(tab_name),
+            grid=txn_settings_grid,
+            task=task
         )
 
     def get_config_schema(self) -> Union[Callable, None]:
-        swap_protocol = self.swap_frame.protocol_combo.get_value().lower()
+        protocol = self.swap_frame.protocol_combo.get_value().lower()
         if self.swap_frame.protocol_combo.get_checkbox_value():
             return tasks.RandomSwapTask
 
         else:
-            return SWAP_TASKS.get(swap_protocol, None)
+            return SWAP_TASKS.get(protocol, None)
 
     def build_config_data(self):
         config_schema = self.get_config_schema()
@@ -97,14 +106,17 @@ class SwapTab:
 
 
 class SwapFrame(customtkinter.CTkFrame):
-    def __init__(self, master, grid, **kwargs):
-        super().__init__(master, **kwargs)
+    def __init__(self, master, grid, task: tasks.SwapTaskBase):
+        super().__init__(master)
+
+        self.task = task
 
         self.frame = customtkinter.CTkFrame(master)
         self.frame.grid(**grid)
         self.frame.grid_columnconfigure((0, 1), weight=1, uniform="a")
         self.frame.grid_rowconfigure((0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11), weight=1)
 
+        # PROTOCOL
         self.protocol_label = customtkinter.CTkLabel(self.frame, text="Protocol:")
         self.protocol_label.grid(row=0, column=0, padx=20, pady=(10, 0), sticky="w")
 
@@ -115,7 +127,13 @@ class SwapFrame(customtkinter.CTkFrame):
             combo_command=self.protocol_change_event,
             text="Random protocol",
         )
+        protocol = getattr(self.task, "module_name", self.protocol_options[0])
+        self.protocol_combo.set_values(
+            combo_value=protocol.upper(),
+            random_value=getattr(self.task, "random_protocol", False)
+        )
 
+        # COIN TO SWAP
         self.coin_to_swap_label = customtkinter.CTkLabel(
             self.frame, text="Coin to swap:"
         )
@@ -127,8 +145,10 @@ class SwapFrame(customtkinter.CTkFrame):
             width=120,
             command=self.update_coin_options,
         )
+        self.coin_to_swap_combo.set(getattr(self.task, "coin_x", self.coin_to_swap_options[0]))
         self.coin_to_swap_combo.grid(row=4, column=0, padx=20, pady=0, sticky="w")
 
+        # COIN TO RECEIVE
         self.coin_to_receive_label = customtkinter.CTkLabel(
             self.frame, text="Coin to receive:"
         )
@@ -142,7 +162,12 @@ class SwapFrame(customtkinter.CTkFrame):
             options=self.coin_to_receive_options,
             text="Random dst coin",
         )
+        self.coin_to_receive_combo.set_values(
+            combo_value=getattr(self.task, "coin_y", self.coin_to_receive_options[0]),
+            random_value=getattr(self.task, "random_y_coin", False)
+        )
 
+        # REVERSE ACTION CHECKBOX
         self.reverse_action_checkbox = customtkinter.CTkCheckBox(
             self.frame,
             text="Make reverse swap",
@@ -151,20 +176,27 @@ class SwapFrame(customtkinter.CTkFrame):
             checkbox_width=18,
             checkbox_height=18,
         )
+        if getattr(self.task, "reverse_action", False):
+            self.reverse_action_checkbox.select()
+
         self.reverse_action_checkbox.grid(
             row=5, column=0, padx=20, pady=(10, 0), sticky="w"
         )
 
+        # MIN AMOUNT
         self.min_amount_label = customtkinter.CTkLabel(self.frame, text="Min amount:")
         self.min_amount_label.grid(row=6, column=0, padx=20, pady=(10, 0), sticky="w")
 
-        self.min_amount_entry = customtkinter.CTkEntry(self.frame, width=120)
+        min_amount = getattr(self.task, "min_amount_out", "")
+        self.min_amount_entry = customtkinter.CTkEntry(self.frame, width=120, textvariable=Variable(value=min_amount))
         self.min_amount_entry.grid(row=7, column=0, padx=20, pady=0, sticky="w")
 
+        # MAX AMOUNT
         self.max_amount_label = customtkinter.CTkLabel(self.frame, text="Max amount:")
         self.max_amount_label.grid(row=6, column=1, padx=20, pady=(10, 0), sticky="w")
 
-        self.max_amount_entry = customtkinter.CTkEntry(self.frame, width=120)
+        max_amount = getattr(self.task, "max_amount_out", "")
+        self.max_amount_entry = customtkinter.CTkEntry(self.frame, width=120, textvariable=Variable(value=max_amount))
         self.max_amount_entry.grid(row=7, column=1, padx=20, pady=0, sticky="w")
 
         self.use_all_balance_checkbox = customtkinter.CTkCheckBox(
@@ -176,6 +208,7 @@ class SwapFrame(customtkinter.CTkFrame):
             checkbox_height=18,
             command=self.use_all_balance_checkbox_event,
         )
+
         self.use_all_balance_checkbox.grid(
             row=8, column=0, padx=20, pady=(10, 0), sticky="w"
         )
@@ -191,12 +224,32 @@ class SwapFrame(customtkinter.CTkFrame):
         self.send_percent_balance_checkbox.grid(
             row=9, column=0, padx=20, pady=(5, 0), sticky="w"
         )
+        if getattr(self.task, "send_percent_balance", False):
+            self.send_percent_balance_checkbox.select()
+
+        if getattr(self.task, "use_all_balance", False):
+            self.use_all_balance_checkbox.select()
+            self.min_amount_entry.configure(
+                state="disabled",
+                fg_color='#3f3f3f',
+                textvariable=Variable(value="")
+            )
+            self.max_amount_entry.configure(
+                state="disabled",
+                fg_color='#3f3f3f',
+                textvariable=Variable(value="")
+            )
+            self.send_percent_balance_checkbox.deselect()
+            self.send_percent_balance_checkbox.configure(
+                state="disabled"
+            )
 
         self.slippage_label = customtkinter.CTkLabel(self.frame, text="Slippage (%):")
         self.slippage_label.grid(row=10, column=1, padx=20, pady=(10, 0), sticky="w")
 
+        slippage = getattr(self.task, "slippage", 2)
         self.slippage_entry = customtkinter.CTkEntry(
-            self.frame, width=70, textvariable=Variable(value=2)
+            self.frame, width=70, textvariable=Variable(value=slippage)
         )
         self.slippage_entry.grid(row=11, column=1, padx=20, pady=0, sticky="w")
 
@@ -207,8 +260,9 @@ class SwapFrame(customtkinter.CTkFrame):
             row=10, column=0, padx=20, pady=(10, 0), sticky="w"
         )
 
+        max_price_difference_percent = getattr(self.task, "max_price_difference_percent", 2)
         self.max_price_difference_percent_entry = customtkinter.CTkEntry(
-            self.frame, width=120, textvariable=Variable(value=2)
+            self.frame, width=120, textvariable=Variable(value=max_price_difference_percent)
         )
         self.max_price_difference_percent_entry.grid(
             row=11, column=0, padx=20, pady=0, sticky="w"
@@ -223,6 +277,17 @@ class SwapFrame(customtkinter.CTkFrame):
             checkbox_height=18,
             command=self.compare_with_cg_price_checkbox_event,
         )
+
+        if getattr(self.task, "compare_with_cg_price", True):
+            self.compare_with_cg_price_checkbox.select()
+            self.max_price_difference_percent_entry.configure(
+                state='normal', textvariable=max_price_difference_percent
+            )
+        else:
+            self.max_price_difference_percent_entry.configure(
+                state="disabled", fg_color="#3f3f3f", textvariable=Variable(value="")
+            )
+
         self.compare_with_cg_price_checkbox.grid(
             row=12, column=0, padx=20, pady=10, sticky="w"
         )

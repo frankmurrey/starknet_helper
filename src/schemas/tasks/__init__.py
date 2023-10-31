@@ -4,9 +4,11 @@ from .base.remove_liquidity import RemoveLiquidityTaskBase
 from .base.supply import SupplyTaskBase
 from .base.swap import SwapTaskBase
 from .base.withdraw import WithdrawTaskBase
+from .base.bridge import BridgeTaskBase
 
 from .avnu import AvnuSwapTask
 from .deploy import DeployTask
+from .deploy import UpgradeTask
 from .dmail import DmailSendMailTask
 from .identity import IdentityMintTask
 from .jediswap import JediSwapTask
@@ -25,6 +27,7 @@ from .zklend import ZkLendWithdrawTask
 from .fibrous import FibrousSwapTask
 from .orbiter import OrbiterBridgeTask
 from .stark_bridge import StarkBridgeTask
+from .transfer import TransferTask
 
 from .random_task.swap import RandomSwapTask
 from .random_task.liquidity import RandomAddLiquidityTask

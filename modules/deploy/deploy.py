@@ -1,4 +1,3 @@
-import dataclasses
 from typing import TYPE_CHECKING, Union
 
 from starknet_py.net.account.account import Account
@@ -7,10 +6,8 @@ from starknet_py.net.client_errors import ClientError
 from loguru import logger
 
 from modules.base import ModuleBase
-from src.schemas.logs import WalletActionSchema
 from src.schemas.action_models import ModuleExecutionResult
 from src import enums
-from src.storage import ActionStorage
 from utils.key_manager.key_manager import get_key_pair_from_pk, get_key_data
 from modules.deploy.custom_curve_signer import BraavosCurveSigner
 

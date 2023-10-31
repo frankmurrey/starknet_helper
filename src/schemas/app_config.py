@@ -45,9 +45,3 @@ class AppConfigSchema(BaseModel):
         value = validation.get_positive(value, "Wallets amount", include_zero=False)
 
         return value
-
-
-
-
-
-

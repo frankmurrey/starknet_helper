@@ -9,9 +9,10 @@ from loguru import logger
 import config
 from src import enums
 from modules.module_executor import ModuleExecutor
+from src.schemas.app_config import AppConfigSchema
 from src.schemas.tasks.base.base import TaskBase
 from src.schemas.wallet_data import WalletData
-from src.storage import ActionStorage
+from src.storage import ActionStorage, Storage
 from src.tasks_executor.event_manager import TasksExecEventManager
 from utils.repr.misc import print_wallet_execution
 from src.logger import configure_logger
@@ -21,6 +22,8 @@ class TasksExecutor:
     def __init__(self):
         self.processing_process: Optional[mp.Process] = None
         self.event_manager: Optional[TasksExecEventManager] = TasksExecEventManager()
+
+        self.__app_config_dict: Optional[dict] = None
 
     async def process_task(
             self,
@@ -38,6 +41,8 @@ class TasksExecutor:
             wallet: wallet for task
             is_last_task: is current task the last
         """
+
+        print("App config: ", Storage().app_config)
 
         if wallet_index == 0 and task.test_mode is False:
             ActionStorage().reset_all_actions()
@@ -109,7 +114,10 @@ class TasksExecutor:
         """
         Start processing async
         """
+
+        Storage().update_app_config(config=AppConfigSchema(**self.__app_config_dict))
         configure_logger()
+
         for wallet_index, wallet in enumerate(wallets):
             await self.process_wallet(
                 wallet=wallet,
@@ -127,7 +135,8 @@ class TasksExecutor:
         """
         Start processing
         """
-        asyncio.run(self._start_processing_async(wallets, tasks))
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(self._start_processing_async(wallets, tasks))
 
     def is_running(self):
         """
@@ -159,6 +168,8 @@ class TasksExecutor:
 
         if shuffle_tasks:
             random.shuffle(tasks)
+
+        self.__app_config_dict = Storage().app_config.dict()
 
         self.processing_process = mp.Process(target=self._start_processing, args=(wallets, tasks))
         self.processing_process.start()

@@ -8,6 +8,7 @@ from utils import validation
 class MinMaxAmountOutValidationMixin(BaseModel):
 
     use_all_balance: bool
+    send_percent_balance: bool
 
     min_amount_out: float
     max_amount_out: float
@@ -35,5 +36,9 @@ class MinMaxAmountOutValidationMixin(BaseModel):
         value = validation.get_converted_to_float(value, "Max Amount Out")
         value = validation.get_positive(value, "Max Amount Out", include_zero=False)
         value = validation.get_greater(value, values["min_amount_out"], "Max Amount Out")
+
+        if values['send_percent_balance']:
+            if float(value) > 100:
+                raise AppValidationError("Max Amount Out must be <= 100%")
 
         return value

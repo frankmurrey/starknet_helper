@@ -1,20 +1,27 @@
-
-import customtkinter
+from tkinter import Variable, messagebox
+from typing import Callable, Union
 from pydantic.error_wrappers import ValidationError
 
-from tkinter import Variable, messagebox
+import customtkinter
+from loguru import logger
 
 from src import enums
-from src.schemas.tasks.zklend import ZkLendSupplyTask
+from src.schemas import tasks
 from contracts.tokens.main import Tokens
 from gui.modules.txn_settings_frame import TxnSettingFrame
+
+
+SUPPLY_TASKS = {
+    enums.ModuleName.ZKLEND: tasks.ZkLendSupplyTask
+}
 
 
 class SupplyLendingTab:
     def __init__(
             self,
             tabview,
-            tab_name
+            tab_name,
+            task: tasks.ZkLendSupplyTask = None
     ):
         self.tabview = tabview
 
@@ -30,7 +37,8 @@ class SupplyLendingTab:
 
         self.supply_frame = SupplyLendingFrame(
             master=self.tabview.tab(tab_name),
-            grid=supply_frame_grid
+            grid=supply_frame_grid,
+            task=task
         )
 
         self.txn_settings_frame = TxnSettingFrame(
@@ -41,12 +49,22 @@ class SupplyLendingTab:
                 "padx": 20,
                 "pady": 20,
                 "sticky": "nsew"
-            }
+            },
+            task=task
         )
 
+    def get_config_schema(self) -> Union[Callable, None]:
+        protocol = self.supply_frame.protocol_combobox.get().lower()
+        return SUPPLY_TASKS.get(protocol, None)
+
     def build_config_data(self):
+        config_schema = self.get_config_schema()
+        if config_schema is None:
+            logger.error("No config schema found")
+            return None
+
         try:
-            return ZkLendSupplyTask(
+            return config_schema(
                 coin_to_supply=self.supply_frame.token_to_supply_combobox.get(),
                 min_amount_out=self.supply_frame.min_amount_out_entry.get(),
                 max_amount_out=self.supply_frame.max_amount_out_entry.get(),
@@ -69,7 +87,8 @@ class SupplyLendingFrame(customtkinter.CTkFrame):
     def __init__(
             self,
             master,
-            grid
+            grid,
+            task: tasks.ZkLendSupplyTask = None
     ):
         super().__init__(master)
 
@@ -77,6 +96,7 @@ class SupplyLendingFrame(customtkinter.CTkFrame):
         self.grid_columnconfigure((0, 1), weight=1)
         self.grid_rowconfigure((0, 1, 2, 3, 4, 5, 6, 7, 8), weight=1)
 
+        # PROTOCOL
         self.protocol_label = customtkinter.CTkLabel(
             master=self,
             text="Protocol"
@@ -89,12 +109,14 @@ class SupplyLendingFrame(customtkinter.CTkFrame):
             pady=(10, 0)
         )
 
+        protocol = getattr(task, "module_name", self.protocol_options[0])
         self.protocol_combobox = customtkinter.CTkComboBox(
             master=self,
             values=self.protocol_options,
             width=120,
             command=self.protocol_change_event
         )
+        self.protocol_combobox.set(protocol.upper())
         self.protocol_combobox.grid(
             row=1,
             column=0,
@@ -103,6 +125,7 @@ class SupplyLendingFrame(customtkinter.CTkFrame):
             pady=(0, 0)
         )
 
+        # TOKEN TO SUPPLY
         self.token_to_supply = customtkinter.CTkLabel(
             master=self,
             text="Token to Supply"
@@ -115,11 +138,13 @@ class SupplyLendingFrame(customtkinter.CTkFrame):
             pady=(10, 0)
         )
 
+        coin_to_supply = getattr(task, "coin_to_supply", self.protocol_coin_options[0])
         self.token_to_supply_combobox = customtkinter.CTkComboBox(
             master=self,
             values=self.protocol_coin_options,
             width=120
         )
+        self.token_to_supply_combobox.set(coin_to_supply.upper())
         self.token_to_supply_combobox.grid(
             row=3,
             column=0,
@@ -128,6 +153,7 @@ class SupplyLendingFrame(customtkinter.CTkFrame):
             pady=(0, 0)
         )
 
+        # MIN AMOUNT OUT
         self.min_amount_out = customtkinter.CTkLabel(
             master=self,
             text="Min amount out:"
@@ -140,9 +166,11 @@ class SupplyLendingFrame(customtkinter.CTkFrame):
             pady=(10, 0)
         )
 
+        min_amount_out = getattr(task, "min_amount_out", "")
         self.min_amount_out_entry = customtkinter.CTkEntry(
             master=self,
             width=120,
+            textvariable=Variable(value=min_amount_out)
         )
         self.min_amount_out_entry.grid(
             row=5,
@@ -152,6 +180,7 @@ class SupplyLendingFrame(customtkinter.CTkFrame):
             pady=(0, 0)
         )
 
+        # MAX AMOUNT OUT
         self.max_amount_out = customtkinter.CTkLabel(
             master=self,
             text="Max amount out:"
@@ -164,9 +193,11 @@ class SupplyLendingFrame(customtkinter.CTkFrame):
             pady=(10, 0)
         )
 
+        max_amount_out = getattr(task, "max_amount_out", "")
         self.max_amount_out_entry = customtkinter.CTkEntry(
             master=self,
-            width=120
+            width=120,
+            textvariable=Variable(value=max_amount_out)
         )
         self.max_amount_out_entry.grid(
             row=5,
@@ -176,6 +207,7 @@ class SupplyLendingFrame(customtkinter.CTkFrame):
             pady=(0, 0)
         )
 
+        # USE ALL BALANCE
         self.use_all_balance_checkbox = customtkinter.CTkCheckBox(
             master=self,
             text="Use All Balance",
@@ -204,6 +236,8 @@ class SupplyLendingFrame(customtkinter.CTkFrame):
             padx=20,
             pady=(10, 0)
         )
+        if getattr(task, "send_percent_balance", False):
+            self.send_percent_balance_checkbox.select()
 
         self.enable_collateral_checkbox = customtkinter.CTkCheckBox(
             master=self,
@@ -218,6 +252,25 @@ class SupplyLendingFrame(customtkinter.CTkFrame):
             padx=20,
             pady=10
         )
+        if getattr(task, "enable_collateral", False):
+            self.enable_collateral_checkbox.select()
+
+        if getattr(task, "use_all_balance", False):
+            self.use_all_balance_checkbox.select()
+            self.min_amount_out_entry.configure(
+                state="disabled",
+                fg_color='#3f3f3f',
+                textvariable=Variable(value="")
+            )
+            self.max_amount_out_entry.configure(
+                state="disabled",
+                fg_color='#3f3f3f',
+                textvariable=Variable(value="")
+            )
+            self.send_percent_balance_checkbox.deselect()
+            self.send_percent_balance_checkbox.configure(
+                state="disabled"
+            )
 
     @property
     def protocol_options(self) -> list:

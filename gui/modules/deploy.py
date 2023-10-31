@@ -1,4 +1,4 @@
-from src.schemas.tasks.deploy import DeployTask
+from src.schemas import tasks
 
 from gui.modules.txn_settings_frame import TxnSettingFrame
 from gui.objects import CTkCustomTextBox
@@ -8,7 +8,8 @@ class DeployTab:
     def __init__(
             self,
             tabview,
-            tab_name
+            tab_name,
+            task: tasks.DeployTask = None
     ):
         self.tabview = tabview
 
@@ -22,7 +23,8 @@ class DeployTab:
                 "padx": 20,
                 "pady": 20,
                 "sticky": "nsew"
-            }
+            },
+            task=task
         )
 
         text_box_grid = {
@@ -43,7 +45,7 @@ class DeployTab:
         )
 
     def build_config_data(self):
-        return DeployTask(
+        return tasks.DeployTask(
             max_fee=self.txn_settings_frame.max_fee_entry.get(),
             forced_gas_limit=self.txn_settings_frame.forced_gas_limit_check_box.get(),
 

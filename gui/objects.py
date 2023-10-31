@@ -1,6 +1,6 @@
 import tkinter
 import random
-from typing import Optional, Callable
+from typing import Optional, Callable, Union
 
 import customtkinter
 
@@ -17,7 +17,7 @@ class CTkEntryWithLabel(customtkinter.CTkFrame):
             master,
             label_text: str,
 
-            textvariable: Optional[tkinter.StringVar] = None,
+            textvariable: Optional[Union[tkinter.StringVar, tkinter.Variable]] = None,
 
             on_text_changed: Optional[Callable] = None,
             on_focus_in: Optional[Callable] = None,
@@ -177,3 +177,18 @@ class ComboWithRandomCheckBox:
     def get_checkbox_value(self):
         return self.random_checkbox.get()
 
+    def set_values(self, combo_value: str, random_value: bool):
+
+        if random_value:
+            self.combobox.configure(
+                state="disabled",
+                fg_color='#3f3f3f',
+            )
+            self.random_checkbox.select()
+        else:
+            self.combobox.configure(
+                state="normal",
+                fg_color='#343638',
+            )
+            self.combobox.set(combo_value)
+            self.random_checkbox.deselect()

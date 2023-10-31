@@ -23,7 +23,7 @@ BRIDGE_TASKS = {
 
 
 class BridgeTab:
-    def __init__(self, tabview, tab_name):
+    def __init__(self, tabview, tab_name, task: tasks.BridgeTaskBase = None):
         self.tabview = tabview
         self.tab_name = tab_name
 
@@ -39,7 +39,8 @@ class BridgeTab:
 
         self.bridge_frame = BridgeFrame(
             master=self.tabview.tab(tab_name),
-            grid=bridge_frame_grid
+            grid=bridge_frame_grid,
+            task=task
         )
 
         txn_settings_frame_grid = {
@@ -113,16 +114,18 @@ class BridgeTab:
 
 
 class BridgeFrame(customtkinter.CTkFrame):
-    def __init__(self, master, grid, **kwargs):
+    def __init__(self, master, grid, task: tasks.BridgeTaskBase, **kwargs):
         super().__init__(master, **kwargs)
 
         self.grid(**grid)
         self.grid_columnconfigure((0, 1), weight=1, uniform="a")
         self.grid_rowconfigure((1, 2, 3, 4, 5, 6, 7), weight=1)
 
+        self.task = task
         self.chains = Chains()
         self.tokens = Tokens()
 
+        # PROTOCOL
         self.protocol_label = customtkinter.CTkLabel(
             master=self,
             text="Protocol:"
@@ -141,6 +144,9 @@ class BridgeFrame(customtkinter.CTkFrame):
             width=120,
             command=self.protocol_change_event
         )
+
+        protocol = getattr(self.task, "module_name", self.protocol_options[0])
+        self.protocol_combobox.set(protocol.upper())
         self.protocol_combobox.grid(
             row=1,
             column=0,
@@ -149,6 +155,7 @@ class BridgeFrame(customtkinter.CTkFrame):
             pady=(0, 0)
         )
 
+        # DEST CHAIN
         self.chain_label = customtkinter.CTkLabel(
             master=self,
             text="Dest chain:"
@@ -167,6 +174,7 @@ class BridgeFrame(customtkinter.CTkFrame):
             width=120,
             command=self.chain_change_event
         )
+        self.chain_combobox.set(getattr(task, "dst_chain", self.chain_options[0]))
         self.chain_combobox.grid(
             row=3,
             column=0,
@@ -175,6 +183,7 @@ class BridgeFrame(customtkinter.CTkFrame):
             pady=(0, 0)
         )
 
+        # COIN
         self.coin_label = customtkinter.CTkLabel(
             master=self,
             text="Coin to bridge:"
@@ -193,6 +202,7 @@ class BridgeFrame(customtkinter.CTkFrame):
             width=120,
             command=self.coin_change_event
         )
+        self.coin_combobox.set(getattr(task, "coin_x", self.coin_options[0]))
         self.coin_combobox.grid(
             row=3,
             column=1,
@@ -213,6 +223,7 @@ class BridgeFrame(customtkinter.CTkFrame):
             }
         )
 
+        # MIN AMOUNT OUT
         self.min_amount_out_label = customtkinter.CTkLabel(
             master=self,
             text="Min amount out:"
@@ -225,9 +236,11 @@ class BridgeFrame(customtkinter.CTkFrame):
             pady=0
         )
 
+        min_amount_out = getattr(task, "min_amount_out", "")
         self.min_amount_out_entry = customtkinter.CTkEntry(
             master=self,
-            width=120
+            width=120,
+            textvariable=Variable(value=min_amount_out)
         )
         self.min_amount_out_entry.grid(
             row=6,
@@ -237,6 +250,7 @@ class BridgeFrame(customtkinter.CTkFrame):
             pady=(0, 0)
         )
 
+        # MAX AMOUNT OUT
         self.max_amount_out_label = customtkinter.CTkLabel(
             master=self,
             text="Max amount out:"
@@ -249,9 +263,11 @@ class BridgeFrame(customtkinter.CTkFrame):
             pady=(10, 0)
         )
 
+        max_amount_out = getattr(task, "max_amount_out", "")
         self.max_amount_out_entry = customtkinter.CTkEntry(
             master=self,
-            width=120
+            width=120,
+            textvariable=Variable(value=max_amount_out)
         )
         self.max_amount_out_entry.grid(
             row=6,
@@ -261,6 +277,7 @@ class BridgeFrame(customtkinter.CTkFrame):
             pady=(0, 0)
         )
 
+        # USE ALL BALANCE
         self.use_all_balance_checkbox = customtkinter.CTkCheckBox(
             master=self,
             text="Use All Balance",
@@ -289,6 +306,25 @@ class BridgeFrame(customtkinter.CTkFrame):
             padx=20,
             pady=(10, 20)
         )
+        if getattr(self.task, "send_percent_balance", False):
+            self.send_percent_balance_checkbox.select()
+
+        if getattr(self.task, "use_all_balance", False):
+            self.use_all_balance_checkbox.select()
+            self.min_amount_out_entry.configure(
+                state="disabled",
+                fg_color='#3f3f3f',
+                textvariable=Variable(value="")
+            )
+            self.max_amount_out_entry.configure(
+                state="disabled",
+                fg_color='#3f3f3f',
+                textvariable=Variable(value="")
+            )
+            self.send_percent_balance_checkbox.deselect()
+            self.send_percent_balance_checkbox.configure(
+                state="disabled"
+            )
 
     @property
     def protocol_options(self) -> list:
@@ -414,9 +450,10 @@ class BridgeDataFrame(customtkinter.CTkFrame):
             pady=(5, 0)
         )
 
+        min_price = getattr(self.chain_data, "minPrice", "-")
         self.min_price_value_label = customtkinter.CTkLabel(
             master=self,
-            text=str(self.chain_data.minPrice),
+            text=str(min_price),
             text_color=constants.SUCCESS_HEX
         )
         self.min_price_value_label.grid(
@@ -440,9 +477,10 @@ class BridgeDataFrame(customtkinter.CTkFrame):
             pady=0
         )
 
+        max_price = getattr(self.chain_data, "maxPrice", "-")
         self.max_price_value_label = customtkinter.CTkLabel(
             master=self,
-            text=str(self.chain_data.maxPrice),
+            text=str(max_price),
             text_color=constants.ERROR_HEX
         )
         self.max_price_value_label.grid(
@@ -466,9 +504,10 @@ class BridgeDataFrame(customtkinter.CTkFrame):
             pady=(0, 5)
         )
 
+        fee = getattr(self.chain_data, "tradingFee", "-")
         self.trading_fee_value_label = customtkinter.CTkLabel(
             master=self,
-            text=str(self.chain_data.tradingFee),
+            text=str(fee),
             text_color=constants.ORANGE_HEX
         )
         self.trading_fee_value_label.grid(

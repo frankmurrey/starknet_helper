@@ -1,4 +1,4 @@
-from src.schemas.tasks.identity import IdentityMintTask
+from src.schemas import tasks
 from gui.modules.txn_settings_frame import TxnSettingFrame
 from gui.objects import CTkCustomTextBox
 
@@ -7,7 +7,9 @@ class StarkIdMintTab:
     def __init__(
             self,
             tabview,
-            tab_name
+            tab_name,
+            task: tasks.IdentityMintTask = None
+
     ):
         self.tabview = tabview
 
@@ -21,7 +23,8 @@ class StarkIdMintTab:
                 "padx": 20,
                 "pady": 20,
                 "sticky": "nsew"
-            }
+            },
+            task=task,
         )
 
         text_box_grid = {
@@ -41,6 +44,6 @@ class StarkIdMintTab:
         )
 
     def build_config_data(self):
-        return IdentityMintTask(
+        return tasks.IdentityMintTask(
             max_fee=self.txn_settings_frame.max_fee_entry.get(),
         )

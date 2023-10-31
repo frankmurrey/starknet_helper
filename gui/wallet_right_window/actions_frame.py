@@ -1,6 +1,6 @@
 import tkinter.messagebox
 from tkinter import Variable, filedialog
-from typing import List, Union
+from typing import List, Union, Callable
 from uuid import UUID
 
 import customtkinter
@@ -38,6 +38,7 @@ class ActionsFrame(customtkinter.CTkFrame):
         self.app_config = Storage().app_config
 
         self.grid_rowconfigure((0, 1, 3, 4), weight=1)
+
         self.grid_columnconfigure(1, weight=0)
 
         self.action_storage = ActionStorage()
@@ -150,7 +151,7 @@ class ActionsFrame(customtkinter.CTkFrame):
             actions: List[dict]
     ):
         try:
-            self.actions = actions
+            self.actions = [*self.actions, *actions]
             self.redraw_current_actions_frame()
 
         except Exception as e:
@@ -159,6 +160,27 @@ class ActionsFrame(customtkinter.CTkFrame):
             tkinter.messagebox.showerror(
                 title="Error",
                 message="Wrong actions config file"
+            )
+
+    def edit_action(
+            self,
+            action: dict
+    ):
+        if action is None:
+            return
+
+        try:
+            for action_index, action_data in enumerate(self.actions):
+                if action_data["task_config"].task_id == action["task_config"].task_id:
+                    self.actions[action_index] = action
+                    break
+
+            self.redraw_current_actions_frame()
+
+        except Exception as e:
+            tkinter.messagebox.showerror(
+                title="Error",
+                message=str(e)
             )
 
     def set_action(
@@ -215,6 +237,7 @@ class ActionsFrame(customtkinter.CTkFrame):
                 repeats=action_data["repeats"],
                 fg_color="grey21",
                 task=action_data["task_config"],
+                tab_name=action_data["tab_name"],
             )
             self.action_items.append(action_item)
 
@@ -336,6 +359,7 @@ class TableTopFrame(customtkinter.CTkFrame):
 
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure((0, 1, 2, 3), weight=1, uniform="uniform")
+        self.grid_columnconfigure(4, weight=1)
 
         self.action_name_label = customtkinter.CTkLabel(
             self,
@@ -345,7 +369,7 @@ class TableTopFrame(customtkinter.CTkFrame):
         self.action_name_label.grid(
             row=0,
             column=0,
-            padx=40,
+            padx=(60, 30),
             pady=0
         )
 
@@ -386,6 +410,18 @@ class TableTopFrame(customtkinter.CTkFrame):
             pady=0
         )
 
+        self.buttons_label = customtkinter.CTkLabel(
+            self,
+            text="   ",
+            font=customtkinter.CTkFont(size=12, weight="bold")
+        )
+        self.buttons_label.grid(
+            row=0,
+            column=4,
+            padx=30,
+            pady=0
+        )
+
 
 class CurrentActionsFrame(customtkinter.CTkScrollableFrame):
     def __init__(
@@ -394,6 +430,7 @@ class CurrentActionsFrame(customtkinter.CTkScrollableFrame):
             **kwargs):
         super().__init__(master, **kwargs)
 
+        self.master: ActionsFrame = master
         self.grid(
             row=1,
             column=0,
@@ -424,6 +461,7 @@ class ButtonActionsFrame(customtkinter.CTkFrame):
         super().__init__(master=parent, **kwargs)
         self.parent: ActionsFrame = parent
         self.actions_top_level_window = None
+        self.actions_edit_top_level_window = None
 
         self.grid_rowconfigure((0, 1, 2, 3), weight=0)
         self.grid_columnconfigure(0, weight=0)
@@ -508,17 +546,50 @@ class ButtonActionsFrame(customtkinter.CTkFrame):
             sticky="ew"
         )
 
+    def add_action_callback(self, action: dict):
+        self.parent.set_actions([action])
+
     def add_action_button_event(self):
         geometry = "500x900+1505+100"
         if self.winfo_screenwidth() <= 1600:
             geometry = "500x900+1000+100"
 
         if self.actions_top_level_window is None or not self.actions_top_level_window.winfo_exists():
-            self.actions_top_level_window = InteractionTopLevelWindow(parent=self.master)
+            self.actions_top_level_window = InteractionTopLevelWindow(
+                parent=self.master,
+                on_action_save=self.add_action_callback,
+            )
             self.actions_top_level_window.geometry(geometry)
             self.actions_top_level_window.resizable(False, False)
         else:
             self.actions_top_level_window.focus()
+
+    def close_edit_action_window(self):
+        if self.actions_edit_top_level_window is not None and self.actions_edit_top_level_window.winfo_exists():
+            self.actions_edit_top_level_window.destroy()
+            self.actions_edit_top_level_window = None
+
+    def edit_action_button_event(
+            self,
+            on_action_save: Callable[[Union[dict, None]], None],
+            action: dict
+    ):
+        geometry = "500x900+1505+100"
+        if self.winfo_screenwidth() <= 1600:
+            geometry = "500x900+1000+100"
+
+        if self.actions_edit_top_level_window is None or not self.actions_edit_top_level_window.winfo_exists():
+            self.actions_edit_top_level_window = InteractionTopLevelWindow(
+                parent=self.master,
+                action=action,
+                on_action_save=on_action_save,
+                title="Edit action"
+            )
+            self.actions_edit_top_level_window.geometry(geometry)
+            self.actions_edit_top_level_window.resizable(False, False)
+            self.actions_edit_top_level_window.protocol("WM_DELETE_WINDOW", self.close_edit_action_window)
+        else:
+            self.actions_edit_top_level_window.focus()
 
     def save_actions_cfg_button_event(self):
         actions = self.parent.actions

@@ -146,7 +146,6 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
         protocol = getattr(self.task, "module_name", self.protocol_options[0])
         self.protocol_combo.set_values(
             combo_value=protocol.upper(),
-            random_value=getattr(self.task, "random_protocol", False)
         )
 
         # COIN X
@@ -198,7 +197,6 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
         )
         self.coin_y_combobox.set_values(
             combo_value=getattr(self.task, "coin_y", self.coin_y_options[0]),
-            random_value=getattr(self.task, "random_y_coin", False)
         )
 
         # REVERSE ACTION
@@ -362,31 +360,48 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
     def protocol_coin_options(self) -> list:
         tokens = Tokens()
         protocol = self.protocol_combo.get_value()
+
         return [token.symbol.upper() for token in tokens.get_tokens_by_protocol(protocol)]
 
     @property
     def coin_x_options(self) -> list:
-        return self.protocol_coin_options
+        if self.protocol_combo.get_checkbox_value():
+            coins = Tokens().general_tokens
+            coin_symbols = [coin.symbol.upper() for coin in coins]
+        else:
+            coin_symbols = self.protocol_coin_options
+
+        return coin_symbols
 
     @property
     def coin_y_options(self) -> list:
-        protocol_coin_options = self.protocol_coin_options
-        coin_to_swap = self.coin_x_combobox.get().lower()
+        if self.protocol_combo.get_checkbox_value():
+            coins = Tokens().general_tokens
+            coin_symbols = [coin.symbol.upper() for coin in coins]
 
-        return [coin.upper() for coin in protocol_coin_options if coin.lower() != coin_to_swap.lower()]
+        else:
+            protocol_coin_options = self.protocol_coin_options
+            coin_x = self.coin_x_combobox.get().lower()
+            coin_symbols = [
+                coin.upper()
+                for coin in protocol_coin_options
+                if coin.lower() != coin_x.lower()
+            ]
+
+        return coin_symbols
 
     def update_coin_options(self, event=None):
-        coin_to_swap_options = self.coin_x_options
-        self.coin_x_combobox.configure(values=coin_to_swap_options)
+        coin_to_x_options = self.coin_x_options
+        self.coin_x_combobox.configure(values=coin_to_x_options)
 
         coin_to_receive_options = self.coin_y_options
         self.coin_y_combobox.combobox.configure(values=coin_to_receive_options)
         self.coin_y_combobox.combobox.set(coin_to_receive_options[1])
 
     def protocol_change_event(self, protocol=None):
-        coin_to_swap_options = self.coin_x_options
-        self.coin_x_combobox.configure(values=coin_to_swap_options)
-        self.coin_x_combobox.set(coin_to_swap_options[1])
+        coin_to_x_options = self.coin_x_options
+        self.coin_x_combobox.configure(values=coin_to_x_options)
+        self.coin_x_combobox.set(coin_to_x_options[1])
 
         coin_to_receive_options = self.coin_y_options
         self.coin_y_combobox.combobox.configure(values=coin_to_receive_options)

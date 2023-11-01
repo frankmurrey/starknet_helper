@@ -2,8 +2,8 @@ from contracts.base import TokenBase
 
 from utils.file_manager import FileManager
 
-from src.paths import (TempFiles,
-                       TOKENS_ABI_DIR)
+from src.paths import TempFiles
+from src.paths import TOKENS_ABI_DIR
 
 from loguru import logger
 
@@ -11,35 +11,48 @@ from loguru import logger
 class Tokens:
     def __init__(self):
         self.all_tokens_data_from_file = FileManager().read_data_from_json_file(TempFiles().TOKENS_JSON_FILE)
-        self.all_tokens = self._get_all_token_objs()
-
-    def _get_all_token_objs(self):
-        if not self.all_tokens_data_from_file:
-            raise ValueError("No tokens found, please add valid tokens in contracts/tokens.json file")
-
-        try:
-            all_token_objs = []
-            for token_data in self.all_tokens_data_from_file:
-                token_obj = TokenBase(**token_data)
-                token_abi = self._get_token_abi(symbol=token_obj.symbol)
-                if token_abi is None:
-                    continue
-
-                token_obj.abi = token_abi
-                all_token_objs.append(token_obj)
-
-            return all_token_objs
-        except Exception as e:
-            logger.error(f"Error while creating token objects: {e}")
-            exit(1)
+        self.all_tokens = [*self.default_tokens, *self.custom_tokens]
 
     def _get_token_abi(self,
                        symbol: str):
         return FileManager.read_abi_from_file(f"{TOKENS_ABI_DIR}\\{symbol.lower()}.abi")
 
+    def _get_tokens_obj(self, tokens_data: list):
+        try:
+            return [TokenBase(**token_data) for token_data in tokens_data]
+
+        except Exception as e:
+            logger.error(f"Error while creating token objects: {e}")
+            exit(1)
+
+    @property
+    def general_tokens(self) -> list:
+        symbols = ["eth", "usdt", "usdc", "dai"]
+        return [token for token in self.all_tokens if token.symbol in symbols]
+
+    @property
+    def default_tokens(self) -> list:
+        try:
+            tokens = self.all_tokens_data_from_file[0]["default"]
+            return self._get_tokens_obj(tokens)
+
+        except Exception as e:
+            logger.error(f"Error while creating token objects: {e}")
+            exit(1)
+
+    @property
+    def custom_tokens(self) -> list:
+        try:
+            tokens = self.all_tokens_data_from_file[0]["custom"]
+            return self._get_tokens_obj(tokens)
+
+        except Exception as e:
+            logger.error(f"Error while creating token objects: {e}")
+            exit(1)
+
     def update_tokens_data(self):
         self.all_tokens_data_from_file = FileManager().read_data_from_json_file(TempFiles().TOKENS_JSON_FILE)
-        self.all_tokens = self._get_all_token_objs()
+        self.all_tokens = [*self.default_tokens, *self.custom_tokens]
 
     def get_by_name(self, name_query):
         for token in self.all_tokens:

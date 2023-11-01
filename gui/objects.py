@@ -177,9 +177,9 @@ class ComboWithRandomCheckBox:
     def get_checkbox_value(self):
         return self.random_checkbox.get()
 
-    def set_values(self, combo_value: str, random_value: bool):
+    def set_values(self, combo_value: str):
 
-        if random_value:
+        if combo_value.lower() == 'random':
             self.combobox.configure(
                 state="disabled",
                 fg_color='#3f3f3f',

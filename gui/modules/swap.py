@@ -130,7 +130,6 @@ class SwapFrame(customtkinter.CTkFrame):
         protocol = getattr(self.task, "module_name", self.protocol_options[0])
         self.protocol_combo.set_values(
             combo_value=protocol.upper(),
-            random_value=getattr(self.task, "random_protocol", False)
         )
 
         # COIN TO SWAP
@@ -164,7 +163,6 @@ class SwapFrame(customtkinter.CTkFrame):
         )
         self.coin_to_receive_combo.set_values(
             combo_value=getattr(self.task, "coin_y", self.coin_to_receive_options[0]),
-            random_value=getattr(self.task, "random_y_coin", False)
         )
 
         # REVERSE ACTION CHECKBOX
@@ -308,18 +306,31 @@ class SwapFrame(customtkinter.CTkFrame):
 
     @property
     def coin_to_swap_options(self) -> list:
-        return self.protocol_coin_options
+        if self.protocol_combo.get_checkbox_value():
+            coins = Tokens().general_tokens
+            coin_symbols = [coin.symbol.upper() for coin in coins]
+        else:
+            coin_symbols = self.protocol_coin_options
+
+        return coin_symbols
 
     @property
     def coin_to_receive_options(self) -> list:
-        protocol_coin_options = self.protocol_coin_options
-        coin_to_swap = self.coin_to_swap_combo.get().lower()
 
-        return [
-            coin.upper()
-            for coin in protocol_coin_options
-            if coin.lower() != coin_to_swap.lower()
-        ]
+        if self.protocol_combo.get_checkbox_value():
+            coins = Tokens().general_tokens
+            coin_symbols = [coin.symbol.upper() for coin in coins]
+
+        else:
+            protocol_coin_options = self.protocol_coin_options
+            coin_to_swap = self.coin_to_swap_combo.get().lower()
+            coin_symbols = [
+                coin.upper()
+                for coin in protocol_coin_options
+                if coin.lower() != coin_to_swap.lower()
+            ]
+
+        return coin_symbols
 
     def update_coin_options(self, event=None):
         coin_to_swap_options = self.coin_to_swap_options

@@ -1,5 +1,8 @@
 from typing import Union
 
+import httpx
+import aiohttp
+
 from loguru import logger
 from starknet_py.net.full_node_client import FullNodeClient
 from starknet_py.net.http_client import HttpMethod
@@ -9,9 +12,10 @@ class GeckoPricer:
     def __init__(self, client: FullNodeClient):
         self.client = client
 
-    async def get_simple_price_of_token_pair(self,
-                                             x_token_id: str,
-                                             y_token_id: str) -> Union[dict, None]:
+    async def get_simple_price_of_token_pair(
+            self,
+            x_token_id: str,
+            y_token_id: str) -> Union[dict, None]:
         try:
             url = f"https://api.coingecko.com/api/v3/simple/price"
             params = {
@@ -32,8 +36,56 @@ class GeckoPricer:
             if x_token_price is None or y_token_price is None:
                 return None
 
-            return {x_token_id: x_token_price,
-                    y_token_id: y_token_price}
+            return {
+                x_token_id: x_token_price,
+                y_token_id: y_token_price
+            }
+
+        except Exception as e:
+            logger.error(e)
+            return None
+
+    @staticmethod
+    def get_simple_price_of_token_sync(
+            x_token_id: str,
+    ) -> Union[None, int]:
+        try:
+            url = f"https://api.coingecko.com/api/v3/simple/price"
+            params = {
+                "ids": f"{x_token_id}",
+                "vs_currencies": "usd"
+            }
+
+            response = httpx.get(
+                url=url,
+                params=params,
+            )
+
+            x_token_price = response.json().get(x_token_id).get("usd")
+
+            if x_token_price is None:
+                return None
+
+            return x_token_price
+
+        except Exception as e:
+            logger.error(e)
+            return None
+
+    @staticmethod
+    async def get_simple_price_of_token_async(
+            x_token_id: str,
+    ) -> Union[None, int]:
+        try:
+            url = f"https://api.coingecko.com/api/v3/simple/price"
+            params = {
+                "ids": f"{x_token_id}",
+                "vs_currencies": "usd"
+            }
+
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url=url, json=params) as response:
+                    return await response.json()
 
         except Exception as e:
             logger.error(e)

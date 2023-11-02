@@ -1,9 +1,13 @@
 import customtkinter
 import webbrowser
+import asyncio
+from threading import Thread
 
 from src import paths
+from src.gecko_pricer import GeckoPricer
 from gui.main_window.tools_window import ToolsWindow
 from gui.main_window.settings_window import SettingsWindow
+from utils.gas_price import GasPrice, get_eth_mainnet_gas_price
 
 from PIL import Image
 
@@ -12,7 +16,8 @@ class SidebarFrame(customtkinter.CTkFrame):
     def __init__(
             self,
             master,
-            **kwargs):
+            **kwargs
+    ):
         super().__init__(master, **kwargs)
         self.master = master
 
@@ -20,7 +25,7 @@ class SidebarFrame(customtkinter.CTkFrame):
         self.settings_window = None
 
         self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure((0, 1, 2, 3, 4, 5, 6, 7, 8), weight=0)
+        self.grid_rowconfigure((0, 1, 2, 4, 5, 6, 7, 8), weight=0)
         self.grid_rowconfigure(9, weight=1)
         self.grid(
             row=0,
@@ -74,6 +79,43 @@ class SidebarFrame(customtkinter.CTkFrame):
             column=0,
             padx=25,
             pady=(0, 20),
+            sticky="w"
+        )
+
+        self.price_frame = PriceFrame(
+            self,
+            grid={
+                "row": 3,
+                "column": 0,
+                "padx": 20,
+                "pady": 0,
+                "sticky": "w"
+            },
+        )
+
+        # REFRESH BUTTON
+        refresh_image = customtkinter.CTkImage(
+            light_image=Image.open(f"{paths.GUI_DIR}/images/refresh_button.png"),
+            dark_image=Image.open(f"{paths.GUI_DIR}/images/refresh_button.png"),
+            size=(20, 20)
+        )
+        self.refresh_button = customtkinter.CTkButton(
+            self,
+            image=refresh_image,
+            command=self.price_frame.set_gas_data,
+            hover=False,
+            text="- refresh data",
+            bg_color='transparent',
+            fg_color='transparent',
+            width=5,
+            text_color='gray58',
+
+        )
+        self.refresh_button.grid(
+            row=4,
+            column=0,
+            padx=(18, 0),
+            pady=(0, 2),
             sticky="w"
         )
 
@@ -167,4 +209,128 @@ class SidebarFrame(customtkinter.CTkFrame):
             self.settings_window.focus()
 
 
+class PriceFrame(customtkinter.CTkFrame):
+    def __init__(
+            self,
+            master: any,
+            grid: dict,
+            **kwargs
+    ):
+        super().__init__(master, **kwargs)
+
+        self.master = master
+
+        self.grid(**grid)
+        self.grid_columnconfigure((0, 1,), weight=1, uniform="uniform")
+        self.grid_rowconfigure((0, 1, 2, 3), weight=0)
+
+        # STARK GAS
+        self.stark_gas_price_label = customtkinter.CTkLabel(
+            self,
+            text="Stark Gas:",
+            font=customtkinter.CTkFont(size=12, weight="bold"),
+        )
+        self.stark_gas_price_label.grid(
+            row=0,
+            column=0,
+            padx=(10, 0),
+            pady=2,
+            sticky="w"
+        )
+
+        self.stark_gas_price_value_label = customtkinter.CTkLabel(
+            self,
+            text="N/A",
+            font=customtkinter.CTkFont(size=12, weight="bold"),
+        )
+        self.stark_gas_price_value_label.grid(
+            row=0,
+            column=1,
+            padx=(10, 0),
+            pady=(0, 2),
+            sticky="w"
+        )
+
+        # L1 ETH GAS
+        self.l1_eth_gas_price_label = customtkinter.CTkLabel(
+            self,
+            text="ETH Gas:",
+            font=customtkinter.CTkFont(size=12, weight="bold"),
+        )
+        self.l1_eth_gas_price_label.grid(
+            row=1,
+            column=0,
+            padx=(10, 0),
+            pady=2,
+            sticky="w"
+        )
+
+        self.l1_eth_gas_price_value_label = customtkinter.CTkLabel(
+            self,
+            text="N/A",
+            font=customtkinter.CTkFont(size=12, weight="bold"),
+        )
+
+        self.l1_eth_gas_price_value_label.grid(
+            row=1,
+            column=1,
+            padx=(10, 0),
+            pady=(0, 2),
+            sticky="w"
+        )
+
+        # ETH PRICE
+        self.eth_price_label = customtkinter.CTkLabel(
+            self,
+            text="ETH Price:",
+            font=customtkinter.CTkFont(size=12, weight="bold"),
+        )
+        self.eth_price_label.grid(
+            row=2,
+            column=0,
+            padx=(10, 0),
+            pady=2,
+            sticky="w"
+        )
+
+        self.eth_price_value_label = customtkinter.CTkLabel(
+            self,
+            text="N/A",
+            font=customtkinter.CTkFont(size=12, weight="bold"),
+        )
+        self.eth_price_value_label.grid(
+            row=2,
+            column=1,
+            padx=(10, 0),
+            pady=(0, 2),
+            sticky="w"
+        )
+        self.set_gas_data()
+
+    def fetch_gas_data(self) -> tuple[str, str, str]:
+        stark_gp = GasPrice(block_number='pending')
+        stark_gas_price = asyncio.run(stark_gp.get_stark_block_gas_price())
+        if stark_gas_price is None:
+            stark_gas_price = "N/A"
+        else:
+            stark_gas_price = round(stark_gas_price / 10 ** 9, 2)
+
+        l1_gas_price = get_eth_mainnet_gas_price('https://rpc.ankr.com/eth')
+        if l1_gas_price is None:
+            l1_gas_price = "N/A"
+
+        eth_price = GeckoPricer.get_simple_price_of_token_sync("ethereum")
+        if eth_price is None:
+            eth_price = "N/A"
+
+        return str(stark_gas_price), str(l1_gas_price), str(eth_price)
+
+    def set_gas_data(self):
+        def _():
+            stark_gas_price, l1_gas_price, eth_price = self.fetch_gas_data()
+            self.stark_gas_price_value_label.configure(text=stark_gas_price)
+            self.l1_eth_gas_price_value_label.configure(text=l1_gas_price)
+            self.eth_price_value_label.configure(text=eth_price)
+
+        Thread(target=_).start()
 

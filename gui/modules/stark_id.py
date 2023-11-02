@@ -35,7 +35,7 @@ class StarkIdMintTab:
             "sticky": "ew"
         }
 
-        text = f"- Module mint's StarkID with random unused ID.\n\n"
+        text = f"- Module mint's free StarkID with random unused ID.\n\n"
 
         self.info_textbox = CTkCustomTextBox(
             master=self.tabview.tab(tab_name),

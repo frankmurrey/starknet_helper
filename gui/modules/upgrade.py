@@ -35,7 +35,8 @@ class UpgradeTab:
             "sticky": "ew"
         }
 
-        text = f"- Wallets will be upgraded from Cairo 0 → Cairo 1" \
+        text = (f"- Wallets will be upgraded from Cairo 0 → Cairo 1\n\n"
+                f"- P.S Braavos wallets doesn't support upgrade yet") \
 
         self.info_textbox = CTkCustomTextBox(
             master=self.tabview.tab(tab_name),

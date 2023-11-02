@@ -133,6 +133,10 @@ class WalletActionFrame(customtkinter.CTkFrame):
             pass
 
     def delete_button_event(self):
+        if self.master.master.is_running:
+            tkinter.messagebox.showerror("Error", "You can't delete action while it's running")
+            return
+
         try:
             action_frame = self.master.master
             actions = action_frame.actions
@@ -152,6 +156,10 @@ class WalletActionFrame(customtkinter.CTkFrame):
         self.master.master.edit_action(action)
 
     def edit_button_event(self):
+        if self.master.master.is_running:
+            tkinter.messagebox.showerror("Error", "You can't edit action while it's running")
+            return
+
         action = {
             "task_config": self.task,
             "repeats": self.repeats,

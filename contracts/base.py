@@ -2,12 +2,14 @@ from utils.orbiter_utils import get_available_tokens_for_chain
 
 
 class TokenBase:
-    def __init__(self,
-                 symbol: str,
-                 contract_address: str,
-                 coin_gecko_id: str = None,
-                 available_protocols: list = None,
-                 abi: str = None):
+    def __init__(
+            self,
+            symbol: str,
+            contract_address: str,
+            coin_gecko_id: str = None,
+            available_protocols: list = None,
+            abi: str = None
+    ):
         if available_protocols is None:
             available_protocols = []
 

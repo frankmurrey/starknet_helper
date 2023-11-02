@@ -38,8 +38,9 @@ class ActionsFrame(customtkinter.CTkFrame):
         self.app_config = Storage().app_config
 
         self.grid_rowconfigure((0, 1, 3, 4), weight=1)
-
         self.grid_columnconfigure(1, weight=0)
+
+        self.is_running = False
 
         self.action_storage = ActionStorage()
         self.actions: List[dict] = []
@@ -263,6 +264,9 @@ class ActionsFrame(customtkinter.CTkFrame):
         self.current_wallet_action_items = []
         self.redraw_current_actions_frame()
 
+    def set_running_state(self, is_running: bool):
+        self.is_running = is_running
+
     def on_wallet_started(self, started_wallet: "WalletData"):
         wallet_item = self.wallets_table.get_wallet_item_by_wallet_id(wallet_id=started_wallet.wallet_id)
         wallet_item.set_wallet_active()
@@ -330,6 +334,8 @@ class ActionsFrame(customtkinter.CTkFrame):
             amount = self.app_config.wallets_amount_to_execute_in_test_mode
             wallets = wallets[:amount]
 
+        self.set_running_state(True)
+
         tasks_executor.process(
             wallets=wallets,
             tasks=self.tasks,
@@ -339,6 +345,7 @@ class ActionsFrame(customtkinter.CTkFrame):
 
     def on_stop_button_click(self):
         logger.critical("Stopped tasks processing")
+        self.set_running_state(False)
         tasks_executor.stop()
 
 

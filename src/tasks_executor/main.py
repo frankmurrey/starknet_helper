@@ -42,8 +42,6 @@ class TasksExecutor:
             is_last_task: is current task the last
         """
 
-        print("App config: ", Storage().app_config)
-
         if wallet_index == 0 and task.test_mode is False:
             ActionStorage().reset_all_actions()
             ActionStorage().create_and_set_new_logs_dir()

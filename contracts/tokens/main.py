@@ -13,8 +13,10 @@ class Tokens:
         self.all_tokens_data_from_file = FileManager().read_data_from_json_file(TempFiles().TOKENS_JSON_FILE)
         self.all_tokens = [*self.default_tokens, *self.custom_tokens]
 
-    def _get_token_abi(self,
-                       symbol: str):
+    def _get_token_abi(
+            self,
+            symbol: str
+    ):
         return FileManager.read_abi_from_file(f"{TOKENS_ABI_DIR}\\{symbol.lower()}.abi")
 
     def _get_tokens_obj(self, tokens_data: list):
@@ -33,22 +35,36 @@ class Tokens:
     @property
     def default_tokens(self) -> list:
         try:
+            all_obj = []
             tokens = self.all_tokens_data_from_file[0]["default"]
-            return self._get_tokens_obj(tokens)
+            tokens_obj = self._get_tokens_obj(tokens)
+            for token_obj in tokens_obj:
+                token_abi = self._get_token_abi(symbol=token_obj.symbol)
+                token_obj.abi = token_abi
+                all_obj.append(token_obj)
+
+            return all_obj
 
         except Exception as e:
-            logger.error(f"Error while creating token objects: {e}")
+            logger.error(f"Error while creating default token objects: {e}")
             exit(1)
 
     @property
     def custom_tokens(self) -> list:
         try:
+            all_obj = []
             tokens = self.all_tokens_data_from_file[0]["custom"]
-            return self._get_tokens_obj(tokens)
+            tokens_obj = self._get_tokens_obj(tokens)
+            for token_obj in tokens_obj:
+                token_abi = self._get_token_abi(symbol=token_obj.symbol)
+                token_obj.abi = token_abi
+                all_obj.append(token_obj)
+
+            return all_obj
 
         except Exception as e:
-            logger.error(f"Error while creating token objects: {e}")
-            exit(1)
+                logger.error(f"Error while creating custom token objects: {e}")
+                exit(1)
 
     def update_tokens_data(self):
         self.all_tokens_data_from_file = FileManager().read_data_from_json_file(TempFiles().TOKENS_JSON_FILE)

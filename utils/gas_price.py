@@ -1,10 +1,12 @@
+import asyncio
 import time
 from typing import Union
 
 import httpx
+import aiohttp
+from aiohttp.client import ClientSession
 from starknet_py.net.gateway_client import GatewayClient
 from loguru import logger
-from aiohttp.client import ClientSession
 
 import config
 
@@ -24,10 +26,23 @@ def get_eth_mainnet_gas_price(rpc_url: str):
         if resp.status_code != 200:
             return None
 
-        return int(resp.json()['result'], 16) / 1e9
+        gas_price = int(resp.json()['result'], 16) / 1e9
+        return round(gas_price, 2)
 
     except Exception as e:
         return None
+
+
+async def get_eth_mainnet_gas_price_async(rpc_url: str):
+    async with aiohttp.ClientSession() as session:
+        payload = {
+            "jsonrpc": "2.0",
+            "method": "eth_gasPrice",
+            "params": [],
+            "id": "1"
+        }
+        async with session.post(url=rpc_url, json=payload) as response:
+            return await response.json()
 
 
 class GasPrice:
@@ -103,3 +118,8 @@ class GasPrice:
                     return False, current_gas_price
 
             time.sleep(delay)
+
+
+if __name__ == '__main__':
+    gas = asyncio.run(get_eth_mainnet_gas_price_async('https://rpc.ankr.com/eth'))
+    print(gas)

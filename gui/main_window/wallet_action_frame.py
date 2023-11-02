@@ -4,8 +4,6 @@ from typing import TYPE_CHECKING, Union
 import customtkinter
 from PIL import Image
 
-from gui.main_window.interactions_top_level_window import InteractionTopLevelWindow
-
 from src.schemas.tasks.base.swap import TaskBase
 from src.paths import GUI_DIR
 from src import enums
@@ -74,7 +72,6 @@ class WalletActionFrame(customtkinter.CTkFrame):
         self.edit_button = customtkinter.CTkButton(
             self,
             text="",
-            font=customtkinter.CTkFont(size=12, weight="bold"),
             width=5,
             bg_color='transparent',
             fg_color='transparent',
@@ -94,7 +91,6 @@ class WalletActionFrame(customtkinter.CTkFrame):
         self.delete_button = customtkinter.CTkButton(
             self,
             text="",
-            font=customtkinter.CTkFont(size=12, weight="bold"),
             width=5,
             bg_color='transparent',
             fg_color='transparent',

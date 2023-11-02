@@ -1,11 +1,14 @@
 import tkinter.messagebox
 from tkinter import Variable
-from typing import Callable, Union
+from typing import Callable, Union, TYPE_CHECKING
 
 from gui import modules
 import customtkinter
 
 from src import enums
+
+if TYPE_CHECKING:
+    from gui.wallet_right_window.actions_frame import ActionsFrame
 
 
 class Tab:
@@ -71,7 +74,7 @@ class InteractionTopLevelWindow(customtkinter.CTkToplevel):
     ):
         super().__init__()
 
-        self.master = parent
+        self.master: ActionsFrame = parent
         self.action = action
         self.task = action["task_config"] if action else None
         self.on_action_save = on_action_save
@@ -187,6 +190,10 @@ class InteractionTopLevelWindow(customtkinter.CTkToplevel):
             return None
 
     def confirm_button_event(self):
+        if self.master.is_running:
+            tkinter.messagebox.showerror("Error", "You can't edit action while it's running")
+            return
+
         current_tab = self.current_tab
         if current_tab is None:
             return

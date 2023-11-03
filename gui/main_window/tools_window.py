@@ -1,13 +1,12 @@
 import tkinter
 from tkinter import filedialog
 from tkinter import messagebox
-from typing import Callable
 
 import customtkinter
 from loguru import logger
 
 import config
-from gui.main_window.interactions_top_level_window import FloatSpinbox
+from gui.objects import FloatSpinbox
 from utils.key_manager.generator.generator import Generator
 from utils.xlsx import write_generated_wallets_to_xlsx
 
@@ -197,8 +196,10 @@ class KeyExtractorFrame(customtkinter.CTkFrame):
         private_key_type = enums.PrivateKeyType(self.private_key_type_radio_var.get())
 
         if not self.uploaded_mnemonics:
-            messagebox.showerror(title="Error",
-                                 message="No mnemonics uploaded")
+            messagebox.showerror(
+                title="Error",
+                message="No mnemonics uploaded"
+            )
             return
 
         if private_key_type == enums.PrivateKeyType.argent.value:

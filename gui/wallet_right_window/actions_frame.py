@@ -174,6 +174,7 @@ class ActionsFrame(customtkinter.CTkFrame):
             for action_index, action_data in enumerate(self.actions):
                 if action_data["task_config"].task_id == action["task_config"].task_id:
                     self.actions[action_index] = action
+                    self.action_items.pop(action_index)
                     break
 
             self.redraw_current_actions_frame()
@@ -287,10 +288,12 @@ class ActionsFrame(customtkinter.CTkFrame):
             action_item.set_task_failed()
 
     def on_wallet_completed(self, completed_wallet: "WalletData"):
-        wallet_item = self.wallets_table.get_wallet_item_by_wallet_id(wallet_id=completed_wallet.wallet_id)
+        wallet_item =  self.wallets_table.get_wallet_item_by_wallet_id(wallet_id=completed_wallet.wallet_id)
         wallet_item.set_wallet_completed()
         if not self.current_wallet_action_items:
             return
+
+        self.set_running_state(False)
 
         for action_item in self.current_wallet_action_items:
             action_item.set_task_empty()

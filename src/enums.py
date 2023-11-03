@@ -22,7 +22,7 @@ class ModuleName(str, Enum):
     JEDI_SWAP = "jediswap"
     MY_SWAP = "myswap"
     DMAIL = "dmail"
-    IDENTITY = "identity"
+    IDENTITY = "starkid"
     K10SWAP = "k10swap"
     SITHSWAP = "sithswap"
     AVNU = "avnu"
@@ -35,6 +35,7 @@ class ModuleName(str, Enum):
     FIBROUS = "fibrous"
     ORBITER = "orbiter"
     STARK_BRIDGE = "starkgate"
+    STARK_VERSE = "starkverse"
 
 
 class TabName(str, Enum):
@@ -43,7 +44,7 @@ class TabName(str, Enum):
     REMOVE_LIQUIDITY = "Remove Liquidity"
     SUPPLY_LENDING = "Supply Lending"
     WITHDRAW_LENDING = "Withdraw Lending"
-    STARK_ID_MINT = "Stark ID Mint"
+    MINT = "Mint"
     DMAIL_SEND_MAIL = "Dmail Send Mail"
     DEPLOY = "Deploy"
     UPGRADE = "Upgrade"

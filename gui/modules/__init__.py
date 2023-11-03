@@ -3,7 +3,7 @@ from .add_liquidity import AddLiquidityTab
 from .remove_liquidity import RemoveLiquidityTab
 from .supply import SupplyLendingTab
 from .withdraw import WithdrawLendingTab
-from .stark_id import StarkIdMintTab
+from .mint import MintTab
 from .dmail import DmailSendMailTab
 from .deploy import DeployTab
 from .upgrade import UpgradeTab

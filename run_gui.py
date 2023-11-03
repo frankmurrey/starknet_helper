@@ -11,10 +11,10 @@ if __name__ == '__main__':
 
     if not args.no_check_req:
         missed_requirements = get_missed_requirements()
-        logger.error(f"Missing requirements: {', '.join(missed_requirements)}")
-        logger.error("Please run \"pip install -r requirements.txt\"")
 
         if len(missed_requirements) > 0:
+            logger.error(f"Missing requirements: {', '.join(missed_requirements)}")
+            logger.error("Please run \"pip install -r requirements.txt\"")
             exit(1)
 
     if is_windows() and not mingw_installed():

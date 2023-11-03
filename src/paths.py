@@ -79,7 +79,6 @@ class StarkBridgeDir:
 
 
 class TempFiles:
-    def __init__(self):
-        self.TOKENS_JSON_FILE = os.path.join(CONTRACTS_DIR, "tokens.json")
-        self.APP_CONFIG_JSON_FILE = os.path.join(MAIN_DIR, "app_config.json")
-        self.LOGS_DIR = os.path.join(MAIN_DIR, "logs")
+    TOKENS_JSON_FILE = os.path.join(CONTRACTS_DIR, "tokens.json")
+    APP_CONFIG_JSON_FILE = os.path.join(MAIN_DIR, "app_config.json")
+    LOGS_DIR = os.path.join(MAIN_DIR, "logs")

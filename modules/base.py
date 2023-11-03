@@ -11,7 +11,6 @@ from starknet_py.net.client_errors import ClientError
 from starknet_py.net.client_models import Call, TransactionReceipt
 from starknet_py.hash.selector import get_selector_from_name
 from starknet_py.net.http_client import HttpMethod
-from starknet_py.net.gateway_client import GatewayClient
 from loguru import logger
 
 from utils.key_manager.key_manager import get_key_pair_from_pk

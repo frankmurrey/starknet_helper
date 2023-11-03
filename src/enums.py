@@ -36,6 +36,7 @@ class ModuleName(str, Enum):
     ORBITER = "orbiter"
     STARK_BRIDGE = "starkgate"
     STARK_VERSE = "starkverse"
+    STARKEX = "starkex"
 
 
 class TabName(str, Enum):

@@ -29,6 +29,7 @@ from .orbiter import OrbiterBridgeTask
 from .stark_bridge import StarkBridgeTask
 from .transfer import TransferTask
 from .starkverse import StarkVersePublicMintTask
+from .starkex import StarkExSwapTask
 
 from .random_task.swap import RandomSwapTask
 from .random_task.liquidity import RandomAddLiquidityTask

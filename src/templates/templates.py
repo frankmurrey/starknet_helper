@@ -51,6 +51,9 @@ class Templates:
 
             return non_matching_files
 
+        except KeyError:
+            self.create_tokens_json_file(file_path=paths.TempFiles().TOKENS_JSON_FILE)
+
         except Exception as e:
             logger.error(f'Error while comparing temp files with templates: {e}')
             exit(1)

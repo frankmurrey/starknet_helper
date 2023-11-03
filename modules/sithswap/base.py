@@ -12,17 +12,21 @@ from modules.sithswap.math import get_amount_in_from_reserves
 
 if TYPE_CHECKING:
     from src.schemas.tasks.sithswap import SithSwapTask
+    from src.schemas.tasks.sithswap import SithSwapAddLiquidityTask
+    from src.schemas.tasks.sithswap import SithSwapRemoveLiquidityTask
 
 
 class SithBase(ModuleBase):
     stable_coin_symbols: list = ['USDC', 'USDT', 'DAI']
 
-    task: 'SithSwapTask'
-
     def __init__(
             self,
             account,
-            task
+            task: Union[
+                'SithSwapTask',
+                'SithSwapAddLiquidityTask',
+                'SithSwapRemoveLiquidityTask'
+            ]
     ):
 
         super().__init__(
@@ -38,8 +42,6 @@ class SithBase(ModuleBase):
             abi=self.sith_swap_contracts.router_abi,
             provider=account
         )
-
-        self.tokens = Tokens()
 
     def is_pool_stable(
             self,

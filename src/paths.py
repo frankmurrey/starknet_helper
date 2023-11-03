@@ -83,6 +83,11 @@ class StarkVerseDir:
     ROUTER_ABI_FILE = os.path.join(_MAIN_DIR, "router.abi")
 
 
+class StarkExDir:
+    _MAIN_DIR = os.path.join(CONTRACTS_DIR, "starkex")
+    ROUTER_ABI_FILE = os.path.join(_MAIN_DIR, "router.abi")
+
+
 class TempFiles:
     def __init__(self):
         self.TOKENS_JSON_FILE = os.path.join(CONTRACTS_DIR, "tokens.json")

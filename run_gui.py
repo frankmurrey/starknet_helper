@@ -1,13 +1,26 @@
-from gui.main_window.main import run_gui
+from loguru import logger
+
+from utils.args import get_args
 from utils.system import is_windows
 from utils.system import mingw_installed
-from loguru import logger
+from utils.system import get_missed_requirements
 
 
 if __name__ == '__main__':
+    args = get_args()
+
+    if not args.no_check_req:
+        missed_requirements = get_missed_requirements()
+        logger.error(f"Missing requirements: {', '.join(missed_requirements)}")
+        logger.error("Please run \"pip install -r requirements.txt\"")
+
+        if len(missed_requirements) > 0:
+            exit(1)
+
     if is_windows() and not mingw_installed():
         logger.error("MinGW is not installed, please install it and try again")
         logger.error("https://starknetpy.readthedocs.io/en/latest/installation.html#windows")
         exit(1)
 
+    from gui.main_window.main import run_gui
     run_gui()

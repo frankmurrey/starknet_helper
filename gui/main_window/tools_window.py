@@ -1,13 +1,12 @@
 import tkinter
 from tkinter import filedialog
 from tkinter import messagebox
-from typing import Callable
 
 import customtkinter
 from loguru import logger
 
 import config
-from gui.main_window.interactions_top_level_window import FloatSpinbox
+from gui.objects import FloatSpinbox
 from utils.key_manager.generator.generator import Generator
 from utils.xlsx import write_generated_wallets_to_xlsx
 

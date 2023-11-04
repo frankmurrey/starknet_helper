@@ -20,6 +20,7 @@ LIQUIDITY_TASKS = {
     enums.ModuleName.SITHSWAP: tasks.SithSwapAddLiquidityTask,
     enums.ModuleName.MY_SWAP: tasks.MySwapAddLiquidityTask,
     enums.ModuleName.JEDI_SWAP: tasks.JediSwapAddLiquidityTask,
+    enums.ModuleName.K10SWAP: tasks.K10SwapAddLiquidityTask,
 }
 
 
@@ -350,11 +351,7 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
 
     @property
     def protocol_options(self) -> list:
-        return [
-            enums.ModuleName.SITHSWAP.upper(),
-            enums.ModuleName.MY_SWAP.upper(),
-            enums.ModuleName.JEDI_SWAP.upper()
-        ]
+        return [name.upper() for name in LIQUIDITY_TASKS.keys()]
 
     @property
     def protocol_coin_options(self) -> list:

@@ -5,6 +5,7 @@ from loguru import logger
 from starknet_py.net.client_errors import ClientError
 from starknet_py.net.account.account import Account
 
+from contracts.base import TokenBase
 from modules.base import LiquidityModuleBase
 from modules.sithswap.base import SithBase
 from modules.sithswap.math import calc_output_burn_liquidity
@@ -33,30 +34,42 @@ class SithSwapAddLiquidity(SithBase, LiquidityModuleBase):
 
         self.task = task
 
-    async def get_amounts_out_data(self) -> Union[dict, None]:
+    async def get_amounts_out_data(
+            self,
+            coin_x: TokenBase,
+            coin_y: TokenBase,
+            amount_in_wei: int,
+    ) -> Union[int, None]:
         """
         Get amounts out data for the add liquidity transaction.
         :return:
         """
-        amount_out_x_wei = await self.calculate_amount_out_from_balance(coin_x=self.coin_x)
-        if amount_out_x_wei is None:
-            logger.error(f"Can't get amount out for {self.coin_x.symbol.upper()}")
-            return None
 
-        amount_out_y_data: dict = await self.get_amount_in_and_pool_type(
-            amount_in_wei=amount_out_x_wei,
-            coin_x=self.coin_x,
-            coin_y=self.coin_y,
+        amount_0_data: dict = await self.get_amount_in_and_pool_type(
+            amount_in_wei=amount_in_wei,
+            coin_x=coin_x,
+            coin_y=coin_y,
             router_contract=self.router_contract
         )
 
-        if amount_out_y_data is None:
-            logger.error(f"Can't get amount in for {self.coin_x.symbol.upper()} {self.coin_y.symbol.upper()}")
+        if amount_0_data is None:
+            logger.error(f"Can't get amount in for {coin_x.symbol.upper()} {coin_y.symbol.upper()}")
             return None
 
-        amount_out_y_wei = amount_out_y_data['amount_in_wei']
-        stable = amount_out_y_data['stable']
+        amount_0_wei = amount_0_data['amount_in_wei']
 
+        return amount_0_wei
+
+    async def build_txn_payload_calls(self) -> Union[TransactionPayloadData, None]:
+        """
+        Build the transaction payload data for the add liquidity transaction.
+        :return:
+        """
+
+        stable = self.is_pool_stable(
+            coin_x_symbol=self.coin_x.symbol,
+            coin_y_symbol=self.coin_y.symbol
+        )
         pool_addr = await self.get_pool_for_pair(
             stable=stable,
             coin_x_address=self.coin_x.contract_address,
@@ -67,49 +80,84 @@ class SithSwapAddLiquidity(SithBase, LiquidityModuleBase):
             logger.error(f"Can't get pool for {self.coin_x.symbol.upper()} {self.coin_y.symbol.upper()}")
             return None
 
-        return {
-            self.i16(self.coin_x.contract_address): amount_out_x_wei,
-            self.i16(self.coin_y.contract_address): amount_out_y_wei,
-            'amount_x_decimals': amount_out_x_wei / 10 ** self.token_x_decimals,
-            'amount_y_decimals': amount_out_y_wei / 10 ** self.token_x_decimals,
-            'stable': stable,
-            'pool_addr': pool_addr
-        }
-
-    async def build_txn_payload_calls(self) -> Union[TransactionPayloadData, None]:
-        """
-        Build the transaction payload data for the add liquidity transaction.
-        :return:
-        """
-        amounts_out_data: dict = await self.get_amounts_out_data()
-        if amounts_out_data is None:
-            return None
-
         sorted_pair: list = await self.get_sorted_tokens(
-            pool_addr=amounts_out_data['pool_addr'],
-            pool_abi=self.sith_swap_contracts.pool_abi)
+            pool_addr=hex(pool_addr),
+            pool_abi=self.sith_swap_contracts.pool_abi
+        )
         if sorted_pair is None:
             return None
 
         token0_addr: int = sorted_pair[0]
         token1_addr: int = sorted_pair[1]
 
-        amount_out_0_wei: int = amounts_out_data[token0_addr]
-        amount_out_0_wei_with_slippage: int = int(amount_out_0_wei - (amount_out_0_wei * self.task.slippage / 100))
+        if token0_addr == self.i16(self.coin_x.contract_address):
 
-        amount_out_1_wei: int = amounts_out_data[token1_addr]
-        amount_out_1_wei_with_slippage: int = int(amount_out_1_wei - (amount_out_1_wei * self.task.slippage / 100))
+            amount0_wei = await self.calculate_amount_out_from_balance(coin_x=self.coin_x)
+            if amount0_wei is None:
+                return None
+
+            if amount0_wei > self.initial_balance_x_wei:
+                logger.error(
+                    f"Amount out {self.coin_x.symbol.upper()} ({amount0_wei / 10 ** self.token_x_decimals}) "
+                    f"is greater than actual balance: {self.initial_balance_x_wei / 10 ** self.token_x_decimals}"
+                )
+                return None
+
+            amount1_wei = await self.get_amounts_out_data(
+                coin_x=self.coin_x,
+                coin_y=self.coin_y,
+                amount_in_wei=amount0_wei
+            )
+            if amount1_wei is None:
+                logger.error(f"Can't get amount in for {self.coin_x.symbol.upper()} {self.coin_y.symbol.upper()}")
+                return None
+
+            if amount1_wei > self.initial_balance_y_wei:
+                logger.error(
+                    f"Amount out {self.coin_y.symbol.upper()} ({amount1_wei / 10 ** self.token_y_decimals}) "
+                    f"is greater than actual balance: {self.initial_balance_y_wei / 10 ** self.token_y_decimals}"
+                )
+                return None
+
+        else:
+            amount1_wei = await self.calculate_amount_out_from_balance(coin_x=self.coin_x)
+            if amount1_wei is None:
+                logger.error(f'Failed to calculate amount out for {self.coin_x.symbol.upper()}')
+                return None
+
+            if amount1_wei > self.initial_balance_x_wei:
+                logger.error(
+                    f"Amount out {self.coin_x.symbol.upper()} ({amount1_wei / 10 ** self.token_x_decimals}) "
+                    f"is greater than actual balance: {self.initial_balance_x_wei / 10 ** self.token_x_decimals}"
+                )
+                return None
+
+            amount0_wei = await self.get_amounts_out_data(
+                coin_x=self.coin_x,
+                coin_y=self.coin_y,
+                amount_in_wei=amount1_wei
+            )
+            if amount0_wei is None:
+                logger.error(f'Failed to calculate amount in for {self.coin_y.symbol.upper()}')
+                return None
+
+            self.coin_x, self.coin_y = self.coin_y, self.coin_x
+            self.token_x_decimals, self.token_y_decimals = self.token_y_decimals, self.token_x_decimals
+
+        amount_out_0_wei_with_slippage: int = int(amount0_wei - (amount0_wei * self.task.slippage / 100))
+
+        amount_out_1_wei_with_slippage: int = int(amount1_wei - (amount1_wei * self.task.slippage / 100))
 
         approve_call_0 = self.build_token_approve_call(
             token_addr=hex(token0_addr),
             spender=self.sith_swap_contracts.router_address,
-            amount_wei=amount_out_0_wei
+            amount_wei=amount0_wei
         )
 
         approve_call_1 = self.build_token_approve_call(
             token_addr=hex(token1_addr),
             spender=self.sith_swap_contracts.router_address,
-            amount_wei=amount_out_1_wei
+            amount_wei=amount1_wei
         )
 
         deadline: int = int(time.time() + 3600)
@@ -120,10 +168,10 @@ class SithSwapAddLiquidity(SithBase, LiquidityModuleBase):
             call_data=[
                 token0_addr,
                 token1_addr,
-                amounts_out_data['stable'],
-                amount_out_0_wei,
+                stable,
+                amount0_wei,
                 0,
-                amount_out_1_wei,
+                amount1_wei,
                 0,
                 amount_out_0_wei_with_slippage,
                 0,
@@ -138,8 +186,8 @@ class SithSwapAddLiquidity(SithBase, LiquidityModuleBase):
 
         return TransactionPayloadData(
             calls=calls,
-            amount_x_decimals=amounts_out_data['amount_x_decimals'],
-            amount_y_decimals=amounts_out_data['amount_y_decimals']
+            amount_x_decimals=amount0_wei / 10 ** self.token_x_decimals,
+            amount_y_decimals=amount1_wei / 10 ** self.token_y_decimals
         )
 
     async def send_txn(self) -> ModuleExecutionResult:

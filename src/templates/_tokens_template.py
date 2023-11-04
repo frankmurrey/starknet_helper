@@ -9,7 +9,8 @@ DEFAULT_TOKENS_DATA = [
             "avnu",
             "k10swap",
             "zklend",
-            "fibrous"
+            "fibrous",
+            "starkex"
         ],
         "coin_gecko_id": "ethereum"
     },
@@ -23,7 +24,8 @@ DEFAULT_TOKENS_DATA = [
             "avnu",
             "k10swap",
             "zklend",
-            "fibrous"
+            "fibrous",
+            "starkex"
         ],
         "coin_gecko_id": "tether"
     },
@@ -37,7 +39,8 @@ DEFAULT_TOKENS_DATA = [
             "avnu",
             "k10swap",
             "zklend",
-            "fibrous"
+            "fibrous",
+            "starkex"
         ],
         "coin_gecko_id": "usd-coin"
     },
@@ -51,7 +54,8 @@ DEFAULT_TOKENS_DATA = [
             "avnu",
             "k10swap",
             "zklend",
-            "fibrous"
+            "fibrous",
+            "starkex"
         ],
         "coin_gecko_id": "dai"
     },

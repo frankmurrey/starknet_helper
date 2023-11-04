@@ -5,20 +5,23 @@ from loguru import logger
 
 from contracts.base import TokenBase
 from modules.base import ModuleBase
-from modules.base import SwapModuleBase
 from contracts.jediswap.main import JediSwapContracts
 
 if TYPE_CHECKING:
     from src.schemas.tasks.jediswap import JediSwapTask
+    from src.schemas.tasks.jediswap import JediSwapAddLiquidityTask
+    from src.schemas.tasks.jediswap import JediSwapRemoveLiquidityTask
 
 
 class JediSwapBase(ModuleBase):
-    task: 'JediSwapTask'
-
     def __init__(
             self,
             account,
-            task
+            task: Union[
+                'JediSwapTask',
+                'JediSwapAddLiquidityTask',
+                'JediSwapRemoveLiquidityTask'
+            ],
     ):
 
         super().__init__(

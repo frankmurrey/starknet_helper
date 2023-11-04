@@ -15,6 +15,8 @@ from .jediswap import JediSwapTask
 from .jediswap import JediSwapAddLiquidityTask
 from .jediswap import JediSwapRemoveLiquidityTask
 from .k10swap import K10SwapTask
+from .k10swap import K10SwapAddLiquidityTask
+from .k10swap import K10SwapRemoveLiquidityTask
 from .myswap import MySwapTask
 from .myswap import MySwapAddLiquidityTask
 from .myswap import MySwapRemoveLiquidityTask

@@ -230,8 +230,8 @@ class ModuleBase:
 
     def get_contract(
             self,
-            address,
-            abi,
+            address: Union[str, int],
+            abi: list,
             provider
     ) -> Contract:
         """
@@ -517,6 +517,7 @@ class ModuleBase:
             cairo_version: int,
             auto_estimate: bool = False
     ) -> Union[Invoke, None]:
+
         try:
             return await account.sign_invoke_transaction(
                 calls=calls,
@@ -526,7 +527,7 @@ class ModuleBase:
             )
 
         except ClientError as ex:
-            logger.exception(ex)
+            logger.error(f"Error while signing transaction: {ex}")
             return None
 
     async def try_send_txn(
@@ -1015,8 +1016,8 @@ class LiquidityModuleBase(ModuleBase):
         out_decimals = txn_payload_data.amount_x_decimals
         in_decimals = txn_payload_data.amount_y_decimals
 
-        coin_x_symbol = self.task.coin_x.upper() if is_reverse is False else self.task.coin_x.upper()
-        coin_y_symbol = self.task.coin_y.upper() if is_reverse is False else self.task.coin_y.upper()
+        coin_x_symbol = self.coin_x.symbol.upper() if is_reverse is False else self.coin_x.symbol.upper()
+        coin_y_symbol = self.coin_y.symbol.upper() if is_reverse is False else self.coin_y.symbol.upper()
 
         txn_info_message = f"{module_type} ({module_name}) | " \
                            f"{out_decimals} ({coin_x_symbol.upper()}) + " \

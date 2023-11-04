@@ -84,6 +84,19 @@ class Tokens:
         logger.error(f"Token {name_query} not found")
         return None
 
+    def get_by_contract_address(self, contract_address_query: str):
+        try:
+            for token in self.all_tokens:
+                if int(token.contract_address, 16) == int(contract_address_query, 16):
+                    return token
+
+            logger.error(f"Token {contract_address_query} not found")
+            return None
+
+        except Exception as e:
+            logger.error(f"Error while getting token by contract address: {e}")
+            return None
+
     def get_tokens_by_protocol(
             self,
             protocol: str

@@ -40,6 +40,8 @@ class StarknetIdDir:
 class K10SwapDir:
     _MAIN_DIR = os.path.join(CONTRACTS_DIR, "k10swap")
     ROUTER_ABI_FILE = os.path.join(_MAIN_DIR, "router.abi")
+    FACTORY_ABI_FILE = os.path.join(_MAIN_DIR, "factory.abi")
+    POOL_ABI_FILE = os.path.join(_MAIN_DIR, "pool.abi")
 
 
 class SithSwapDir:

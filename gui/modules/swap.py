@@ -21,6 +21,7 @@ SWAP_TASKS = {
     enums.ModuleName.AVNU: tasks.AvnuSwapTask,
     enums.ModuleName.K10SWAP: tasks.K10SwapTask,
     enums.ModuleName.FIBROUS: tasks.FibrousSwapTask,
+    enums.ModuleName.STARKEX: tasks.StarkExSwapTask,
 }
 
 

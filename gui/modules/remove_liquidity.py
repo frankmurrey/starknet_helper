@@ -16,6 +16,14 @@ from src.schemas.tasks.base.remove_liquidity import RemoveLiquidityTaskBase
 from src.schemas import tasks
 
 
+LIQUIDITY_TASKS = {
+    enums.ModuleName.SITHSWAP: tasks.SithSwapRemoveLiquidityTask,
+    enums.ModuleName.MY_SWAP: tasks.MySwapRemoveLiquidityTask,
+    enums.ModuleName.JEDI_SWAP: tasks.JediSwapRemoveLiquidityTask,
+    enums.ModuleName.K10SWAP: tasks.K10SwapRemoveLiquidityTask,
+}
+
+
 class RemoveLiquidityTab:
     def __init__(
             self,
@@ -54,18 +62,8 @@ class RemoveLiquidityTab:
         )
 
     def get_config_schema(self) -> Union[Callable, None]:
-        swap_protocol = self.liquidity_frame.protocol_combo.get().lower()
-        if swap_protocol == enums.ModuleName.JEDI_SWAP:
-            return tasks.JediSwapRemoveLiquidityTask
-
-        elif swap_protocol == enums.ModuleName.SITHSWAP:
-            return tasks.SithSwapRemoveLiquidityTask
-
-        elif swap_protocol == enums.ModuleName.MY_SWAP:
-            return tasks.MySwapRemoveLiquidityTask
-
-        else:
-            return None
+        protocol = self.liquidity_frame.protocol_combo.get().lower()
+        return LIQUIDITY_TASKS.get(protocol, None)
 
     def build_config_data(self):
         config_schema = self.get_config_schema()
@@ -224,11 +222,7 @@ class RemoveLiquidityFrame(customtkinter.CTkFrame):
 
     @property
     def protocol_options(self) -> list:
-        return [
-            enums.ModuleName.SITHSWAP.upper(),
-            enums.ModuleName.MY_SWAP.upper(),
-            enums.ModuleName.JEDI_SWAP.upper()
-        ]
+        return [name.upper() for name in LIQUIDITY_TASKS.keys()]
 
     @property
     def protocol_coin_options(self) -> list:

@@ -61,7 +61,7 @@ class MySwapBase(ModuleBase):
 
         return None
 
-    async def get_token_pair_for_pool(self, pool_id: int) -> Union[list, None]:
+    async def get_token_pair_for_pool(self, pool_id: int) -> Union[list[str, str], None]:
         """
         Get token pair for pool
         :param pool_id:

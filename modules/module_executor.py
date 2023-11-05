@@ -118,7 +118,7 @@ class ModuleExecutor:
                 f"now = {gas_price / 10 ** 9} Gwei."
             )
         else:
-            logger.warning(f"Test mode is enabled, gas price check is skipped")
+            logger.warning(f"Test mode enabled, gas price check is skipped")
 
         account = Account(
             address=wallet_data.address,

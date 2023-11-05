@@ -32,6 +32,8 @@ from .stark_bridge import StarkBridgeTask
 from .transfer import TransferTask
 from .starkverse import StarkVersePublicMintTask
 from .starkex import StarkExSwapTask
+from .unframed import UnframedCancelOrdersTask
+from .flex import FlexCancelOrdersTask
 
 from .random_task.swap import RandomSwapTask
 from .random_task.liquidity import RandomAddLiquidityTask

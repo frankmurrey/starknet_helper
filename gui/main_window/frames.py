@@ -309,7 +309,10 @@ class PriceFrame(customtkinter.CTkFrame):
 
     def fetch_gas_data(self) -> tuple[str, str, str]:
         stark_gp = GasPrice(block_number='pending')
-        stark_gas_price = asyncio.run(stark_gp.get_stark_block_gas_price())
+
+        loop = asyncio.get_event_loop()
+        stark_gas_price = loop.run_until_complete(stark_gp.get_stark_block_gas_price())
+
         if stark_gas_price is None:
             stark_gas_price = "N/A"
         else:
@@ -326,11 +329,21 @@ class PriceFrame(customtkinter.CTkFrame):
         return str(stark_gas_price), str(l1_gas_price), str(eth_price)
 
     def set_gas_data(self):
-        def _():
-            stark_gas_price, l1_gas_price, eth_price = self.fetch_gas_data()
-            self.stark_gas_price_value_label.configure(text=stark_gas_price)
-            self.l1_eth_gas_price_value_label.configure(text=l1_gas_price)
-            self.eth_price_value_label.configure(text=eth_price)
 
-        Thread(target=_).start()
+        def _(loop):
+            asyncio.set_event_loop(loop)
+
+            try:
+                stark_gas_price, l1_gas_price, eth_price = self.fetch_gas_data()
+                self.stark_gas_price_value_label.configure(text=stark_gas_price)
+                self.l1_eth_gas_price_value_label.configure(text=l1_gas_price)
+                self.eth_price_value_label.configure(text=eth_price)
+            except RuntimeError as e:
+                pass
+
+        Thread(
+            target=_,
+            args=(asyncio.get_event_loop(), ),
+            name="gas_price_thread"
+        ).start()
 

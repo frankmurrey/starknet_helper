@@ -1,6 +1,7 @@
 from loguru import logger
 
 from utils.args import get_args
+from utils import patches
 from utils.system import is_windows
 from utils.system import mingw_installed
 from utils.system import get_missed_requirements
@@ -21,6 +22,9 @@ if __name__ == '__main__':
         logger.error("MinGW is not installed, please install it and try again")
         logger.error("https://starknetpy.readthedocs.io/en/latest/installation.html#windows")
         exit(1)
+
+    if is_windows():
+        patches.patch_windows()
 
     from gui.main_window.main import run_gui
     run_gui()

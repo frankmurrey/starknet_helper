@@ -1,0 +1,1040 @@
+[
+  {
+    "name": "MarketplaceImpl",
+    "type": "implementation",
+    "interface_name": "marketplace::protocol::interfaces::IMarketplace"
+  },
+  {
+    "name": "marketplace::protocol::orders::TakerOrder",
+    "type": "struct",
+    "members": [
+      {
+        "name": "limit_price",
+        "type": "core::integer::u256"
+      },
+      {
+        "name": "max_fee",
+        "type": "core::integer::u32"
+      },
+      {
+        "name": "additional_params",
+        "type": "core::array::Span::<core::felt252>"
+      }
+    ]
+  },
+  {
+    "name": "marketplace::protocol::orders::MakerOrder",
+    "type": "struct",
+    "members": [
+      {
+        "name": "side",
+        "type": "marketplace::protocol::orders::Side"
+      },
+      {
+        "name": "maker",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "collection",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "collection_type",
+        "type": "marketplace::protocol::orders::CollectionType"
+      },
+      {
+        "name": "limit_price",
+        "type": "core::integer::u256"
+      },
+      {
+        "name": "token_id",
+        "type": "core::integer::u256"
+      },
+      {
+        "name": "amount",
+        "type": "core::integer::u256"
+      },
+      {
+        "name": "strategy",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "currency",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "global_nonce",
+        "type": "core::felt252"
+      },
+      {
+        "name": "order_nonce",
+        "type": "core::felt252"
+      },
+      {
+        "name": "start_time",
+        "type": "core::integer::u64"
+      },
+      {
+        "name": "end_time",
+        "type": "core::integer::u64"
+      },
+      {
+        "name": "max_fee",
+        "type": "core::integer::u32"
+      },
+      {
+        "name": "additional_params",
+        "type": "core::array::Span::<core::felt252>"
+      },
+      {
+        "name": "signature",
+        "type": "core::array::Span::<core::felt252>"
+      }
+    ]
+  },
+  {
+    "name": "core::bool",
+    "type": "enum",
+    "variants": [
+      {
+        "name": "False",
+        "type": "()"
+      },
+      {
+        "name": "True",
+        "type": "()"
+      }
+    ]
+  },
+  {
+    "name": "marketplace::protocol::interfaces::IMarketplace",
+    "type": "interface",
+    "items": [
+      {
+        "name": "execute_taker_sell",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "taker_sell",
+            "type": "marketplace::protocol::orders::TakerOrder"
+          },
+          {
+            "name": "maker_buy",
+            "type": "marketplace::protocol::orders::MakerOrder"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "execute_taker_buy",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "taker_buy",
+            "type": "marketplace::protocol::orders::TakerOrder"
+          },
+          {
+            "name": "maker_sell",
+            "type": "marketplace::protocol::orders::MakerOrder"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "execute_auction",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "maker_sell",
+            "type": "marketplace::protocol::orders::MakerOrder"
+          },
+          {
+            "name": "maker_buy",
+            "type": "marketplace::protocol::orders::MakerOrder"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "update_global_nonces",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "cancel_buy_orders",
+            "type": "core::bool"
+          },
+          {
+            "name": "cancel_sell_orders",
+            "type": "core::bool"
+          },
+          {
+            "name": "random_number",
+            "type": "core::integer::u128"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "cancel_orders",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "order_nonces",
+            "type": "core::array::Array::<core::felt252>"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "update_protocol_fee_recipient",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "protocol_fee_recipient",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "update_deprecated_erc20_mode",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "deprecated_mode",
+            "type": "core::bool"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "get_user_order_status",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "user",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "order_nonce",
+            "type": "core::felt252"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::felt252"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "get_user_global_nonces",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "user",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "(core::felt252, core::felt252)"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "get_protocol_fee_recipient",
+        "type": "function",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "get_deprecated_erc20_mode",
+        "type": "function",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::bool"
+          }
+        ],
+        "state_mutability": "view"
+      }
+    ]
+  },
+  {
+    "name": "TransferManagerImpl",
+    "type": "implementation",
+    "interface_name": "marketplace::protocol::interfaces::ITransferManager"
+  },
+  {
+    "name": "marketplace::protocol::orders::CollectionType",
+    "type": "enum",
+    "variants": [
+      {
+        "name": "Erc721",
+        "type": "()"
+      },
+      {
+        "name": "Erc721Deprecated",
+        "type": "()"
+      },
+      {
+        "name": "Erc1155",
+        "type": "()"
+      },
+      {
+        "name": "Erc1155Deprecated",
+        "type": "()"
+      },
+      {
+        "name": "Custom",
+        "type": "()"
+      }
+    ]
+  },
+  {
+    "name": "marketplace::protocol::interfaces::ITransferManager",
+    "type": "interface",
+    "items": [
+      {
+        "name": "update_transfer_executor_for_collection_type",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "collection_type",
+            "type": "marketplace::protocol::orders::CollectionType"
+          },
+          {
+            "name": "executor",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "update_transfer_executor_for_collection",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "collection",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "executor",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "get_transfer_executor",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "collection",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "collection_type",
+            "type": "marketplace::protocol::orders::CollectionType"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "state_mutability": "view"
+      }
+    ]
+  },
+  {
+    "name": "RoyaltyFeeRegistryImpl",
+    "type": "implementation",
+    "interface_name": "marketplace::protocol::interfaces::IRoyaltyFeeRegistry"
+  },
+  {
+    "name": "marketplace::protocol::interfaces::IRoyaltyFeeRegistry",
+    "type": "interface",
+    "items": [
+      {
+        "name": "update_royalty_info_for_collection",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "collection",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "recipient",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "royalty_fee",
+            "type": "core::integer::u32"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "get_royalty_info_for_collection",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "collection",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "(core::starknet::contract_address::ContractAddress, core::integer::u32)"
+          }
+        ],
+        "state_mutability": "view"
+      }
+    ]
+  },
+  {
+    "name": "StrategyManagerImpl",
+    "type": "implementation",
+    "interface_name": "marketplace::protocol::interfaces::IStrategyManager"
+  },
+  {
+    "name": "marketplace::protocol::interfaces::IStrategyManager",
+    "type": "interface",
+    "items": [
+      {
+        "name": "update_strategy_status",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "strategy",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "is_allowed",
+            "type": "core::bool"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "is_strategy_whitelisted",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "strategy",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::bool"
+          }
+        ],
+        "state_mutability": "view"
+      }
+    ]
+  },
+  {
+    "name": "CurrencyManagerImpl",
+    "type": "implementation",
+    "interface_name": "marketplace::protocol::interfaces::ICurrencyManager"
+  },
+  {
+    "name": "marketplace::protocol::interfaces::ICurrencyManager",
+    "type": "interface",
+    "items": [
+      {
+        "name": "update_currency_status",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "currency",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "is_allowed",
+            "type": "core::bool"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "is_currency_whitelisted",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "currency",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::bool"
+          }
+        ],
+        "state_mutability": "view"
+      }
+    ]
+  },
+  {
+    "name": "UpgradeableTimelockImpl",
+    "type": "implementation",
+    "interface_name": "marketplace::protocol::interfaces::IUpgradeableTimelock"
+  },
+  {
+    "name": "marketplace::protocol::interfaces::IUpgradeableTimelock",
+    "type": "interface",
+    "items": [
+      {
+        "name": "propose_upgrade",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "new_implementation",
+            "type": "core::starknet::class_hash::ClassHash"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "cancel_upgrade",
+        "type": "function",
+        "inputs": [],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "upgrade",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "calldata",
+            "type": "core::array::Array::<core::felt252>"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::array::Array::<core::felt252>"
+          }
+        ],
+        "state_mutability": "external"
+      },
+      {
+        "name": "execute_after_upgrade",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "data",
+            "type": "core::array::Array::<core::felt252>"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::array::Array::<core::felt252>"
+          }
+        ],
+        "state_mutability": "external"
+      },
+      {
+        "name": "get_proposed_implementation",
+        "type": "function",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::starknet::class_hash::ClassHash"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "get_upgrade_ready_at",
+        "type": "function",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::integer::u64"
+          }
+        ],
+        "state_mutability": "view"
+      }
+    ]
+  },
+  {
+    "name": "OwnableImpl",
+    "type": "implementation",
+    "interface_name": "marketplace::protocol::interfaces::IOwnable"
+  },
+  {
+    "name": "marketplace::protocol::interfaces::IOwnable",
+    "type": "interface",
+    "items": [
+      {
+        "name": "transfer_ownership",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "pending_owner",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "accept_ownership",
+        "type": "function",
+        "inputs": [],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "renounce_ownership",
+        "type": "function",
+        "inputs": [],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "get_owner",
+        "type": "function",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "get_pending_owner",
+        "type": "function",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "state_mutability": "view"
+      }
+    ]
+  },
+  {
+    "name": "PausableImpl",
+    "type": "implementation",
+    "interface_name": "marketplace::protocol::interfaces::IPausable"
+  },
+  {
+    "name": "marketplace::protocol::interfaces::IPausable",
+    "type": "interface",
+    "items": [
+      {
+        "name": "pause",
+        "type": "function",
+        "inputs": [],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "unpause",
+        "type": "function",
+        "inputs": [],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "is_paused",
+        "type": "function",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::bool"
+          }
+        ],
+        "state_mutability": "view"
+      }
+    ]
+  },
+  {
+    "name": "constructor",
+    "type": "constructor",
+    "inputs": [
+      {
+        "name": "owner",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "protocol_fee_recipient",
+        "type": "core::starknet::contract_address::ContractAddress"
+      }
+    ]
+  },
+  {
+    "kind": "struct",
+    "name": "marketplace::protocol::marketplace::Marketplace::CurrencyStatusUpdated",
+    "type": "event",
+    "members": [
+      {
+        "kind": "data",
+        "name": "currency",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "data",
+        "name": "is_allowed",
+        "type": "core::bool"
+      }
+    ]
+  },
+  {
+    "kind": "struct",
+    "name": "marketplace::protocol::marketplace::Marketplace::StrategyStatusUpdated",
+    "type": "event",
+    "members": [
+      {
+        "kind": "data",
+        "name": "strategy",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "data",
+        "name": "is_allowed",
+        "type": "core::bool"
+      }
+    ]
+  },
+  {
+    "kind": "struct",
+    "name": "marketplace::protocol::marketplace::Marketplace::TransferExecutorForCollectionTypeUpdated",
+    "type": "event",
+    "members": [
+      {
+        "kind": "data",
+        "name": "collection_type",
+        "type": "marketplace::protocol::orders::CollectionType"
+      },
+      {
+        "kind": "data",
+        "name": "executor",
+        "type": "core::starknet::contract_address::ContractAddress"
+      }
+    ]
+  },
+  {
+    "kind": "struct",
+    "name": "marketplace::protocol::marketplace::Marketplace::TransferExecutorForCollectionUpdated",
+    "type": "event",
+    "members": [
+      {
+        "kind": "key",
+        "name": "collection",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "data",
+        "name": "executor",
+        "type": "core::starknet::contract_address::ContractAddress"
+      }
+    ]
+  },
+  {
+    "kind": "struct",
+    "name": "marketplace::protocol::marketplace::Marketplace::RoyaltyFeeUpdated",
+    "type": "event",
+    "members": [
+      {
+        "kind": "key",
+        "name": "collection",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "data",
+        "name": "recipient",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "data",
+        "name": "royalty_fee",
+        "type": "core::integer::u32"
+      }
+    ]
+  },
+  {
+    "kind": "struct",
+    "name": "marketplace::protocol::marketplace::Marketplace::GlobalNoncesUpdated",
+    "type": "event",
+    "members": [
+      {
+        "kind": "key",
+        "name": "maker",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "data",
+        "name": "global_buy_nonce",
+        "type": "core::felt252"
+      },
+      {
+        "kind": "data",
+        "name": "global_sell_nonce",
+        "type": "core::felt252"
+      }
+    ]
+  },
+  {
+    "kind": "struct",
+    "name": "marketplace::protocol::marketplace::Marketplace::OrdersCanceled",
+    "type": "event",
+    "members": [
+      {
+        "kind": "key",
+        "name": "maker",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "data",
+        "name": "order_nonces",
+        "type": "core::array::Array::<core::felt252>"
+      }
+    ]
+  },
+  {
+    "kind": "struct",
+    "name": "marketplace::protocol::marketplace::Marketplace::ProtocolFeeRecipientUpdated",
+    "type": "event",
+    "members": [
+      {
+        "kind": "data",
+        "name": "protocol_fee_recipient",
+        "type": "core::starknet::contract_address::ContractAddress"
+      }
+    ]
+  },
+  {
+    "kind": "struct",
+    "name": "marketplace::protocol::marketplace::Marketplace::DeprecatedErc20ModeUpdated",
+    "type": "event",
+    "members": [
+      {
+        "kind": "data",
+        "name": "deprecated_mode",
+        "type": "core::bool"
+      }
+    ]
+  },
+  {
+    "name": "core::integer::u256",
+    "type": "struct",
+    "members": [
+      {
+        "name": "low",
+        "type": "core::integer::u128"
+      },
+      {
+        "name": "high",
+        "type": "core::integer::u128"
+      }
+    ]
+  },
+  {
+    "kind": "struct",
+    "name": "marketplace::protocol::marketplace::Marketplace::OrderExecuted",
+    "type": "event",
+    "members": [
+      {
+        "kind": "key",
+        "name": "order_hash",
+        "type": "core::felt252"
+      },
+      {
+        "kind": "key",
+        "name": "maker",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "key",
+        "name": "taker",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "key",
+        "name": "strategy",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "key",
+        "name": "collection",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "key",
+        "name": "token_id",
+        "type": "core::integer::u256"
+      },
+      {
+        "kind": "data",
+        "name": "amount",
+        "type": "core::integer::u256"
+      },
+      {
+        "kind": "data",
+        "name": "price",
+        "type": "core::integer::u256"
+      },
+      {
+        "kind": "data",
+        "name": "total_fee",
+        "type": "core::integer::u256"
+      },
+      {
+        "kind": "data",
+        "name": "currency",
+        "type": "core::starknet::contract_address::ContractAddress"
+      }
+    ]
+  },
+  {
+    "kind": "struct",
+    "name": "marketplace::protocol::marketplace::Marketplace::AuctionExecuted",
+    "type": "event",
+    "members": [
+      {
+        "kind": "key",
+        "name": "sell_order_hash",
+        "type": "core::felt252"
+      },
+      {
+        "kind": "key",
+        "name": "buy_order_hash",
+        "type": "core::felt252"
+      },
+      {
+        "kind": "key",
+        "name": "maker_sell",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "key",
+        "name": "maker_buy",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "key",
+        "name": "strategy",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "key",
+        "name": "collection",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "key",
+        "name": "token_id",
+        "type": "core::integer::u256"
+      },
+      {
+        "kind": "data",
+        "name": "amount",
+        "type": "core::integer::u256"
+      },
+      {
+        "kind": "data",
+        "name": "price",
+        "type": "core::integer::u256"
+      },
+      {
+        "kind": "data",
+        "name": "total_fee",
+        "type": "core::integer::u256"
+      },
+      {
+        "kind": "data",
+        "name": "currency",
+        "type": "core::starknet::contract_address::ContractAddress"
+      }
+    ]
+  },
+  {
+    "kind": "enum",
+    "name": "marketplace::protocol::marketplace::Marketplace::Event",
+    "type": "event",
+    "variants": [
+      {
+        "kind": "nested",
+        "name": "CurrencyStatusUpdated",
+        "type": "marketplace::protocol::marketplace::Marketplace::CurrencyStatusUpdated"
+      },
+      {
+        "kind": "nested",
+        "name": "StrategyStatusUpdated",
+        "type": "marketplace::protocol::marketplace::Marketplace::StrategyStatusUpdated"
+      },
+      {
+        "kind": "nested",
+        "name": "TransferExecutorForCollectionTypeUpdated",
+        "type": "marketplace::protocol::marketplace::Marketplace::TransferExecutorForCollectionTypeUpdated"
+      },
+      {
+        "kind": "nested",
+        "name": "TransferExecutorForCollectionUpdated",
+        "type": "marketplace::protocol::marketplace::Marketplace::TransferExecutorForCollectionUpdated"
+      },
+      {
+        "kind": "nested",
+        "name": "RoyaltyFeeUpdated",
+        "type": "marketplace::protocol::marketplace::Marketplace::RoyaltyFeeUpdated"
+      },
+      {
+        "kind": "nested",
+        "name": "GlobalNoncesUpdated",
+        "type": "marketplace::protocol::marketplace::Marketplace::GlobalNoncesUpdated"
+      },
+      {
+        "kind": "nested",
+        "name": "OrdersCanceled",
+        "type": "marketplace::protocol::marketplace::Marketplace::OrdersCanceled"
+      },
+      {
+        "kind": "nested",
+        "name": "ProtocolFeeRecipientUpdated",
+        "type": "marketplace::protocol::marketplace::Marketplace::ProtocolFeeRecipientUpdated"
+      },
+      {
+        "kind": "nested",
+        "name": "DeprecatedErc20ModeUpdated",
+        "type": "marketplace::protocol::marketplace::Marketplace::DeprecatedErc20ModeUpdated"
+      },
+      {
+        "kind": "nested",
+        "name": "OrderExecuted",
+        "type": "marketplace::protocol::marketplace::Marketplace::OrderExecuted"
+      },
+      {
+        "kind": "nested",
+        "name": "AuctionExecuted",
+        "type": "marketplace::protocol::marketplace::Marketplace::AuctionExecuted"
+      }
+    ]
+  }
+]

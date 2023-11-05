@@ -1,11 +1,11 @@
-from contracts.base import TokenBase
-
-from utils.file_manager import FileManager
-
-from src.paths import TempFiles
-from src.paths import TOKENS_ABI_DIR
+from typing import Union
 
 from loguru import logger
+
+from contracts.base import TokenBase
+from utils.file_manager import FileManager
+from src.paths import TempFiles
+from src.paths import TOKENS_ABI_DIR
 
 
 class Tokens:
@@ -70,7 +70,7 @@ class Tokens:
         self.all_tokens_data_from_file = FileManager().read_data_from_json_file(TempFiles().TOKENS_JSON_FILE)
         self.all_tokens = [*self.default_tokens, *self.custom_tokens]
 
-    def get_by_name(self, name_query):
+    def get_by_name(self, name_query) -> Union[TokenBase, None]:
         for token in self.all_tokens:
             if token.symbol.lower() == name_query.lower():
                 return token

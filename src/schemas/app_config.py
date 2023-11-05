@@ -8,6 +8,7 @@ from utils import validation
 
 class AppConfigSchema(BaseModel):
     preserve_logs: bool = True
+    use_proxy: bool = True
     rpc_url: str = "https://starknet-mainnet.public.blastapi.io"
     target_gas_price: Union[int, float] = 20
     is_gas_price_wait_timeout_needed: bool = False

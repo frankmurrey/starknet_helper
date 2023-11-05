@@ -16,6 +16,7 @@ class ModuleType(str, Enum):
     SEND = "send"
     BRIDGE = "bridge"
     TRANSFER = "transfer"
+    CANCEL_ORDER = "cancel_order"
 
 
 class ModuleName(str, Enum):
@@ -37,6 +38,8 @@ class ModuleName(str, Enum):
     STARK_BRIDGE = "starkgate"
     STARK_VERSE = "starkverse"
     STARKEX = "starkex"
+    UNFRAMED = "unframed"
+    FLEX = "flex"
 
 
 class TabName(str, Enum):
@@ -51,6 +54,7 @@ class TabName(str, Enum):
     UPGRADE = "Upgrade"
     TRANSFER = "Transfer"
     BRIDGE = "Bridge"
+    TRASH_TXNS = "Trash txn's"
 
 
 class PrivateKeyType(str, Enum):

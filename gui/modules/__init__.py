@@ -9,3 +9,5 @@ from .deploy import DeployTab
 from .upgrade import UpgradeTab
 from .transfer import TransferTab
 from .bridge import BridgeTab
+from .trash_txns import TrashTxnsTab
+

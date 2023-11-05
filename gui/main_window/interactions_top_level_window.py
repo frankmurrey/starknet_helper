@@ -62,6 +62,10 @@ TABS: dict = {
     enums.TabName.BRIDGE: Tab(
         tab=modules.BridgeTab,
     ),
+    enums.TabName.TRASH_TXNS: Tab(
+        tab=modules.TrashTxnsTab,
+    ),
+
 }
 
 

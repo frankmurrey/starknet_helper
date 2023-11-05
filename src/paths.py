@@ -90,6 +90,16 @@ class StarkExDir:
     ROUTER_ABI_FILE = os.path.join(_MAIN_DIR, "router.abi")
 
 
+class UnframedDir:
+    _MAIN_DIR = os.path.join(CONTRACTS_DIR, "unframed")
+    ROUTER_ABI_FILE = os.path.join(_MAIN_DIR, "router.abi")
+
+
+class FlexDir:
+    _MAIN_DIR = os.path.join(CONTRACTS_DIR, "flex")
+    ROUTER_ABI_FILE = os.path.join(_MAIN_DIR, "router.abi")
+
+
 class TempFiles:
     def __init__(self):
         self.TOKENS_JSON_FILE = os.path.join(CONTRACTS_DIR, "tokens.json")

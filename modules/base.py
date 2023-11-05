@@ -363,7 +363,7 @@ class ModuleBase:
     async def get_token_balance(
             self,
             account: Account,
-            token_address: int
+            token_address: Union[str, int]
     ) -> int:
         """
         Returns the token balance of an account in wei.

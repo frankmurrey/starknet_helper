@@ -7,6 +7,7 @@ from starknet_py.net.full_node_client import FullNodeClient
 from starknet_py.net.http_client import HttpMethod
 from src.schemas.proxy_data import ProxyData
 from src.custom_client_session import CustomSession
+from src.storage import Storage
 
 
 class ProxyManager:
@@ -15,7 +16,7 @@ class ProxyManager:
         self.connector = None
 
     def get_session(self) -> Union[aiohttp.ClientSession, None]:
-        if self.proxy_data:
+        if self.proxy_data and Storage().app_config.use_proxy:
             return self.get_custom_session_for_proxy()
         else:
             return self.get_custom_session()

@@ -15,6 +15,8 @@ def parse_proxy_data(proxy_str: str) -> Optional[ProxyData]:
     try:
         if '://' in proxy_str:
             proxy_type, proxy_str = proxy_str.split('://', 1)
+            if proxy_type not in ['socks5', 'http', 'https']:
+                return None
         else:
             proxy_type = 'http'
 

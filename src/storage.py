@@ -16,20 +16,6 @@ class Storage:
 
         def __init__(self):
             self.__app_config: AppConfigSchema = self.__load_app_config()
-            self.__wallets_data = []
-
-        def set_wallets_data(self, value):
-            self.__wallets_data = value
-
-        def add_wallet_data(self, value):
-            self.__wallets_data.append(value)
-
-        def clear_wallets_data(self):
-            self.__wallets_data.clear()
-
-        @property
-        def wallets_data(self):
-            return self.__wallets_data
 
         @property
         def app_config(self) -> AppConfigSchema:
@@ -45,6 +31,11 @@ class Storage:
 
         def update_app_config(self, config: AppConfigSchema):
             self.__app_config = config
+
+        def update_app_config_values(self, **kwargs):
+            config_dict = self.__app_config.dict()
+            new_config_dict = {**config_dict, **kwargs}
+            self.__app_config = AppConfigSchema(**new_config_dict)
 
     def __new__(cls):
         if not Storage.__instance:

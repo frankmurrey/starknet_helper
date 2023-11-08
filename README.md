@@ -6,6 +6,7 @@ It's a python project with user-friendly interface, which allows you to interact
 
 
 | `run_gui.py` - to run the program
+
 | `run_gui.py -ncr` - to run the program without req's checkup
 
 

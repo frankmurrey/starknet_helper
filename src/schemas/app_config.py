@@ -16,6 +16,8 @@ class AppConfigSchema(BaseModel):
     wallets_amount_to_execute_in_test_mode: int = 3
     last_wallet_version: str = "0.3.0"
 
+    debug: bool = False
+
     @validator('rpc_url', pre=True)
     def rpc_url_must_be_valid(cls, value):
         if not value:

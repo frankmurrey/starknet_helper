@@ -65,7 +65,9 @@ TABS: dict = {
     enums.TabName.TRASH_TXNS: Tab(
         tab=modules.TrashTxnsTab,
     ),
-
+    enums.TabName.ZERIUS: Tab(
+        tab=modules.ZeriusTab
+    ),
 }
 
 

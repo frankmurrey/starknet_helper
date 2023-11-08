@@ -1,0 +1,930 @@
+[
+  {
+    "name": "CoreImpl",
+    "type": "implementation",
+    "interface_name": "zerius::zerius::interface::IZeriusONFT721Core"
+  },
+  {
+    "name": "core::integer::u256",
+    "type": "struct",
+    "members": [
+      {
+        "name": "low",
+        "type": "core::integer::u128"
+      },
+      {
+        "name": "high",
+        "type": "core::integer::u128"
+      }
+    ]
+  },
+  {
+    "name": "zerius::zerius::interface::IZeriusONFT721Core",
+    "type": "interface",
+    "items": [
+      {
+        "name": "setMintFee",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "mint_fee",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "setFeeCollector",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "fee_collector",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "getNextMintId",
+        "type": "function",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::integer::u32"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "getFeeEarnedAmount",
+        "type": "function",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::integer::u256"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "getFeeClaimedAmount",
+        "type": "function",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::integer::u256"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "getMintFee",
+        "type": "function",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::integer::u256"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "getFeeCollector",
+        "type": "function",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "mint",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "uri",
+            "type": "core::felt252"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "claimFeeEarnings",
+        "type": "function",
+        "inputs": [],
+        "outputs": [],
+        "state_mutability": "external"
+      }
+    ]
+  },
+  {
+    "name": "ReferralImpl",
+    "type": "implementation",
+    "interface_name": "zerius::zerius::interface::IZeriusONFT721Referral"
+  },
+  {
+    "name": "zerius::zerius::interface::IZeriusONFT721Referral",
+    "type": "interface",
+    "items": [
+      {
+        "name": "setReferralEarningBips",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "earning_bips",
+            "type": "core::integer::u16"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "setEarningBipsForReferrer",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "referrer",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "earning_bips",
+            "type": "core::integer::u16"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "getReferredTransactionsCount",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "referrer",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::integer::u32"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "getReferrerEarnedAmount",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "referrer",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::integer::u256"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "getReferrerClaimedAmount",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "referrer",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::integer::u256"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "getReferralEarningBips",
+        "type": "function",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::integer::u16"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "getEarningBipsForReferrer",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "referrer",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::integer::u16"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "mintWithReferrer",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "uri",
+            "type": "core::felt252"
+          },
+          {
+            "name": "referrer",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "claimReferralEarnings",
+        "type": "function",
+        "inputs": [],
+        "outputs": [],
+        "state_mutability": "external"
+      }
+    ]
+  },
+  {
+    "name": "ERC721Impl",
+    "type": "implementation",
+    "interface_name": "openzeppelin::token::erc721::interface::IERC721"
+  },
+  {
+    "name": "core::array::Span::<core::felt252>",
+    "type": "struct",
+    "members": [
+      {
+        "name": "snapshot",
+        "type": "@core::array::Array::<core::felt252>"
+      }
+    ]
+  },
+  {
+    "name": "core::bool",
+    "type": "enum",
+    "variants": [
+      {
+        "name": "False",
+        "type": "()"
+      },
+      {
+        "name": "True",
+        "type": "()"
+      }
+    ]
+  },
+  {
+    "name": "openzeppelin::token::erc721::interface::IERC721",
+    "type": "interface",
+    "items": [
+      {
+        "name": "balance_of",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "account",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::integer::u256"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "owner_of",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "transfer_from",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "from",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "to",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "safe_transfer_from",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "from",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "to",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
+          },
+          {
+            "name": "data",
+            "type": "core::array::Span::<core::felt252>"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "approve",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "to",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "set_approval_for_all",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "operator",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "approved",
+            "type": "core::bool"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "get_approved",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "is_approved_for_all",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "owner",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "operator",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::bool"
+          }
+        ],
+        "state_mutability": "view"
+      }
+    ]
+  },
+  {
+    "name": "ERC721CamelOnlyImpl",
+    "type": "implementation",
+    "interface_name": "openzeppelin::token::erc721::interface::IERC721CamelOnly"
+  },
+  {
+    "name": "openzeppelin::token::erc721::interface::IERC721CamelOnly",
+    "type": "interface",
+    "items": [
+      {
+        "name": "balanceOf",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "account",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::integer::u256"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "ownerOf",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "tokenId",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "transferFrom",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "from",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "to",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "tokenId",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "safeTransferFrom",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "from",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "to",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "tokenId",
+            "type": "core::integer::u256"
+          },
+          {
+            "name": "data",
+            "type": "core::array::Span::<core::felt252>"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "setApprovalForAll",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "operator",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "approved",
+            "type": "core::bool"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "getApproved",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "tokenId",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "isApprovedForAll",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "owner",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "operator",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::bool"
+          }
+        ],
+        "state_mutability": "view"
+      }
+    ]
+  },
+  {
+    "name": "SRC5Impl",
+    "type": "implementation",
+    "interface_name": "openzeppelin::introspection::interface::ISRC5"
+  },
+  {
+    "name": "openzeppelin::introspection::interface::ISRC5",
+    "type": "interface",
+    "items": [
+      {
+        "name": "supports_interface",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "interface_id",
+            "type": "core::felt252"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::bool"
+          }
+        ],
+        "state_mutability": "view"
+      }
+    ]
+  },
+  {
+    "name": "SRC5CamelImpl",
+    "type": "implementation",
+    "interface_name": "openzeppelin::introspection::interface::ISRC5Camel"
+  },
+  {
+    "name": "openzeppelin::introspection::interface::ISRC5Camel",
+    "type": "interface",
+    "items": [
+      {
+        "name": "supportsInterface",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "interfaceId",
+            "type": "core::felt252"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::bool"
+          }
+        ],
+        "state_mutability": "view"
+      }
+    ]
+  },
+  {
+    "name": "OwnableImpl",
+    "type": "implementation",
+    "interface_name": "openzeppelin::access::ownable::interface::IOwnable"
+  },
+  {
+    "name": "openzeppelin::access::ownable::interface::IOwnable",
+    "type": "interface",
+    "items": [
+      {
+        "name": "owner",
+        "type": "function",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "transfer_ownership",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "new_owner",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "renounce_ownership",
+        "type": "function",
+        "inputs": [],
+        "outputs": [],
+        "state_mutability": "external"
+      }
+    ]
+  },
+  {
+    "name": "OwnableCamelOnlyImpl",
+    "type": "implementation",
+    "interface_name": "openzeppelin::access::ownable::interface::IOwnableCamelOnly"
+  },
+  {
+    "name": "openzeppelin::access::ownable::interface::IOwnableCamelOnly",
+    "type": "interface",
+    "items": [
+      {
+        "name": "transferOwnership",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "newOwner",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "renounceOwnership",
+        "type": "function",
+        "inputs": [],
+        "outputs": [],
+        "state_mutability": "external"
+      }
+    ]
+  },
+  {
+    "name": "constructor",
+    "type": "constructor",
+    "inputs": [
+      {
+        "name": "owner",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "fee_collector",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "referral_earning_bips",
+        "type": "core::integer::u16"
+      },
+      {
+        "name": "mint_fee",
+        "type": "core::integer::u256"
+      }
+    ]
+  },
+  {
+    "kind": "struct",
+    "name": "zerius::zerius::zerius::ZeriusONFT721::MintFeeChanged",
+    "type": "event",
+    "members": [
+      {
+        "kind": "key",
+        "name": "old_mint_fee",
+        "type": "core::integer::u256"
+      },
+      {
+        "kind": "key",
+        "name": "new_mint_fee",
+        "type": "core::integer::u256"
+      }
+    ]
+  },
+  {
+    "kind": "struct",
+    "name": "zerius::zerius::zerius::ZeriusONFT721::ReferralEarningBipsChanged",
+    "type": "event",
+    "members": [
+      {
+        "kind": "key",
+        "name": "old_bips",
+        "type": "core::integer::u16"
+      },
+      {
+        "kind": "key",
+        "name": "new_bips",
+        "type": "core::integer::u16"
+      }
+    ]
+  },
+  {
+    "kind": "struct",
+    "name": "zerius::zerius::zerius::ZeriusONFT721::EarningBipsForReferrerChanged",
+    "type": "event",
+    "members": [
+      {
+        "kind": "key",
+        "name": "referrer",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "data",
+        "name": "old_bips",
+        "type": "core::integer::u16"
+      },
+      {
+        "kind": "data",
+        "name": "new_bips",
+        "type": "core::integer::u16"
+      }
+    ]
+  },
+  {
+    "kind": "struct",
+    "name": "zerius::zerius::zerius::ZeriusONFT721::FeeCollectorChanged",
+    "type": "event",
+    "members": [
+      {
+        "kind": "key",
+        "name": "old_collector",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "key",
+        "name": "new_collector",
+        "type": "core::starknet::contract_address::ContractAddress"
+      }
+    ]
+  },
+  {
+    "kind": "struct",
+    "name": "zerius::zerius::zerius::ZeriusONFT721::FeeTokenChanged",
+    "type": "event",
+    "members": [
+      {
+        "kind": "key",
+        "name": "old_token",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "key",
+        "name": "new_token",
+        "type": "core::starknet::contract_address::ContractAddress"
+      }
+    ]
+  },
+  {
+    "kind": "struct",
+    "name": "zerius::zerius::zerius::ZeriusONFT721::ONFTMinted",
+    "type": "event",
+    "members": [
+      {
+        "kind": "key",
+        "name": "minter",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "key",
+        "name": "item_id",
+        "type": "core::integer::u32"
+      },
+      {
+        "kind": "data",
+        "name": "fee_earnings",
+        "type": "core::integer::u256"
+      },
+      {
+        "kind": "key",
+        "name": "referrer",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "data",
+        "name": "referrer_earnings",
+        "type": "core::integer::u256"
+      }
+    ]
+  },
+  {
+    "kind": "struct",
+    "name": "zerius::zerius::zerius::ZeriusONFT721::FeeEarningsClaimed",
+    "type": "event",
+    "members": [
+      {
+        "kind": "key",
+        "name": "collector",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "data",
+        "name": "claimed_amount",
+        "type": "core::integer::u256"
+      }
+    ]
+  },
+  {
+    "kind": "struct",
+    "name": "zerius::zerius::zerius::ZeriusONFT721::ReferrerEarningsClaimed",
+    "type": "event",
+    "members": [
+      {
+        "kind": "key",
+        "name": "referrer",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "data",
+        "name": "claimed_amount",
+        "type": "core::integer::u256"
+      }
+    ]
+  },
+  {
+    "kind": "enum",
+    "name": "zerius::zerius::zerius::ZeriusONFT721::Event",
+    "type": "event",
+    "variants": [
+      {
+        "kind": "nested",
+        "name": "MintFeeChanged",
+        "type": "zerius::zerius::zerius::ZeriusONFT721::MintFeeChanged"
+      },
+      {
+        "kind": "nested",
+        "name": "ReferralEarningBipsChanged",
+        "type": "zerius::zerius::zerius::ZeriusONFT721::ReferralEarningBipsChanged"
+      },
+      {
+        "kind": "nested",
+        "name": "EarningBipsForReferrerChanged",
+        "type": "zerius::zerius::zerius::ZeriusONFT721::EarningBipsForReferrerChanged"
+      },
+      {
+        "kind": "nested",
+        "name": "FeeCollectorChanged",
+        "type": "zerius::zerius::zerius::ZeriusONFT721::FeeCollectorChanged"
+      },
+      {
+        "kind": "nested",
+        "name": "FeeTokenChanged",
+        "type": "zerius::zerius::zerius::ZeriusONFT721::FeeTokenChanged"
+      },
+      {
+        "kind": "nested",
+        "name": "ONFTMinted",
+        "type": "zerius::zerius::zerius::ZeriusONFT721::ONFTMinted"
+      },
+      {
+        "kind": "nested",
+        "name": "FeeEarningsClaimed",
+        "type": "zerius::zerius::zerius::ZeriusONFT721::FeeEarningsClaimed"
+      },
+      {
+        "kind": "nested",
+        "name": "ReferrerEarningsClaimed",
+        "type": "zerius::zerius::zerius::ZeriusONFT721::ReferrerEarningsClaimed"
+      }
+    ]
+  }
+]

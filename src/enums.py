@@ -40,6 +40,7 @@ class ModuleName(str, Enum):
     STARKEX = "starkex"
     UNFRAMED = "unframed"
     FLEX = "flex"
+    ZERIUS = "zerius"
 
 
 class TabName(str, Enum):
@@ -55,6 +56,7 @@ class TabName(str, Enum):
     TRANSFER = "Transfer"
     BRIDGE = "Bridge"
     TRASH_TXNS = "Trash txn's"
+    ZERIUS = "Zerius"
 
 
 class PrivateKeyType(str, Enum):

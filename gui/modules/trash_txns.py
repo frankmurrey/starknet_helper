@@ -22,7 +22,7 @@ class TrashTxnsTab:
             self,
             tabview,
             tab_name,
-            task: tasks.ZkLendSupplyTask = None
+            task=None
     ):
         self.tabview = tabview
 

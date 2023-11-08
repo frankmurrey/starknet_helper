@@ -82,27 +82,21 @@ class SidebarFrame(customtkinter.CTkFrame):
             sticky="w"
         )
 
-        self.price_frame = PriceFrame(
-            self,
-            grid={
-                "row": 3,
-                "column": 0,
-                "padx": 20,
-                "pady": 0,
-                "sticky": "w"
-            },
-        )
-
         # REFRESH BUTTON
-        refresh_image = customtkinter.CTkImage(
+        self.refresh_image = customtkinter.CTkImage(
             light_image=Image.open(f"{paths.GUI_DIR}/images/refresh_button.png"),
             dark_image=Image.open(f"{paths.GUI_DIR}/images/refresh_button.png"),
             size=(20, 20)
         )
+        self.refresh_image_active = customtkinter.CTkImage(
+            light_image=Image.open(f"{paths.GUI_DIR}/images/refresh_button_active.png"),
+            dark_image=Image.open(f"{paths.GUI_DIR}/images/refresh_button_active.png"),
+            size=(20, 20)
+        )
         self.refresh_button = customtkinter.CTkButton(
             self,
-            image=refresh_image,
-            command=self.price_frame.set_gas_data,
+            image=self.refresh_image,
+            command=self.refresh_price_table_event,
             hover=False,
             text="- refresh data",
             bg_color='transparent',
@@ -117,6 +111,17 @@ class SidebarFrame(customtkinter.CTkFrame):
             padx=(18, 0),
             pady=(0, 2),
             sticky="w"
+        )
+
+        self.price_frame = PriceFrame(
+            self,
+            grid={
+                "row": 3,
+                "column": 0,
+                "padx": 20,
+                "pady": 0,
+                "sticky": "w"
+            },
         )
 
         self.appearance_mode_label = customtkinter.CTkLabel(
@@ -165,6 +170,17 @@ class SidebarFrame(customtkinter.CTkFrame):
             pady=(0, 10),
             sticky="s"
         )
+
+    def set_refresh_image(self, state: bool):
+        if state:
+            self.refresh_button.configure(image=self.refresh_image_active, text="- refreshing...")
+        else:
+            self.refresh_button.configure(image=self.refresh_image, text="- refresh data")
+
+    def refresh_price_table_event(self):
+        self.refresh_button.configure(text="Refreshing...")
+        self.price_frame.set_gas_data()
+        self.refresh_button.configure(text="- refresh data")
 
     def change_appearance_mode_event(self, new_appearance_mode: str):
         customtkinter.set_appearance_mode(new_appearance_mode)
@@ -218,7 +234,7 @@ class PriceFrame(customtkinter.CTkFrame):
     ):
         super().__init__(master, **kwargs)
 
-        self.master = master
+        self.master: SidebarFrame = master
 
         self.grid(**grid)
         self.grid_columnconfigure((0, 1,), weight=1, uniform="uniform")
@@ -332,14 +348,15 @@ class PriceFrame(customtkinter.CTkFrame):
 
         def _(loop):
             asyncio.set_event_loop(loop)
-
+            self.master.set_refresh_image(True)
             try:
                 stark_gas_price, l1_gas_price, eth_price = self.fetch_gas_data()
                 self.stark_gas_price_value_label.configure(text=stark_gas_price)
                 self.l1_eth_gas_price_value_label.configure(text=l1_gas_price)
                 self.eth_price_value_label.configure(text=eth_price)
+                self.master.set_refresh_image(False)
             except RuntimeError as e:
-                pass
+                self.master.set_refresh_image(False)
 
         Thread(
             target=_,

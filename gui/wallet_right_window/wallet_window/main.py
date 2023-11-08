@@ -2,6 +2,7 @@ import asyncio
 import tkinter
 import tkinter.messagebox
 from typing import Callable, Union
+from threading import Thread
 
 import customtkinter
 from pydantic import ValidationError
@@ -109,7 +110,7 @@ class WalletFrame(customtkinter.CTkFrame):
             font=customtkinter.CTkFont(size=12, underline=True, weight="bold"),
             command=self.check_proxy_button_event
         )
-        self.proxy_check_button.grid(row=5, column=0, padx=0, pady=0, sticky="w")
+        self.proxy_check_button.grid(row=5, column=0, padx=(5, 0), pady=0, sticky="w")
 
         # PRIVATE KEY TYPE
         self.private_key_type_radio_var = tkinter.StringVar(
@@ -246,7 +247,7 @@ class WalletFrame(customtkinter.CTkFrame):
 
         self.focus_force()
 
-    def check_proxy_button_event(self):
+    def _check_proxy_button_event(self):
         proxy_string = self.proxy_entry.text
         proxy_data = parse_proxy_data(proxy_string)
 
@@ -265,6 +266,35 @@ class WalletFrame(customtkinter.CTkFrame):
             self.proxy_check_button.configure(text="Invalid proxy", text_color=constants.ERROR_HEX)
         else:
             self.proxy_check_button.configure(text=f"Proxy valid: {ip}", text_color=constants.SUCCESS_HEX)
+
+    def check_proxy_button_event(self):
+        def _(loop):
+            asyncio.set_event_loop(loop)
+
+            self.proxy_check_button.configure(text="Checking proxy...", text_color="gray70")
+            proxy_string = self.proxy_entry.text
+            proxy_data = parse_proxy_data(proxy_string)
+            pm = ProxyManager(proxy_data)
+            if not proxy_data:
+                tkinter.messagebox.showerror("Error", "Invalid proxy")
+                self.focus_force()
+                return
+
+            try:
+                ip = loop.run_until_complete(pm.get_ip())
+                if ip is None:
+                    self.proxy_check_button.configure(text="Invalid proxy", text_color=constants.ERROR_HEX)
+                else:
+                    self.proxy_check_button.configure(text=f"Proxy valid: {ip}", text_color=constants.SUCCESS_HEX)
+
+            except Exception as e:
+                self.proxy_check_button.configure(text="Invalid proxy", text_color=constants.ERROR_HEX)
+
+        Thread(
+            target=_,
+            args=(asyncio.get_event_loop(),),
+            name="proxy_check_thread"
+        ).start()
 
 
 class WalletWindow(customtkinter.CTkToplevel):

@@ -26,5 +26,9 @@ if __name__ == '__main__':
     if is_windows():
         patches.patch_windows()
 
+    from src.storage import Storage
+    storage = Storage()
+    storage.update_app_config_values(debug=args.debug)
+
     from gui.main_window.main import run_gui
     run_gui()

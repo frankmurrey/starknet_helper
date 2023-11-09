@@ -33,6 +33,8 @@ class Storage:
             self.__app_config = config
 
         def update_app_config_values(self, **kwargs):
+            if not self.__app_config:
+                return
             config_dict = self.__app_config.dict()
             new_config_dict = {**config_dict, **kwargs}
             self.__app_config = AppConfigSchema(**new_config_dict)

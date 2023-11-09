@@ -18,10 +18,10 @@ if __name__ == '__main__':
             logger.error("Please run \"pip install -r requirements.txt\"")
             exit(1)
 
-    if is_windows() and not mingw_installed():
-        logger.error("MinGW is not installed, please install it and try again")
-        logger.error("https://starknetpy.readthedocs.io/en/latest/installation.html#windows")
-        exit(1)
+        if is_windows() and mingw_installed():
+            logger.error("MinGW is not installed, please install it and try again")
+            logger.error("https://starknetpy.readthedocs.io/en/latest/installation.html#windows")
+            exit(1)
 
     if is_windows():
         patches.patch_windows()

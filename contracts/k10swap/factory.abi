@@ -1,0 +1,156 @@
+[
+  {
+    "data": [
+      {
+        "name": "token0",
+        "type": "felt"
+      },
+      {
+        "name": "token1",
+        "type": "felt"
+      },
+      {
+        "name": "pair",
+        "type": "felt"
+      },
+      {
+        "name": "index",
+        "type": "felt"
+      }
+    ],
+    "keys": [],
+    "name": "PairCreated",
+    "type": "event"
+  },
+  {
+    "name": "constructor",
+    "type": "constructor",
+    "inputs": [
+      {
+        "name": "pairClass",
+        "type": "felt"
+      },
+      {
+        "name": "feeToSetter",
+        "type": "felt"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "name": "feeTo",
+    "type": "function",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "feeTo",
+        "type": "felt"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "name": "feeToSetter",
+    "type": "function",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "feeToSetter",
+        "type": "felt"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "name": "getPair",
+    "type": "function",
+    "inputs": [
+      {
+        "name": "token0",
+        "type": "felt"
+      },
+      {
+        "name": "token1",
+        "type": "felt"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "pair",
+        "type": "felt"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "name": "allPairs",
+    "type": "function",
+    "inputs": [
+      {
+        "name": "index",
+        "type": "felt"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "pair",
+        "type": "felt"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "name": "allPairsLength",
+    "type": "function",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "length",
+        "type": "felt"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "name": "createPair",
+    "type": "function",
+    "inputs": [
+      {
+        "name": "tokenA",
+        "type": "felt"
+      },
+      {
+        "name": "tokenB",
+        "type": "felt"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "pair",
+        "type": "felt"
+      }
+    ]
+  },
+  {
+    "name": "setFeeTo",
+    "type": "function",
+    "inputs": [
+      {
+        "name": "feeTo",
+        "type": "felt"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "name": "setFeeToSetter",
+    "type": "function",
+    "inputs": [
+      {
+        "name": "feeToSetter",
+        "type": "felt"
+      }
+    ],
+    "outputs": []
+  }
+]

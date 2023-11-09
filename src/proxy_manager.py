@@ -1,109 +1,92 @@
-import httpx
-import time
-
-from typing import Union
-
-from src.schemas.proxy_data import ProxyData
+import aiohttp.typedefs
+from typing import Union, Optional
+from aiohttp_socks import SocksConnector
 
 from loguru import logger
+from starknet_py.net.full_node_client import FullNodeClient
+from starknet_py.net.http_client import HttpMethod
+from src.schemas.proxy_data import ProxyData
+from src.custom_client_session import CustomSession
+from src.storage import Storage
 
 
 class ProxyManager:
-    def __init__(self, proxy_data):
+    def __init__(self, proxy_data: ProxyData):
         self.proxy_data = proxy_data
+        self.connector = None
+
+    def get_session(self) -> Union[aiohttp.ClientSession, None]:
+        if self.proxy_data and Storage().app_config.use_proxy:
+            return self.get_custom_session_for_proxy()
+        else:
+            return self.get_custom_session()
 
     def get_proxy(self) -> Union[dict, None, bool]:
         proxy_data = self.proxy_data
         if proxy_data is None:
             return None
 
+        p_type = proxy_data.proxy_type
+
         if proxy_data.auth is False:
             return {
-                "http://": f"http://{proxy_data.host}:{proxy_data.port}",
-                "https://": f"http://{proxy_data.host}:{proxy_data.port}"
+                f"{p_type}://": f"{p_type}://{proxy_data.host}:{proxy_data.port}",
             }
 
         if proxy_data.auth is True:
             return {
-                "http://": f"http://{proxy_data.username}:{proxy_data.password}@{proxy_data.host}:{proxy_data.port}",
-                "https://": f"http://{proxy_data.username}:{proxy_data.password}@{proxy_data.host}:{proxy_data.port}"
+                f"{p_type}://": f"{p_type}://{proxy_data.username}:{proxy_data.password}@{proxy_data.host}:{proxy_data.port}",
             }
 
-    def ping(self) -> bool:
-        proxies = self.get_proxy()
-        if proxies is None:
-            return False
+    async def get_ip(self) -> Union[str, None]:
         try:
-            http_client = httpx.Client(proxies=proxies)
-            ipify_url = 'https://api.ipify.org?format=json'
-            response = http_client.get(url=ipify_url, timeout=30)
+            session = self.get_session()
+            client = FullNodeClient(node_url="")
+            response = await client._client._make_request(
+                session=session,
+                address="https://api.ipify.org?format=json",
+                http_method=HttpMethod.GET,
+                payload=None,
+                params=None
+            )
+            await session.close()
+            await self.close_connector()
 
-            if response.status_code == 200:
-                return True
-            else:
-                return False
-        except Exception as e:
-            return False
+            return response['ip']
 
-    def get_ip(self) -> Union[str, None]:
+        except Exception as ex:
+            logger.error(f"Failed to get ip")
+            return None
+
+    def get_custom_session_for_proxy(self) -> aiohttp.ClientSession:
         proxies = self.get_proxy()
-        if proxies is None:
-            return None
-        try:
-            http_client = httpx.Client(proxies=proxies)
-            ipify_url = 'https://api.ipify.org?format=json'
-            response = http_client.get(url=ipify_url, timeout=15)
 
-            if response.status_code == 200:
-                return response.json()['ip']
-            else:
-                return None
-        except Exception as e:
-            return None
+        proxy_unit: Optional[aiohttp.typedefs.StrOrURL] = (
+            proxies.get(f"{self.proxy_data.proxy_type}://") if proxies else None
+        )
 
-    def rotate_mobile_proxy(self, rotation_link: str):
-        if rotation_link is None:
-            return None
+        if self.proxy_data.proxy_type == 'http':
+            self.connector = aiohttp.TCPConnector(limit=10)
+            custom_session = CustomSession(proxy=proxy_unit, connector=self.connector)
 
-        initial_ip = self.get_ip()
-        if initial_ip is None:
-            logger.error(f"Failed to get initial ip")
-            return False
-
-        http_client_clear = httpx.Client()
-        response = http_client_clear.get(url=rotation_link)
-        if response.status_code == 200:
-            logger.info(f"Proxy rotation response success (current ip: {initial_ip}), "
-                        f"waiting for proxy to rotate (120 sec timeout)")
-            is_rotated = self.wait_for_proxy_rotation(initial_ip=initial_ip)
-            if is_rotated is True:
-                logger.info(f"Proxy is successfully rotated")
-                return True
-            else:
-                logger.error(f"Proxy rotation failed or timeout")
-                return False
+        elif self.proxy_data.proxy_type == 'socks5':
+            self.connector = SocksConnector.from_url(
+                url=proxy_unit
+            )
+            custom_session = CustomSession(connector=self.connector)
 
         else:
-            logger.error(f"Proxy rotation failed")
-            return False
+            raise ValueError(f"Unknown proxy type: {self.proxy_data.proxy_type}")
 
-    def wait_for_proxy_rotation(self, initial_ip: str):
-        start_time = time.time()
-        while True:
-            if time.time() - start_time > 120:
-                return False
+        return custom_session
 
-            ip = self.get_ip()
-            if ip is None:
-                continue
+    def get_custom_session(self) -> aiohttp.ClientSession:
+        self.connector = aiohttp.TCPConnector(limit=10)
+        custom_session = CustomSession(connector=self.connector)
 
-            if ip != initial_ip:
-                return True
+        return custom_session
 
-            time.sleep(2)
-
-
-
-
-
-
+    async def close_connector(self):
+        if self.connector:
+            await self.connector.close()
+            self.connector = None

@@ -140,7 +140,7 @@ class OrbiterBridge(ModuleBase):
                 decimals=token_x_decimals
             )
 
-        self.initial_balance_x_weii = balance_x_wei
+        self.initial_balance_x_wei = balance_x_wei
         self.token_x_decimals = token_x_decimals
 
         return amount_out_wei

@@ -230,8 +230,8 @@ class ModuleBase:
 
     def get_contract(
             self,
-            address,
-            abi,
+            address: Union[str, int],
+            abi: list,
             provider
     ) -> Contract:
         """
@@ -363,7 +363,7 @@ class ModuleBase:
     async def get_token_balance(
             self,
             account: Account,
-            token_address: int
+            token_address: Union[str, int]
     ) -> int:
         """
         Returns the token balance of an account in wei.
@@ -517,6 +517,7 @@ class ModuleBase:
             cairo_version: int,
             auto_estimate: bool = False
     ) -> Union[Invoke, None]:
+
         try:
             return await account.sign_invoke_transaction(
                 calls=calls,
@@ -526,7 +527,7 @@ class ModuleBase:
             )
 
         except ClientError as ex:
-            logger.exception(ex)
+            logger.error(f"Error while signing transaction: {ex}")
             return None
 
     async def try_send_txn(
@@ -565,7 +566,7 @@ class ModuleBase:
 
     async def send_txn(self):
         """
-        Abstract method for sending a transaction.
+        ABS method for sending a transaction.
         :return:
         """
         raise NotImplementedError
@@ -584,35 +585,6 @@ class ModuleBase:
         :return:
         """
         logger.warning(f"Action: {txn_info_message}")
-
-        target_gas_price_gwei = self.storage.app_config.target_eth_mainnet_gas_price
-        target_gas_price_wei = self.storage.app_config.target_eth_mainnet_gas_price * 10 ** 9
-        time_out_sec = self.storage.app_config.time_to_wait_target_gas_price_sec
-        is_timeout_needed = self.storage.app_config.is_gas_price_wait_timeout_needed
-        gas_price_status = await self.gas_price_check_loop(
-            target_price_wei=target_gas_price_wei,
-            time_out_sec=time_out_sec,
-            is_timeout_needed=is_timeout_needed,
-        )
-
-        status, gas_price = gas_price_status
-        if gas_price is None:
-            err_msg = f"Error while getting gas price. Aborting transaction."
-            logger.error(err_msg)
-
-            self.module_execution_result.execution_status = False
-            self.module_execution_result.execution_info = err_msg
-            return self.module_execution_result
-
-        if status is False:
-            err_msg = f"Gas price is too high ({gas_price / 10 ** 9} Gwei) after {time_out_sec}. Aborting transaction."
-            logger.error(err_msg)
-
-            self.module_execution_result.execution_status = False
-            self.module_execution_result.execution_info = err_msg
-            return self.module_execution_result
-
-        logger.info(f"Gas price is under target value ({target_gas_price_gwei}), now = {gas_price / 10 ** 9} Gwei.")
 
         cairo_version = await self.get_cairo_version_for_txn_execution(account=account)
         if cairo_version is None:
@@ -1044,12 +1016,12 @@ class LiquidityModuleBase(ModuleBase):
         out_decimals = txn_payload_data.amount_x_decimals
         in_decimals = txn_payload_data.amount_y_decimals
 
-        coin_x_symbol = self.task.coin_x.upper() if is_reverse is False else self.task.coin_x.upper()
-        coin_y_symbol = self.task.coin_y.upper() if is_reverse is False else self.task.coin_y.upper()
+        coin_x_symbol = self.coin_x.symbol.upper() if is_reverse is False else self.coin_x.symbol.upper()
+        coin_y_symbol = self.coin_y.symbol.upper() if is_reverse is False else self.coin_y.symbol.upper()
 
         txn_info_message = f"{module_type} ({module_name}) | " \
                            f"{out_decimals} ({coin_x_symbol.upper()}) + " \
-                           f"{in_decimals} ({coin_y_symbol.symbol.upper()}). " \
+                           f"{in_decimals} ({coin_y_symbol.upper()}). " \
                            f"Slippage: {self.task.slippage}%."
 
         txn_status = await self.simulate_and_send_transfer_type_transaction(

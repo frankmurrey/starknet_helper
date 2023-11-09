@@ -1,7 +1,9 @@
-from typing import Callable, Union
+from typing import Union
 
 import customtkinter
+from PIL import Image
 
+from src.paths import GUI_DIR
 from src.schemas.proxy_data import ProxyData
 from src.schemas.wallet_data import WalletData
 from gui.wallet_right_window.wallet_window import WalletWindow
@@ -58,7 +60,7 @@ class WalletItem(customtkinter.CTkFrame):
         self.wallet_name_label.grid(
             row=0,
             column=0,
-            padx=(50, 0),
+            padx=(60, 0),
             pady=pad_y,
             sticky="w"
         )
@@ -119,20 +121,27 @@ class WalletItem(customtkinter.CTkFrame):
             sticky="e"
         )
 
+        edit_image = customtkinter.CTkImage(
+            light_image=Image.open(f"{GUI_DIR}/images/edit_button.png"),
+            dark_image=Image.open(f"{GUI_DIR}/images/edit_button.png"),
+            size=(20, 20)
+        )
         self.edit_button = customtkinter.CTkButton(
             self.frame,
-            text="Edit",
-            font=customtkinter.CTkFont(size=12, weight="bold"),
-            width=45,
-            height=25,
+            text="",
+            bg_color='transparent',
+            fg_color='transparent',
+            width=5,
+            image=edit_image,
+            hover=False,
             command=self.edit_wallet_button_clicked
         )
         self.edit_button.grid(
             row=0,
             column=5,
-            padx=(60, 0),
+            padx=(0, 20),
             pady=pad_y,
-            sticky="w"
+            sticky="e"
         )
 
         # EDIT WALLET

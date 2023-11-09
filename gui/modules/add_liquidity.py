@@ -16,11 +16,20 @@ from src.schemas.tasks.base.add_liquidity import AddLiquidityTaskBase
 from src.schemas import tasks
 
 
+LIQUIDITY_TASKS = {
+    enums.ModuleName.SITHSWAP: tasks.SithSwapAddLiquidityTask,
+    enums.ModuleName.MY_SWAP: tasks.MySwapAddLiquidityTask,
+    enums.ModuleName.JEDI_SWAP: tasks.JediSwapAddLiquidityTask,
+    enums.ModuleName.K10SWAP: tasks.K10SwapAddLiquidityTask,
+}
+
+
 class AddLiquidityTab:
     def __init__(
             self,
             tabview,
-            tab_name
+            tab_name,
+            task: tasks.AddLiquidityTaskBase = None
     ):
         self.tabview = tabview
         self.tab_name = tab_name
@@ -37,7 +46,8 @@ class AddLiquidityTab:
 
         self.liquidity_frame = AddLiquidityFrame(
             master=self.tabview.tab(tab_name),
-            grid=liquidity_frame_grid
+            grid=liquidity_frame_grid,
+            task=task
         )
 
         self.txn_settings_frame = TxnSettingFrame(
@@ -48,26 +58,17 @@ class AddLiquidityTab:
                 "padx": 20,
                 "pady": 20,
                 "sticky": "nsew"
-            }
+            },
+            task=task
         )
 
     def get_config_schema(self) -> Union[Callable, None]:
-        swap_protocol = self.liquidity_frame.protocol_combo.get_value().lower()
+        protocol = self.liquidity_frame.protocol_combo.get_value().lower()
         if self.liquidity_frame.protocol_combo.get_checkbox_value():
             return tasks.RandomAddLiquidityTask
 
         else:
-            if swap_protocol == enums.ModuleName.SITHSWAP:
-                return tasks.SithSwapAddLiquidityTask
-
-            elif swap_protocol == enums.ModuleName.MY_SWAP:
-                return tasks.MySwapAddLiquidityTask
-
-            elif swap_protocol == enums.ModuleName.JEDI_SWAP:
-                return tasks.JediSwapAddLiquidityTask
-
-            else:
-                return None
+            return LIQUIDITY_TASKS.get(protocol, None)
 
     def build_config_data(self):
         config_schema = self.get_config_schema()
@@ -105,19 +106,22 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
     def __init__(
             self,
             master,
-            grid
+            grid,
+            task: tasks.AddLiquidityTaskBase
     ):
         super().__init__(master)
+
+        self.task = task
 
         self.grid(**grid)
         self.grid_columnconfigure((0, 1), weight=1)
         self.grid_rowconfigure((0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11), weight=1)
 
+        # PROTOCOL
         self.protocol_label = customtkinter.CTkLabel(
             self,
             text="Protocol:"
         )
-
         self.protocol_label.grid(
             row=0,
             column=0,
@@ -140,6 +144,12 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
             text="Random protocol",
         )
 
+        protocol = getattr(self.task, "module_name", self.protocol_options[0])
+        self.protocol_combo.set_values(
+            combo_value=protocol.upper(),
+        )
+
+        # COIN X
         self.coin_x_label = customtkinter.CTkLabel(
             self,
             text="Coin X:"
@@ -158,6 +168,7 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
             width=120,
             command=self.update_coin_options
         )
+        self.coin_x_combobox.set(getattr(self.task, "coin_x", self.coin_x_options[0]))
         self.coin_x_combobox.grid(
             row=4,
             column=0,
@@ -166,6 +177,7 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
             sticky="w"
         )
 
+        # COIN Y
         self.coin_y_label = customtkinter.CTkLabel(
             self,
             text="Coin Y:"
@@ -184,7 +196,11 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
             options=self.coin_y_options,
             text="Random Y coin",
         )
+        self.coin_y_combobox.set_values(
+            combo_value=getattr(self.task, "coin_y", self.coin_y_options[0]),
+        )
 
+        # REVERSE ACTION
         self.reverse_action_checkbox = customtkinter.CTkCheckBox(
             self,
             text="Make reverse action",
@@ -193,10 +209,13 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
             checkbox_width=18,
             checkbox_height=18,
         )
+        if getattr(self.task, "reverse_action", False):
+            self.reverse_action_checkbox.select()
         self.reverse_action_checkbox.grid(
             row=5, column=0, padx=20, pady=(5, 0), sticky="w"
         )
 
+        # AMOUNT OUT X
         self.min_amount_out_x_label = customtkinter.CTkLabel(
             self,
             text="Min Amount Out X:"
@@ -209,9 +228,11 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
             sticky="w"
         )
 
+        min_amount_out_x = getattr(self.task, "min_amount_out", "")
         self.min_amount_out_x_entry = customtkinter.CTkEntry(
             self,
-            width=120
+            width=120,
+            textvariable=Variable(value=min_amount_out_x)
         )
         self.min_amount_out_x_entry.grid(
             row=7,
@@ -221,6 +242,7 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
             sticky="w"
         )
 
+        # MAX AMOUNT OUT X
         self.max_amount_out_x_label = customtkinter.CTkLabel(
             self,
             text="Max Amount Out X:"
@@ -233,9 +255,11 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
             sticky="w"
         )
 
+        max_amount_out_x = getattr(self.task, "max_amount_out", "")
         self.max_amount_out_x_entry = customtkinter.CTkEntry(
             self,
-            width=120
+            width=120,
+            textvariable=Variable(value=max_amount_out_x)
         )
         self.max_amount_out_x_entry.grid(
             row=7,
@@ -269,8 +293,9 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
             checkbox_height=18,
             onvalue=True,
             offvalue=False
-
         )
+        if getattr(self.task, "send_percent_balance", False):
+            self.send_percent_balance_x_checkbox.select()
 
         self.send_percent_balance_x_checkbox.grid(
             row=9,
@@ -280,6 +305,24 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
             sticky="w"
         )
 
+        if getattr(self.task, "use_all_balance", False):
+            self.use_all_balance_x_checkbox.select()
+            self.min_amount_out_x_entry.configure(
+                state="disabled",
+                fg_color='#3f3f3f',
+                textvariable=Variable(value="")
+            )
+            self.max_amount_out_x_entry.configure(
+                state="disabled",
+                fg_color='#3f3f3f',
+                textvariable=Variable(value="")
+            )
+            self.send_percent_balance_x_checkbox.deselect()
+            self.send_percent_balance_x_checkbox.configure(
+                state="disabled"
+            )
+
+        # SLIPPAGE
         self.slippage_label = customtkinter.CTkLabel(
             self,
             text="Slippage (%):",
@@ -292,10 +335,11 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
             sticky="w"
         )
 
+        slippage = getattr(self.task, "slippage", 2)
         self.slippage_entry = customtkinter.CTkEntry(
             self,
             width=70,
-            textvariable=Variable(value=2)
+            textvariable=Variable(value=slippage)
         )
         self.slippage_entry.grid(
             row=11,
@@ -307,41 +351,54 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
 
     @property
     def protocol_options(self) -> list:
-        return [
-            enums.ModuleName.SITHSWAP.upper(),
-            enums.ModuleName.MY_SWAP.upper(),
-            enums.ModuleName.JEDI_SWAP.upper()
-        ]
+        return [name.upper() for name in LIQUIDITY_TASKS.keys()]
 
     @property
     def protocol_coin_options(self) -> list:
         tokens = Tokens()
         protocol = self.protocol_combo.get_value()
+
         return [token.symbol.upper() for token in tokens.get_tokens_by_protocol(protocol)]
 
     @property
     def coin_x_options(self) -> list:
-        return self.protocol_coin_options
+        if self.protocol_combo.get_checkbox_value():
+            coins = Tokens().general_tokens
+            coin_symbols = [coin.symbol.upper() for coin in coins]
+        else:
+            coin_symbols = self.protocol_coin_options
+
+        return coin_symbols
 
     @property
     def coin_y_options(self) -> list:
-        protocol_coin_options = self.protocol_coin_options
-        coin_to_swap = self.coin_x_combobox.get().lower()
+        if self.protocol_combo.get_checkbox_value():
+            coins = Tokens().general_tokens
+            coin_symbols = [coin.symbol.upper() for coin in coins]
 
-        return [coin.upper() for coin in protocol_coin_options if coin.lower() != coin_to_swap.lower()]
+        else:
+            protocol_coin_options = self.protocol_coin_options
+            coin_x = self.coin_x_combobox.get().lower()
+            coin_symbols = [
+                coin.upper()
+                for coin in protocol_coin_options
+                if coin.lower() != coin_x.lower()
+            ]
+
+        return coin_symbols
 
     def update_coin_options(self, event=None):
-        coin_to_swap_options = self.coin_x_options
-        self.coin_x_combobox.configure(values=coin_to_swap_options)
+        coin_to_x_options = self.coin_x_options
+        self.coin_x_combobox.configure(values=coin_to_x_options)
 
         coin_to_receive_options = self.coin_y_options
         self.coin_y_combobox.combobox.configure(values=coin_to_receive_options)
         self.coin_y_combobox.combobox.set(coin_to_receive_options[1])
 
     def protocol_change_event(self, protocol=None):
-        coin_to_swap_options = self.coin_x_options
-        self.coin_x_combobox.configure(values=coin_to_swap_options)
-        self.coin_x_combobox.set(coin_to_swap_options[1])
+        coin_to_x_options = self.coin_x_options
+        self.coin_x_combobox.configure(values=coin_to_x_options)
+        self.coin_x_combobox.set(coin_to_x_options[1])
 
         coin_to_receive_options = self.coin_y_options
         self.coin_y_combobox.combobox.configure(values=coin_to_receive_options)

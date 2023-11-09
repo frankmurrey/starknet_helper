@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 
 from src.storage import Storage
@@ -27,16 +28,18 @@ class ActionLogger:
 
     def save_single_log_to_csv(self, action_data):
         log = self.build_single_log(action_data)
-        file_name = f"{action_data.wallet_address}_{action_data.date_time}.csv"
-        path = self.action_storage.get_current_logs_dir()
+        path = os.path.join(
+            self.action_storage.get_current_logs_dir(),
+            f"{action_data.wallet_address}_{action_data.date_time}.csv"
+        )
         if not path:
             logger.error("No logs dir found")
             return
 
         FileManager().write_data_to_csv(
             path=path,
-            file_name=file_name,
-            data=log
+            data=[log],
+            mode="a",
         )
 
     def log_error(self, action_data: WalletActionSchema):

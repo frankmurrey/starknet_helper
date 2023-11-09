@@ -8,11 +8,16 @@ from gui.modules.txn_settings_frame import TxnSettingFrame
 from gui.objects import CTkEntryWithLabel
 from gui.objects import CTkCustomTextBox
 from contracts.tokens.main import Tokens
-from src.schemas.tasks.transfer import TransferTask
+from src.schemas import tasks
 
 
 class TransferTab:
-    def __init__(self, tabview, tab_name):
+    def __init__(
+            self,
+            tabview,
+            tab_name,
+            task: tasks.TransferTask = None
+    ):
         self.tabview = tabview
 
         self.tabview.tab(tab_name).grid_columnconfigure(0, weight=1)
@@ -25,7 +30,11 @@ class TransferTab:
             "sticky": "nsew",
         }
 
-        self.transfer_frame = TransferFrame(master=self.tabview.tab(tab_name), grid=transfer_frame_grid)
+        self.transfer_frame = TransferFrame(
+            master=self.tabview.tab(tab_name),
+            grid=transfer_frame_grid,
+            task=task
+        )
 
         txn_settings_grid = {
             "row": 1,
@@ -36,7 +45,9 @@ class TransferTab:
         }
 
         self.txn_settings_frame = TxnSettingFrame(
-            master=self.tabview.tab(tab_name), grid=txn_settings_grid
+            master=self.tabview.tab(tab_name),
+            grid=txn_settings_grid,
+            task=task
         )
 
         text_box_grid = {
@@ -56,7 +67,7 @@ class TransferTab:
         )
 
     def build_config_data(self):
-        config_schema = TransferTask
+        config_schema = tasks.TransferTask
 
         try:
             config_data = config_schema(
@@ -80,39 +91,49 @@ class TransferTab:
 
 
 class TransferFrame(customtkinter.CTkFrame):
-    def __init__(self, master, grid, **kwargs):
-        super().__init__(master, **kwargs)
+    def __init__(self, master, grid, task: tasks.TransferTask = None):
+        super().__init__(master)
 
         self.grid(**grid)
         self.columnconfigure(0, weight=1)
 
+        # COIN X
         self.coin_x_label = customtkinter.CTkLabel(
             self,
             text="Coin to transfer:",
         )
         self.coin_x_label.grid(row=0, column=0, sticky="w", padx=20, pady=(20, 0))
 
+        coin_x = getattr(task, "coin_x", self.coin_options[0])
         self.coin_x_combobox = customtkinter.CTkComboBox(
             self,
             values=self.coin_options,
             width=120,
         )
+        self.coin_x_combobox.set(coin_x.upper())
         self.coin_x_combobox.grid(row=1, column=0, sticky="w", padx=20, pady=(0, 0))
 
+        # MIN AMOUNT OUT
+        min_amount_out = getattr(task, "min_amount_out", "")
         self.min_amount_out_element = CTkEntryWithLabel(
             self,
             label_text="Min amount out:",
             width=120,
+            textvariable=Variable(value=min_amount_out),
         )
         self.min_amount_out_element.grid(row=2, column=0, sticky="w", padx=20, pady=(10, 0))
 
+        # MAX AMOUNT OUT
+        max_amount_out = getattr(task, "max_amount_out", "")
         self.max_amount_out_element = CTkEntryWithLabel(
             self,
             label_text="Max amount out:",
             width=120,
+            textvariable=Variable(value=max_amount_out),
         )
         self.max_amount_out_element.grid(row=2, column=1, sticky="e", padx=20, pady=(10, 0))
 
+        # USE ALL BALANCE CHECKBOX
         self.use_all_balance_checkbox = customtkinter.CTkCheckBox(
             self,
             text="Use all balance",
@@ -124,6 +145,7 @@ class TransferFrame(customtkinter.CTkFrame):
         )
         self.use_all_balance_checkbox.grid(row=3, column=0, sticky="w", padx=20, pady=(10, 0))
 
+        # SEND PERCENT BALANCE CHECKBOX
         self.send_percent_balance_checkbox = customtkinter.CTkCheckBox(
             self,
             text="Send % of balance",
@@ -132,7 +154,27 @@ class TransferFrame(customtkinter.CTkFrame):
             checkbox_width=18,
             checkbox_height=18,
         )
+        if getattr(task, "send_percent_balance", False):
+            self.send_percent_balance_checkbox.select()
+
         self.send_percent_balance_checkbox.grid(row=4, column=0, sticky="w", padx=20, pady=(10, 20))
+
+        if getattr(task, "use_all_balance", False):
+            self.use_all_balance_checkbox.select()
+            self.min_amount_out_element.entry.configure(
+                state="disabled",
+                fg_color='#3f3f3f',
+                textvariable=Variable(value="")
+            )
+            self.max_amount_out_element.entry.configure(
+                state="disabled",
+                fg_color='#3f3f3f',
+                textvariable=Variable(value="")
+            )
+            self.send_percent_balance_checkbox.deselect()
+            self.send_percent_balance_checkbox.configure(
+                state="disabled"
+            )
 
     @property
     def coin_options(self) -> list:

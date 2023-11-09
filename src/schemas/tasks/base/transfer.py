@@ -1,5 +1,3 @@
-from pydantic import validator
-
 from src.schemas.tasks.base.base import TaskBase
 from src.schemas import validation_mixins
 

@@ -1,4 +1,4 @@
-TOKENS_DATA = [
+DEFAULT_TOKENS_DATA = [
     {
         "symbol": "eth",
         "contract_address": "0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7",
@@ -8,7 +8,9 @@ TOKENS_DATA = [
             "sithswap",
             "avnu",
             "k10swap",
-            "zklend"
+            "zklend",
+            "fibrous",
+            "starkex"
         ],
         "coin_gecko_id": "ethereum"
     },
@@ -21,7 +23,9 @@ TOKENS_DATA = [
             "sithswap",
             "avnu",
             "k10swap",
-            "zklend"
+            "zklend",
+            "fibrous",
+            "starkex"
         ],
         "coin_gecko_id": "tether"
     },
@@ -34,7 +38,9 @@ TOKENS_DATA = [
             "sithswap",
             "avnu",
             "k10swap",
-            "zklend"
+            "zklend",
+            "fibrous",
+            "starkex"
         ],
         "coin_gecko_id": "usd-coin"
     },
@@ -47,7 +53,9 @@ TOKENS_DATA = [
             "sithswap",
             "avnu",
             "k10swap",
-            "zklend"
+            "zklend",
+            "fibrous",
+            "starkex"
         ],
         "coin_gecko_id": "dai"
     },
@@ -86,5 +94,12 @@ TOKENS_DATA = [
     {
         "symbol": "msw_eth_usdt",
         "contract_address": "0x041f9a1e9a4d924273f5a5c0c138d52d66d2e6a8bee17412c6b0f48fe059ae04"
+    }
+]
+
+TOKENS_DATA = [
+    {
+        "default": DEFAULT_TOKENS_DATA,
+        "custom": []
     }
 ]

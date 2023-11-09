@@ -1,31 +1,95 @@
 import tkinter.messagebox
 from tkinter import Variable
-from typing import Callable, Union
+from typing import Callable, Union, TYPE_CHECKING
 
-from gui.modules.swap import SwapTab
-from gui.modules.add_liquidity import AddLiquidityTab
-from gui.modules.remove_liquidity import RemoveLiquidityTab
-from gui.modules.supply import SupplyLendingTab
-from gui.modules.withdraw import WithdrawLendingTab
-from gui.modules.stark_id import StarkIdMintTab
-from gui.modules.dmail import DmailSendMailTab
-from gui.modules.deploy import DeployTab
-from gui.modules.upgrade import UpgradeTab
-from gui.modules.transfer import TransferTab
-
+from gui import modules
+from gui.objects import FloatSpinbox
 import customtkinter
+
+from src import enums
+
+if TYPE_CHECKING:
+    from gui.wallet_right_window.actions_frame import ActionsFrame
+
+
+class Tab:
+    def __init__(
+            self,
+            tab,
+            spinbox_max_value: Union[int, float] = 100,
+            spinbox_start_value: Union[int, float] = 1,
+    ):
+        self.tab = tab
+        self.spinbox_max_value = spinbox_max_value
+        self.spinbox_start_value = spinbox_start_value
+
+
+TABS: dict = {
+    enums.TabName.SWAP: Tab(
+        tab=modules.SwapTab,
+    ),
+    enums.TabName.ADD_LIQUIDITY: Tab(
+        tab=modules.AddLiquidityTab,
+    ),
+    enums.TabName.REMOVE_LIQUIDITY: Tab(
+        tab=modules.RemoveLiquidityTab,
+        spinbox_max_value=1,
+    ),
+    enums.TabName.SUPPLY_LENDING: Tab(
+        tab=modules.SupplyLendingTab,
+    ),
+    enums.TabName.WITHDRAW_LENDING: Tab(
+        tab=modules.WithdrawLendingTab,
+        spinbox_max_value=1,
+    ),
+    enums.TabName.MINT: Tab(
+        tab=modules.MintTab,
+    ),
+    enums.TabName.DMAIL_SEND_MAIL: Tab(
+        tab=modules.DmailSendMailTab,
+    ),
+    enums.TabName.DEPLOY: Tab(
+        tab=modules.DeployTab,
+        spinbox_max_value=1,
+    ),
+    enums.TabName.UPGRADE: Tab(
+        tab=modules.UpgradeTab,
+        spinbox_max_value=1,
+    ),
+    enums.TabName.TRANSFER: Tab(
+        tab=modules.TransferTab,
+    ),
+    enums.TabName.BRIDGE: Tab(
+        tab=modules.BridgeTab,
+    ),
+    enums.TabName.TRASH_TXNS: Tab(
+        tab=modules.TrashTxnsTab,
+    ),
+    enums.TabName.ZERIUS: Tab(
+        tab=modules.ZeriusTab
+    ),
+}
 
 
 class InteractionTopLevelWindow(customtkinter.CTkToplevel):
     def __init__(
             self,
             parent,
-            *args,
-            **kwargs
+            action: dict = None,
+            on_action_save: Callable[[Union[dict, None]], None] = None,
+            title: str = "New action"
     ):
-        super().__init__(*args, **kwargs)
-        self.title("New action")
+        super().__init__()
+
+        self.master: ActionsFrame = parent
+        self.action = action
+        self.task = action["task_config"] if action else None
+        self.on_action_save = on_action_save
+
+        self.title(title)
+
         self.after(10, self.focus_force)
+
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=0)
         self.grid_rowconfigure(1, weight=0)
@@ -36,7 +100,9 @@ class InteractionTopLevelWindow(customtkinter.CTkToplevel):
         self.current_tab = None
 
         self.chose_module_frame = ChoseModuleFrame(
-            master=self)
+            master=self,
+            action=action
+        )
 
         self.tabview = customtkinter.CTkTabview(
             self,
@@ -53,11 +119,14 @@ class InteractionTopLevelWindow(customtkinter.CTkToplevel):
         self.tabview.grid_columnconfigure(0, weight=1)
         self.tabview.grid_rowconfigure(0, weight=1)
 
-        self.set_default_tab()
+        if self.action:
+            self.set_edit_tab()
+        else:
+            self.set_default_tab()
 
         self.confirm_button = customtkinter.CTkButton(
             self,
-            text="Add",
+            text="Save",
             font=customtkinter.CTkFont(size=12, weight="bold"),
             width=100,
             height=35,
@@ -75,106 +144,46 @@ class InteractionTopLevelWindow(customtkinter.CTkToplevel):
 
     def set_new_tab(
             self,
-            tab_name: str):
+            tab_name: str
+    ):
         if self.current_tab_name is not None:
             self.tabview.delete(self.current_tab_name)
 
         self.tabview.add(tab_name)
         self.tabview.set(tab_name)
 
-        if tab_name == "Swap":
-            self.current_tab = SwapTab(
-                self.tabview,
-                tab_name
-            )
-            self.current_tab_name = tab_name
-            self.chose_module_frame.float_spinbox.max_value = 100
+        tab: Tab = TABS[enums.TabName(tab_name)]
+        self.current_tab = tab.tab(
+            self.tabview,
+            tab_name,
+            self.task
+        )
+        self.current_tab_name = tab_name
+        self.chose_module_frame.float_spinbox.max_value = tab.spinbox_max_value
+        self.chose_module_frame.float_spinbox.entry.configure(textvariable=Variable(value=1))
 
-        elif tab_name == "Add Liquidity":
-            self.current_tab = AddLiquidityTab(
-                self.tabview,
-                tab_name
-            )
-            self.chose_module_frame.float_spinbox.max_value = 100
-            self.current_tab_name = tab_name
-
-        elif tab_name == "Remove Liquidity":
-            self.current_tab = RemoveLiquidityTab(
-                self.tabview,
-                tab_name
-            )
-            self.current_tab_name = tab_name
-            self.chose_module_frame.float_spinbox.max_value = 1
-            self.chose_module_frame.float_spinbox.entry.configure(textvariable=Variable(value=1))
-
-        elif tab_name == "Supply Lending":
-            self.current_tab = SupplyLendingTab(
-                self.tabview,
-                tab_name
-            )
-            self.current_tab_name = tab_name
-            self.chose_module_frame.float_spinbox.max_value = 100
-
-        elif tab_name == "Withdraw Lending":
-            self.current_tab = WithdrawLendingTab(
-                self.tabview,
-                tab_name
-            )
-            self.current_tab_name = tab_name
-            self.chose_module_frame.float_spinbox.max_value = 1
-            self.chose_module_frame.float_spinbox.entry.configure(textvariable=Variable(value=1))
-
-        elif tab_name == "Stark ID Mint":
-            self.current_tab = StarkIdMintTab(
-                self.tabview,
-                tab_name
-            )
-            self.current_tab_name = tab_name
-            self.chose_module_frame.float_spinbox.max_value = 100
-        elif tab_name == "Dmail Send Mail":
-            self.current_tab = DmailSendMailTab(
-                self.tabview,
-                tab_name
-            )
-            self.current_tab_name = tab_name
-            self.chose_module_frame.float_spinbox.max_value = 100
-
-        elif tab_name == "Deploy":
-            self.current_tab = DeployTab(
-                self.tabview,
-                tab_name
-            )
-            self.current_tab_name = tab_name
-            self.chose_module_frame.float_spinbox.max_value = 1
-            self.chose_module_frame.float_spinbox.entry.configure(textvariable=Variable(value=1))
-
-        elif tab_name == "Upgrade":
-            self.current_tab = UpgradeTab(
-                self.tabview,
-                tab_name
-            )
-            self.current_tab_name = tab_name
-            self.chose_module_frame.float_spinbox.max_value = 1
-            self.chose_module_frame.float_spinbox.entry.configure(textvariable=Variable(value=1))
-
-        elif tab_name == "Transfer":
-            self.current_tab = TransferTab(
-                self.tabview,
-                tab_name
-            )
-            self.current_tab_name = tab_name
-            self.chose_module_frame.float_spinbox.max_value = 100
+    def set_edit_tab(self):
+        tab_name = self.action["tab_name"]
+        self.tabview.add(tab_name.title())
+        self.tabview.set(tab_name.title())
+        self.current_tab = TABS[enums.TabName(tab_name)].tab(
+            self.tabview,
+            tab_name.title(),
+            self.task
+        )
+        self.current_tab_name = tab_name
+        self.chose_module_frame.float_spinbox.entry.configure(textvariable=Variable(value=self.action["repeats"]))
 
     def set_default_tab(self):
         tab_name = self.chose_module_frame.modules_option_menu.get()
         self.tabview.add(tab_name.title())
         self.tabview.set(tab_name.title())
-        self.current_tab = DeployTab(
+        self.current_tab = modules.SwapTab(
             self.tabview,
             tab_name
         )
         self.current_tab_name = tab_name
-        self.chose_module_frame.float_spinbox.max_value = 1
+        self.chose_module_frame.float_spinbox.max_value = 100
         self.chose_module_frame.float_spinbox.entry.configure(textvariable=Variable(value=1))
 
     def get_repeats_amount(self) -> Union[int, None]:
@@ -188,6 +197,10 @@ class InteractionTopLevelWindow(customtkinter.CTkToplevel):
             return None
 
     def confirm_button_event(self):
+        if self.master.is_running:
+            tkinter.messagebox.showerror("Error", "You can't edit action while it's running")
+            return
+
         current_tab = self.current_tab
         if current_tab is None:
             return
@@ -195,6 +208,9 @@ class InteractionTopLevelWindow(customtkinter.CTkToplevel):
         config_data = current_tab.build_config_data()
         if config_data is None:
             return
+
+        if self.action:
+            config_data.task_id = self.action["task_config"].task_id
 
         repeats = self.get_repeats_amount()
         if repeats is None:
@@ -204,20 +220,27 @@ class InteractionTopLevelWindow(customtkinter.CTkToplevel):
             )
             return
 
-        self.parent.set_action(
+        self.on_action_save(
             {
                 "task_config": config_data,
-                "repeats": repeats
+                "repeats": repeats,
+                "tab_name": self.current_tab_name
             }
         )
+        if self.action:
+            self.master.button_actions_frame.close_edit_action_window()
 
 
 class ChoseModuleFrame(customtkinter.CTkFrame):
     def __init__(
             self,
-            master):
+            master,
+            action: dict = None,
+    ):
         super().__init__(master=master)
         self.master = master
+        self.action = action
+
         self.grid(
             row=0,
             column=0,
@@ -241,18 +264,7 @@ class ChoseModuleFrame(customtkinter.CTkFrame):
 
         self.modules_option_menu = customtkinter.CTkOptionMenu(
             self,
-            values=[
-                'Deploy',
-                'Upgrade',
-                'Swap',
-                'Transfer',
-                "Add Liquidity",
-                "Remove Liquidity",
-                "Supply Lending",
-                "Withdraw Lending",
-                "Stark ID Mint",
-                "Dmail Send Mail",
-            ],
+            values=self.tab_names,
             command=master.set_new_tab
         )
         self.modules_option_menu.grid(
@@ -285,73 +297,13 @@ class ChoseModuleFrame(customtkinter.CTkFrame):
             sticky="w"
         )
 
+    @property
+    def tab_names(self) -> list:
+        if self.action:
+            values = [self.action["tab_name"]]
+        else:
+            tab: enums.TabName
+            values = [tab.value for tab in enums.TabName]
 
-class FloatSpinbox(customtkinter.CTkFrame):
-    def __init__(
-            self,
-            *args,
-            start_index: int = 1,
-            max_value: Union[int] = 100,
-            width: int = 100,
-            height: int = 32,
-            step_size: Union[int, float] = 1,
-            command: Callable = None,
-            **kwargs
-    ):
-        super().__init__(*args, width=width, height=height, **kwargs)
+        return values
 
-        self.step_size = int(step_size)
-        self.max_value = int(max_value)
-        self.command = command
-
-        self.configure(fg_color=("gray78", "gray21"))
-
-        self.grid_columnconfigure((0, 2), weight=0)
-        self.grid_columnconfigure(1, weight=1)
-
-        self.subtract_button = customtkinter.CTkButton(self, text="-", width=height-6, height=height-6,
-                                                       command=self.subtract_button_callback)
-        self.subtract_button.grid(row=0, column=0, padx=(3, 0), pady=3)
-
-        self.entry = customtkinter.CTkEntry(self, width=width-(2*height), height=height-6, border_width=0, fg_color="gray16")
-        self.entry.grid(row=0, column=1, columnspan=1, padx=3, pady=3, sticky="ew")
-
-        self.add_button = customtkinter.CTkButton(self, text="+", width=height-6, height=height-6,
-                                                  command=self.add_button_callback)
-        self.add_button.grid(row=0, column=2, padx=(0, 3), pady=3)
-
-        self.entry.insert(0, start_index)
-
-    def add_button_callback(self):
-        if self.command is not None:
-            self.command()
-        try:
-            value = int(self.entry.get()) + self.step_size
-            if value > self.max_value:
-                value = self.max_value
-            self.entry.delete(0, "end")
-            self.entry.insert(0, value)
-        except ValueError:
-            return
-
-    def subtract_button_callback(self):
-        if self.command is not None:
-            self.command()
-        try:
-            value = int(self.entry.get()) - self.step_size
-            if value < 1:
-                value = 1
-            self.entry.delete(0, "end")
-            self.entry.insert(0, value)
-        except ValueError:
-            return
-
-    def get(self) -> Union[float, None]:
-        try:
-            return float(self.entry.get())
-        except ValueError:
-            return None
-
-    def set(self, value: float):
-        self.entry.delete(0, "end")
-        self.entry.insert(0, str(int(value)))

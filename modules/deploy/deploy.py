@@ -1,18 +1,15 @@
-import dataclasses
 from typing import TYPE_CHECKING, Union
 
-from starknet_py.net.account.account import Account
-from starknet_py.net.models.transaction import DeployAccount
-from starknet_py.net.client_errors import ClientError
 from loguru import logger
+from starknet_py.net.account.account import Account
+from starknet_py.net.client_errors import ClientError
+from starknet_py.net.models.transaction import DeployAccount
 
-from modules.base import ModuleBase
-from src.schemas.logs import WalletActionSchema
-from src.schemas.action_models import ModuleExecutionResult
 from src import enums
-from src.storage import ActionStorage
-from utils.key_manager.key_manager import get_key_pair_from_pk, get_key_data
+from modules.base import ModuleBase
 from modules.deploy.custom_curve_signer import BraavosCurveSigner
+from src.schemas.action_models import ModuleExecutionResult
+from utils.key_manager.key_manager import get_key_pair_from_pk, get_key_data
 
 if TYPE_CHECKING:
     from src.schemas.tasks.deploy import DeployTask
@@ -106,24 +103,6 @@ class Deploy(ModuleBase):
             err_msg = f"Error while estimating transaction fee"
             logger.error(err_msg)
             self.module_execution_result.execution_info = err_msg
-            return self.module_execution_result
-
-        target_gas_price_gwei = self.storage.app_config.target_eth_mainnet_gas_price
-        target_gas_price_wei = target_gas_price_gwei * 10 ** 9
-        time_out_sec = self.storage.app_config.time_to_wait_target_gas_price_sec
-        is_timeout_needed = self.storage.app_config.is_gas_price_wait_timeout_needed
-        gas_price_status = await self.gas_price_check_loop(target_price_wei=target_gas_price_wei,
-                                                           time_out_sec=time_out_sec,
-                                                           is_timeout_needed=is_timeout_needed)
-        status, gas_price = gas_price_status
-        if status is False:
-            err_msg = f"Gas price is too high ({gas_price / 10 ** 9} Gwei) after {time_out_sec}. Aborting transaction."
-            logger.error(err_msg)
-
-            self.module_execution_result.execution_info = err_msg
-            return self.module_execution_result
-
-        logger.info(f"Gas price is under target value ({target_gas_price_gwei}), now = {gas_price / 10 ** 9} Gwei.")
 
         wallet_eth_balance_wei = await self.get_eth_balance(account=self.account)
         wallet_eth_balance_decimals = wallet_eth_balance_wei / 10 ** 18

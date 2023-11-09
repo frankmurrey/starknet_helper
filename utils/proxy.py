@@ -1,47 +1,53 @@
-from typing import Union, List
+from typing import Optional
 
 from loguru import logger
 
 from src.schemas.proxy_data import ProxyData
 
 
-def parse_proxy_data(proxy_str: str) -> Union[ProxyData, None]:
+def parse_proxy_data(proxy_str: str) -> Optional[ProxyData]:
     if not proxy_str:
         return None
 
+    is_mobile = proxy_str.startswith('m$')
+    proxy_str = proxy_str[2:] if is_mobile else proxy_str
+
     try:
-        if proxy_str.startswith('m$'):
-            is_mobile = True
-            proxy_str = proxy_str[2:]
+        if '://' in proxy_str:
+            proxy_type, proxy_str = proxy_str.split('://', 1)
+            if proxy_type not in ['socks5', 'http', 'https']:
+                return None
         else:
-            is_mobile = False
+            proxy_type = 'http'
 
-        proxy_str = proxy_str.split(":")
-        if len(proxy_str) == 2:
-            host, port = proxy_str
-            proxy = ProxyData(
-                host=host,
-                port=port,
-                is_mobile=is_mobile
-            )
+        if '@' in proxy_str:
+            credentials, proxy_str = proxy_str.split('@', 1)
 
-        elif len(proxy_str) == 4:
-            host, port, username, password = proxy_str
-            proxy = ProxyData(
-                host=host,
-                port=port,
-                username=username,
-                password=password,
-                auth=True,
-                is_mobile=is_mobile
-            )
-
+            username, password = credentials.split(':', 1)
+            host, port = proxy_str.split(':', 1)
+            auth = True
         else:
-            proxy = None
 
-        return proxy
+            auth = proxy_str.count(":") == 3
+
+            if auth:
+                host, port, username, password = proxy_str.split(':', 3)
+            else:
+                host, port = proxy_str.split(':', 1)
+                username = password = None
+
+        port = int(port)
+        return ProxyData(
+            host=host,
+            port=port,
+            username=username,
+            password=password,
+            auth=auth,
+            is_mobile=is_mobile,
+            proxy_type=proxy_type,
+        )
 
     except Exception as e:
-        logger.error(f"Error while parsing proxy data: {e}")
-        logger.exception(e)
-        return None
+        logger.debug(f"Error parsing proxy data: {e}")
+
+    return None

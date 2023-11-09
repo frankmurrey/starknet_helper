@@ -4,6 +4,7 @@ import tkinter.messagebox
 import config
 from src import enums
 from gui import objects
+from utils.key_manager.key_manager import pad_hex_with_zeros
 from utils.key_manager.key_manager import get_braavos_addr_from_private_key, get_argent_addr_from_private_key
 
 
@@ -26,6 +27,10 @@ class AddressEntry(objects.CTkEntryWithLabel):
             **kwargs
         )
 
+    @property
+    def address(self):
+        return self.text
+
     def set_address(
             self,
             private_key: str,
@@ -41,6 +46,8 @@ class AddressEntry(objects.CTkEntryWithLabel):
             address = hex(get_argent_addr_from_private_key(private_key, cairo_version=cairo_version))
         else:
             return
+
+        address = pad_hex_with_zeros(address, config.STARK_KEY_LENGTH)
 
         self.text = address
         self.entry.configure(textvariable=tkinter.StringVar(value=address))

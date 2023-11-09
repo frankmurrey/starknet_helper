@@ -70,83 +70,121 @@ class MySwapAddLiquidity(MySwapBase, LiquidityModuleBase):
         Build transaction payload data
         :return:
         """
-        amounts_out = await self.get_amounts_out()
-        if amounts_out is None:
-            return None
-
         pool_id = self.get_pool_id(
-            coin_x_symbol=self.task.coin_x,
-            coin_y_symbol=self.task.coin_y
+            coin_x_symbol=self.coin_x.symbol,
+            coin_y_symbol=self.coin_y.symbol
         )
         if pool_id is None:
             return None
 
-        token_pair: list[str, str] = await self.get_token_pair_for_pool(pool_id=pool_id)
+        token_pair = await self.get_token_pair_for_pool(pool_id=pool_id)
         if token_pair is None:
             return None
 
-        token_0_balance_wei = await self.get_token_balance_for_address(
-            token_address=self.i16(token_pair[0]),
-            account=self.account,
-            address=self.account.address
-        )
-        if token_0_balance_wei == 0:
-            logger.error(f"Wallet {token_pair[0]} balance = 0")
-            return None
+        token0_address, token1_address = token_pair
 
-        token_1_balance_wei = await self.get_token_balance_for_address(
-            token_address=self.i16(token_pair[1]),
-            account=self.account,
-            address=self.account.address
-        )
-        if token_1_balance_wei == 0:
-            logger.error(f"Wallet {token_pair[1]} balance = 0")
-            return None
+        if self.i16(token0_address) == self.i16(self.coin_x.contract_address):
+            amount0_wei = await self.calculate_amount_out_from_balance(coin_x=self.coin_x)
+            if amount0_wei is None:
+                logger.error(f'Failed to calculate amount out for {self.coin_x.symbol.upper()}')
+                return None
 
-        token_0_decimals = await self.get_tokens_decimals_by_call(
-            token_address=self.i16(token_pair[0]),
-            account=self.account
-        )
-        if token_0_decimals is None:
-            return None
+            if amount0_wei > self.initial_balance_x_wei:
+                logger.error(
+                    f"Amount out {self.coin_x.symbol.upper()} ({amount0_wei / 10 ** self.token_x_decimals}) "
+                    f"is greater than actual balance: {self.initial_balance_x_wei / 10 ** self.token_x_decimals}"
+                )
+                return None
 
-        amount_out_0_wei = int(amounts_out[token_pair[0]])
-        if amount_out_0_wei > token_0_balance_wei:
-            logger.error(
-                f"Amount out of Token0 ({round(amount_out_0_wei / 10 ** token_0_decimals, 4)}) > "
-                f"wallet token balance ({round(token_0_balance_wei / 10 ** token_0_decimals, 4)})"
+            reserves_data = await self.get_pool_reserves_data(
+                coin_x_symbol=self.coin_x.symbol,
+                coin_y_symbol=self.coin_y.symbol,
+                router_contract=self.router_contract
             )
-            return None
+            if reserves_data is None:
+                logger.error(
+                    f"Failed to get reserves data for pair {self.coin_x.symbol.upper()}/{self.coin_y.symbol.upper()}"
+                )
+                return None
 
-        amount_out_0_wei_with_slippage = int(amount_out_0_wei * (1 - self.task.slippage / 100))
-        amount_0_decimals = amount_out_0_wei / 10 ** token_0_decimals
-
-        token_1_decimals = await self.get_tokens_decimals_by_call(
-            token_address=self.i16(token_pair[1]),
-            account=self.account
-        )
-        if token_1_decimals is None:
-            return None
-
-        amount_out_1_wei = int(amounts_out[token_pair[1]])
-        if amount_out_1_wei > token_1_balance_wei:
-            logger.error(
-                f"Amount out of Token1 ({round(amount_out_1_wei / 10 ** token_1_decimals, 4)}) > "
-                f"wallet token balance ({round(token_1_balance_wei / 10 ** token_1_decimals, 4)})"
+            amount1_wei = await self.get_amount_in(
+                reserves_data=reserves_data,
+                amount_out_wei=amount0_wei,
+                coin_x_obj=self.coin_x,
+                coin_y_obj=self.coin_y,
+                slippage=0
             )
-            return None
-        amount_out_1_wei_with_slippage = int(amount_out_1_wei * (1 - self.task.slippage / 100))
-        amount_1_decimals = amount_out_1_wei / 10 ** token_1_decimals
+            if amount1_wei is None:
+                logger.error(
+                    f"Failed to calculate amount out for {self.coin_y.symbol.upper()}"
+                )
+                return None
+
+            if amount1_wei > self.initial_balance_y_wei:
+                logger.error(
+                    f"Amount out {self.coin_y.symbol.upper()} ({amount1_wei / 10 ** self.token_y_decimals}) "
+                    f"is greater than actual balance: {self.initial_balance_y_wei / 10 ** self.token_y_decimals}"
+                )
+                return None
+
+        else:
+            amount1_wei = await self.calculate_amount_out_from_balance(coin_x=self.coin_y)
+            if amount1_wei is None:
+                logger.error(f'Failed to calculate amount out for {self.coin_y.symbol.upper()}')
+                return None
+
+            if amount1_wei > self.initial_balance_x_wei:
+                logger.error(
+                    f"Amount out {self.coin_y.symbol.upper()} ({amount1_wei / 10 ** self.token_y_decimals}) "
+                    f"is greater than actual balance: {self.initial_balance_x_wei / 10 ** self.token_y_decimals}"
+                )
+                return None
+
+            reserves_data = await self.get_pool_reserves_data(
+                coin_x_symbol=self.coin_x.symbol,
+                coin_y_symbol=self.coin_y.symbol,
+                router_contract=self.router_contract
+            )
+            if reserves_data is None:
+                logger.error(
+                    f"Failed to get reserves data for pair {self.coin_y.symbol.upper()}/{self.coin_x.symbol.upper()}"
+                )
+                return None
+
+            amount0_wei = await self.get_amount_in(
+                reserves_data=reserves_data,
+                amount_out_wei=amount1_wei,
+                coin_x_obj=self.coin_x,
+                coin_y_obj=self.coin_y,
+                slippage=0
+            )
+            if amount0_wei is None:
+                logger.error(
+                    f"Failed to calculate amount out for {self.coin_x.symbol.upper()}"
+                )
+                return None
+
+            if amount0_wei > self.initial_balance_y_wei:
+                logger.error(
+                    f"Amount out {self.coin_x.symbol.upper()} ({amount0_wei / 10 ** self.token_x_decimals}) "
+                    f"is greater than actual balance: {self.initial_balance_y_wei / 10 ** self.token_x_decimals}"
+                )
+                return None
+            self.coin_x, self.coin_y = self.coin_y, self.coin_x
+            self.token_x_decimals, self.token_y_decimals = self.token_y_decimals, self.token_x_decimals
+
+        amount0_with_slippage = int(amount0_wei * (1 - self.task.slippage / 100))
+        amount1_with_slippage = int(amount1_wei * (1 - self.task.slippage / 100))
 
         approve_call_0 = self.build_token_approve_call(
             token_addr=token_pair[0],
             spender=hex(self.router_contract.address),
-            amount_wei=amount_out_0_wei
+            amount_wei=amount0_wei
         )
         approve_call_1 = self.build_token_approve_call(
             token_addr=token_pair[1],
             spender=hex(self.router_contract.address),
-            amount_wei=amount_out_1_wei
+            amount_wei=amount1_wei
         )
 
         add_liq_call = self.build_call(
@@ -154,14 +192,14 @@ class MySwapAddLiquidity(MySwapBase, LiquidityModuleBase):
             func_name='add_liquidity',
             call_data=[
                 self.i16(token_pair[0]),
-                amount_out_0_wei,
+                amount0_wei,
                 0,
-                amount_out_0_wei_with_slippage,
+                amount0_with_slippage,
                 0,
                 self.i16(token_pair[1]),
-                amount_out_1_wei,
+                amount1_wei,
                 0,
-                amount_out_1_wei_with_slippage,
+                amount1_with_slippage,
                 0
             ]
         )
@@ -170,8 +208,8 @@ class MySwapAddLiquidity(MySwapBase, LiquidityModuleBase):
 
         return TransactionPayloadData(
             calls=calls,
-            token_pair_0=amount_0_decimals,
-            token_pair_1=amount_1_decimals
+            amount_x_decimals=amount0_wei / 10 ** self.token_x_decimals,
+            amount_y_decimals=amount1_wei / 10 ** self.token_y_decimals
         )
 
     async def send_txn(self) -> ModuleExecutionResult:

@@ -1,4 +1,4 @@
-from src.schemas.tasks.dmail import DmailSendMailTask
+from src.schemas import tasks
 from gui.modules.txn_settings_frame import TxnSettingFrame
 from gui.objects import CTkCustomTextBox
 
@@ -7,7 +7,8 @@ class DmailSendMailTab:
     def __init__(
             self,
             tabview,
-            tab_name
+            tab_name,
+            task: tasks.DmailSendMailTask = None
     ):
         self.tabview = tabview
 
@@ -21,7 +22,8 @@ class DmailSendMailTab:
                 "padx": 20,
                 "pady": 20,
                 "sticky": "nsew"
-            }
+            },
+            task=task
         )
 
         text_box_grid = {
@@ -44,7 +46,7 @@ class DmailSendMailTab:
         )
 
     def build_config_data(self):
-        return DmailSendMailTask(
+        return tasks.DmailSendMailTask(
             max_fee=self.txn_settings_frame.max_fee_entry.get(),
             forced_gas_limit=self.txn_settings_frame.forced_gas_limit_check_box.get(),
         )

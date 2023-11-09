@@ -16,11 +16,20 @@ from src.schemas.tasks.base.remove_liquidity import RemoveLiquidityTaskBase
 from src.schemas import tasks
 
 
+LIQUIDITY_TASKS = {
+    enums.ModuleName.SITHSWAP: tasks.SithSwapRemoveLiquidityTask,
+    enums.ModuleName.MY_SWAP: tasks.MySwapRemoveLiquidityTask,
+    enums.ModuleName.JEDI_SWAP: tasks.JediSwapRemoveLiquidityTask,
+    enums.ModuleName.K10SWAP: tasks.K10SwapRemoveLiquidityTask,
+}
+
+
 class RemoveLiquidityTab:
     def __init__(
             self,
             tabview,
-            tab_name
+            tab_name,
+            task: RemoveLiquidityTaskBase = None
     ):
         self.tabview = tabview
 
@@ -36,7 +45,8 @@ class RemoveLiquidityTab:
 
         self.liquidity_frame = RemoveLiquidityFrame(
             master=self.tabview.tab(tab_name),
-            grid=liquidity_frame_grid
+            grid=liquidity_frame_grid,
+            task=task
         )
 
         self.txn_settings_frame = TxnSettingFrame(
@@ -47,22 +57,13 @@ class RemoveLiquidityTab:
                 "padx": 20,
                 "pady": 20,
                 "sticky": "nsew"
-            }
+            },
+            task=task
         )
 
     def get_config_schema(self) -> Union[Callable, None]:
-        swap_protocol = self.liquidity_frame.protocol_combo.get().lower()
-        if swap_protocol == enums.ModuleName.JEDI_SWAP:
-            return tasks.JediSwapRemoveLiquidityTask
-
-        elif swap_protocol == enums.ModuleName.SITHSWAP:
-            return tasks.SithSwapRemoveLiquidityTask
-
-        elif swap_protocol == enums.ModuleName.MY_SWAP:
-            return tasks.MySwapRemoveLiquidityTask
-
-        else:
-            return None
+        protocol = self.liquidity_frame.protocol_combo.get().lower()
+        return LIQUIDITY_TASKS.get(protocol, None)
 
     def build_config_data(self):
         config_schema = self.get_config_schema()
@@ -94,7 +95,8 @@ class RemoveLiquidityFrame(customtkinter.CTkFrame):
     def __init__(
             self,
             master,
-            grid
+            grid,
+            task: RemoveLiquidityTaskBase = None
     ):
         super().__init__(master)
 
@@ -102,6 +104,9 @@ class RemoveLiquidityFrame(customtkinter.CTkFrame):
         self.grid_columnconfigure((0, 1), weight=1)
         self.grid_rowconfigure((0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11), weight=1)
 
+        self.task = task
+
+        # PROTOCOL
         self.protocol_label = customtkinter.CTkLabel(
             self,
             text="Protocol:"
@@ -115,12 +120,14 @@ class RemoveLiquidityFrame(customtkinter.CTkFrame):
             sticky='w'
         )
 
+        protocol = getattr(self.task, "module_name", self.protocol_options[0])
         self.protocol_combo = customtkinter.CTkComboBox(
             self,
             values=self.protocol_options,
             width=120,
             command=self.protocol_change_event
         )
+        self.protocol_combo.set(protocol.upper())
         self.protocol_combo.grid(
             row=1,
             column=0,
@@ -129,6 +136,7 @@ class RemoveLiquidityFrame(customtkinter.CTkFrame):
             sticky="w"
         )
 
+        # COIN X
         self.coin_x_label = customtkinter.CTkLabel(
             self,
             text="Coin X:"
@@ -141,12 +149,14 @@ class RemoveLiquidityFrame(customtkinter.CTkFrame):
             sticky="w"
         )
 
+        coin_x = getattr(self.task, "coin_x", self.coin_x_options[0])
         self.coin_x_combobox = customtkinter.CTkComboBox(
             self,
             values=self.coin_x_options,
             width=120,
             command=self.update_coin_options
         )
+        self.coin_x_combobox.set(coin_x.upper())
         self.coin_x_combobox.grid(
             row=3,
             column=0,
@@ -155,6 +165,7 @@ class RemoveLiquidityFrame(customtkinter.CTkFrame):
             sticky="w"
         )
 
+        # COIN Y
         self.coin_y_label = customtkinter.CTkLabel(
             self,
             text="Coin Y:"
@@ -167,11 +178,13 @@ class RemoveLiquidityFrame(customtkinter.CTkFrame):
             sticky="w"
         )
 
+        coin_y = getattr(self.task, "coin_y", self.coin_y_options[0])
         self.coin_y_combobox = customtkinter.CTkComboBox(
             self,
             values=self.coin_y_options,
-            width=120
+            width=120,
         )
+        self.coin_y_combobox.set(coin_y.upper())
         self.coin_y_combobox.grid(
             row=3,
             column=1,
@@ -180,6 +193,7 @@ class RemoveLiquidityFrame(customtkinter.CTkFrame):
             sticky="w"
         )
 
+        # SLIPPAGE
         self.slippage_label = customtkinter.CTkLabel(
             self,
             text="Slippage (%):",
@@ -192,10 +206,11 @@ class RemoveLiquidityFrame(customtkinter.CTkFrame):
             sticky="w"
         )
 
+        slippage = getattr(self.task, "slippage", 2)
         self.slippage_entry = customtkinter.CTkEntry(
             self,
             width=70,
-            textvariable=Variable(value=2)
+            textvariable=Variable(value=slippage)
         )
         self.slippage_entry.grid(
             row=5,
@@ -207,11 +222,7 @@ class RemoveLiquidityFrame(customtkinter.CTkFrame):
 
     @property
     def protocol_options(self) -> list:
-        return [
-            enums.ModuleName.SITHSWAP.upper(),
-            enums.ModuleName.MY_SWAP.upper(),
-            enums.ModuleName.JEDI_SWAP.upper()
-        ]
+        return [name.upper() for name in LIQUIDITY_TASKS.keys()]
 
     @property
     def protocol_coin_options(self) -> list:

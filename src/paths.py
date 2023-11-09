@@ -40,6 +40,8 @@ class StarknetIdDir:
 class K10SwapDir:
     _MAIN_DIR = os.path.join(CONTRACTS_DIR, "k10swap")
     ROUTER_ABI_FILE = os.path.join(_MAIN_DIR, "router.abi")
+    FACTORY_ABI_FILE = os.path.join(_MAIN_DIR, "factory.abi")
+    POOL_ABI_FILE = os.path.join(_MAIN_DIR, "pool.abi")
 
 
 class SithSwapDir:
@@ -71,6 +73,36 @@ class OrbiterDir:
     _MAIN_DIR = os.path.join(CONTRACTS_DIR, "orbiter")
     ROUTER_ABI_FILE = os.path.join(_MAIN_DIR, "router.abi")
     BRIDGE_DATA_FILE = os.path.join(_MAIN_DIR, "bridge_data.json")
+
+
+class StarkBridgeDir:
+    _MAIN_DIR = os.path.join(CONTRACTS_DIR, "stark_bridge")
+    ROUTER_ABI_FILE = os.path.join(_MAIN_DIR, "router.abi")
+
+
+class StarkVerseDir:
+    _MAIN_DIR = os.path.join(CONTRACTS_DIR, "starkverse")
+    ROUTER_ABI_FILE = os.path.join(_MAIN_DIR, "router.abi")
+
+
+class StarkExDir:
+    _MAIN_DIR = os.path.join(CONTRACTS_DIR, "starkex")
+    ROUTER_ABI_FILE = os.path.join(_MAIN_DIR, "router.abi")
+
+
+class UnframedDir:
+    _MAIN_DIR = os.path.join(CONTRACTS_DIR, "unframed")
+    ROUTER_ABI_FILE = os.path.join(_MAIN_DIR, "router.abi")
+
+
+class FlexDir:
+    _MAIN_DIR = os.path.join(CONTRACTS_DIR, "flex")
+    ROUTER_ABI_FILE = os.path.join(_MAIN_DIR, "router.abi")
+
+
+class ZeriusDir:
+    _MAIN_DIR = os.path.join(CONTRACTS_DIR, "zerius")
+    ROUTER_ABI_FILE = os.path.join(_MAIN_DIR, "router.abi")
 
 
 class TempFiles:

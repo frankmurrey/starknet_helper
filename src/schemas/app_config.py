@@ -8,13 +8,15 @@ from utils import validation
 
 class AppConfigSchema(BaseModel):
     preserve_logs: bool = True
+    use_proxy: bool = True
     rpc_url: str = "https://starknet-mainnet.public.blastapi.io"
-    eth_mainnet_rpc_url: str = "https://rpc.ankr.com/eth"
-    target_eth_mainnet_gas_price: Union[int, float] = 20
+    target_gas_price: Union[int, float] = 20
     is_gas_price_wait_timeout_needed: bool = False
     time_to_wait_target_gas_price_sec: Union[int, float] = 360
     wallets_amount_to_execute_in_test_mode: int = 3
     last_wallet_version: str = "0.3.0"
+
+    debug: bool = False
 
     @validator('rpc_url', pre=True)
     def rpc_url_must_be_valid(cls, value):
@@ -23,15 +25,8 @@ class AppConfigSchema(BaseModel):
 
         return value
 
-    @validator('eth_mainnet_rpc_url', pre=True)
-    def eth_mainnet_rpc_url_must_be_valid(cls, value):
-        if not value:
-            raise exceptions.AppValidationError("ETH Mainnet RPC URL can't be empty")
-
-        return value
-
-    @validator('target_eth_mainnet_gas_price', pre=True)
-    def target_eth_mainnet_gas_price_must_be_valid(cls, value):
+    @validator('target_gas_price', pre=True)
+    def target_gas_price_must_be_valid(cls, value):
         value = validation.get_converted_to_int(value, "Gas Price")
         value = validation.get_positive(value, "Gas Price", include_zero=False)
 
@@ -53,9 +48,3 @@ class AppConfigSchema(BaseModel):
         value = validation.get_positive(value, "Wallets amount", include_zero=False)
 
         return value
-
-
-
-
-
-

@@ -155,13 +155,13 @@ class FileManager:
 
     @staticmethod
     def write_data_to_csv(path,
-                          file_name,
-                          data: list):
-        if not os.path.exists(path):
-            logger.error(f"Path \"{path}\" does not exist")
+                          data: List[List[str]],
+                          mode: str = "w",):
+        if not os.path.exists(os.path.dirname(path)):
+            logger.error(f"Path \"{os.path.dirname(path)}\" does not exist")
             return
 
-        file_path = f"{path}\\{file_name}"
-        with open(file_path, "a", newline='') as file:
+        with open(path, mode, newline='') as file:
             writer = csv.writer(file)
-            writer.writerow(data)
+            for row in data:
+                writer.writerow(row)

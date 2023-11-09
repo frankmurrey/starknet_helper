@@ -2,21 +2,20 @@ import time
 from typing import Union
 from typing import TYPE_CHECKING
 
-from starknet_py.net.account.account import Account
 from loguru import logger
-from starknet_py.serialization import TupleDataclass
+from starknet_py.net.account.account import Account
 
-from contracts.k10swap.main import K10SwapContracts
-from src.schemas.action_models import ModuleExecutionResult, TransactionPayloadData
-from modules.base import SwapModuleBase
 from utils.get_delay import get_delay
+from modules.base import SwapModuleBase
+from modules.k10swap.base import K10SwapBase
+from src.schemas.action_models import ModuleExecutionResult, TransactionPayloadData
 
 
 if TYPE_CHECKING:
     from src.schemas.tasks.k10swap import K10SwapTask
 
 
-class K10Swap(SwapModuleBase):
+class K10Swap(K10SwapBase, SwapModuleBase):
     task: 'K10SwapTask'
     account: Account
 
@@ -34,34 +33,6 @@ class K10Swap(SwapModuleBase):
         self.task = task
         self.account = account
 
-        self.k10_swap_contracts = K10SwapContracts()
-        self.router_contract = self.get_contract(
-            address=self.k10_swap_contracts.router_address,
-            abi=self.k10_swap_contracts.router_abi,
-            provider=account
-        )
-
-    async def get_amounts_in(self, amount_in_wei: int) -> Union[TupleDataclass, None]:
-        """
-        Get amount in wei from router function
-        :param amount_in_wei:
-        :return:
-        """
-        path = [int(self.coin_x.contract_address, 16),
-                int(self.coin_y.contract_address, 16)]
-
-        try:
-            amounts_out = await self.router_contract.functions["getAmountsOut"].call(
-                amount_in_wei,
-                path
-            )
-
-            return amounts_out
-
-        except Exception as e:
-            logger.error(f'Error while getting amount in: {e}')
-            return None
-
     async def build_txn_payload_data(self) -> Union[TransactionPayloadData, None]:
         """
         Build the transaction payload data for the swap type transaction.
@@ -71,7 +42,11 @@ class K10Swap(SwapModuleBase):
         if amount_x_wei is None:
             return None
 
-        amounts_in_wei = await self.get_amounts_in(amount_x_wei)
+        amounts_in_wei = await self.get_amounts_in(
+            coin_x=self.coin_x,
+            coin_y=self.coin_y,
+            amount_in_wei=amount_x_wei
+        )
         if amounts_in_wei is None:
             return None
 
@@ -126,7 +101,11 @@ class K10Swap(SwapModuleBase):
             logger.error(f"Wallet {self.coin_y.symbol.upper()} balance less than initial balance")
             return None
 
-        amounts_in_wei = await self.get_amounts_in(amount_out_y_wei)
+        amounts_in_wei = await self.get_amounts_in(
+            coin_x=self.coin_y,
+            coin_y=self.coin_x,
+            amount_in_wei=amount_out_y_wei
+        )
         if amounts_in_wei is None:
             return None
 

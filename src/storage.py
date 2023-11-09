@@ -23,8 +23,9 @@ class Storage:
 
         def __load_app_config(self) -> AppConfigSchema:
             try:
-                config_file_data = FileManager.read_data_from_json_file(paths.APP_CONFIG_FILE)
-                return AppConfigSchema(**config_file_data)
+                if os.path.exists(paths.APP_CONFIG_FILE):
+                    config_file_data = FileManager.read_data_from_json_file(paths.APP_CONFIG_FILE)
+                    return AppConfigSchema(**config_file_data)
             except Exception as e:
                 logger.error(f"Error while loading app config: {e}")
                 logger.exception(e)

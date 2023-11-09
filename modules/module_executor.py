@@ -1,8 +1,7 @@
 import time
 from datetime import datetime
-from typing import Union, Optional
+from typing import Union
 
-import aiohttp.typedefs
 from loguru import logger
 from starknet_py.net.account.account import Account
 from starknet_py.net.full_node_client import FullNodeClient
@@ -15,7 +14,7 @@ from src.schemas.action_models import ModuleExecutionResult
 from src.storage import Storage
 from src.storage import ActionStorage
 from src.action_logger import ActionLogger
-from src.custom_client_session import CustomSession
+
 from src.proxy_manager import ProxyManager
 
 from utils.key_manager.key_manager import get_key_pair_from_pk

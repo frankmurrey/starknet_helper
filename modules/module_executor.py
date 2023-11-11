@@ -80,10 +80,8 @@ class ModuleExecutor:
         current_ip = await proxy_manager.get_ip()
         if current_ip is None and proxy_data:
             err_msg = f"Proxy {wallet_data.proxy.host}:{wallet_data.proxy.port} is not valid or bad auth params"
-            logger.error(err_msg)
+            action_log_data.set_error(err_msg)
 
-            action_log_data.is_success = False
-            action_log_data.status = err_msg
             return False
 
         logger.info(f"Current ip: {current_ip}")
@@ -102,14 +100,16 @@ class ModuleExecutor:
             )
 
             if gas_price is None:
-                logger.error(f"Error while getting gas price")
+                err_msg = f"Error while getting gas price"
+                action_log_data.set_error(err_msg)
                 return False
 
             if status is False:
-                logger.error(
+                err_msg = (
                     f"Gas price is too high ({gas_price / 10 ** 9} Gwei) after "
                     f"{self.app_config.time_to_wait_target_gas_price_sec}. Aborting transaction."
                 )
+                action_log_data.set_error(err_msg)
                 return False
 
             logger.info(

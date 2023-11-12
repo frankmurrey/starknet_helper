@@ -5,6 +5,7 @@ from typing import Optional, Callable, Union
 import customtkinter
 
 from utils import gui as gui_utils
+from gui import constants
 
 
 class FloatSpinbox(customtkinter.CTkFrame):

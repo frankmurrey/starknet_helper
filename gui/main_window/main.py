@@ -46,7 +46,6 @@ class MainWindow(customtkinter.CTk):
         self.protocol("WM_DELETE_WINDOW", self.hide_window)
 
     def create_image(self, width, height, color1, color2):
-        # create image from {GUI_DIR}/images/info_button.png
         image = Image.open(f"{GUI_DIR}/images/tray_icon.png")
         image = image.resize((width, height), Image.Resampling.LANCZOS)
         return image

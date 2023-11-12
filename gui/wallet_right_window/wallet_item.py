@@ -121,6 +121,29 @@ class WalletItem(customtkinter.CTkFrame):
             sticky="e"
         )
 
+        info_image = customtkinter.CTkImage(
+            light_image=Image.open(f"{GUI_DIR}/images/info_button.png"),
+            dark_image=Image.open(f"{GUI_DIR}/images/info_button.png"),
+            size=(20, 20)
+        )
+        self.info_button = customtkinter.CTkButton(
+            self.frame,
+            text="",
+            bg_color='transparent',
+            fg_color='transparent',
+            width=5,
+            image=info_image,
+            hover=False,
+            command=self.edit_wallet_button_clicked
+        )
+        self.info_button.grid(
+            row=0,
+            column=5,
+            padx=(0, 50),
+            pady=pad_y,
+            sticky="e"
+        )
+
         edit_image = customtkinter.CTkImage(
             light_image=Image.open(f"{GUI_DIR}/images/edit_button.png"),
             dark_image=Image.open(f"{GUI_DIR}/images/edit_button.png"),

@@ -1,13 +1,12 @@
-import sys
-
 import customtkinter
 
 from src.tasks_executor import tasks_executor
 from src.logger import configure_logger
-from PIL import Image, ImageDraw
+from PIL import Image
 import pystray
 from pystray import MenuItem as item
 
+from src.paths import GUI_DIR
 from gui.main_window.frames import SidebarFrame
 from gui.wallet_right_window.right_frame import RightFrame
 
@@ -47,17 +46,8 @@ class MainWindow(customtkinter.CTk):
         self.protocol("WM_DELETE_WINDOW", self.hide_window)
 
     def create_image(self, width, height, color1, color2):
-        image = Image.new('RGB', (width, height), color1)
-        dc = ImageDraw.Draw(image)
-        dc.rectangle(
-            [width // 2, 0, width, height // 2],
-            fill=color2
-        )
-        dc.rectangle(
-            [0, height // 2, width // 2, height],
-            fill=color2
-        )
-
+        image = Image.open(f"{GUI_DIR}/images/tray_icon.png")
+        image = image.resize((width, height), Image.Resampling.LANCZOS)
         return image
 
     def init_tray_icon(self):

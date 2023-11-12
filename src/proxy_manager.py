@@ -39,8 +39,8 @@ class ProxyManager:
             }
 
     async def get_ip(self) -> Union[str, None]:
+        session = self.get_session()
         try:
-            session = self.get_session()
             client = FullNodeClient(node_url="")
             response = await client._client._make_request(
                 session=session,
@@ -55,7 +55,9 @@ class ProxyManager:
             return response['ip']
 
         except Exception as ex:
-            logger.error(f"Failed to get ip")
+            logger.error(f"Failed to get ip or")
+            await session.close()
+            await self.close_connector()
             return None
 
     def get_custom_session_for_proxy(self) -> aiohttp.ClientSession:

@@ -4,7 +4,7 @@ from src.tasks_executor import tasks_executor
 from src.logger import configure_logger
 from PIL import Image
 import pystray
-from pystray import MenuItem as item
+from pystray import MenuItem
 
 from src.paths import GUI_DIR
 from gui.main_window.frames import SidebarFrame
@@ -52,7 +52,12 @@ class MainWindow(customtkinter.CTk):
 
     def init_tray_icon(self):
         icon_image = self.create_image(64, 64, 'black', 'red')
-        menu = (item('Show', self.show_window), item('Quit', self.quit_window))
+
+        menu = (
+            MenuItem('Show', self.show_window, default=True),
+            MenuItem('Quit', self.quit_window)
+        )
+
         self.tray_icon = pystray.Icon("tray_icon", icon_image, "StarkNet Helper", menu)
         self.tray_icon.run_detached()
 
@@ -77,4 +82,3 @@ class MainWindow(customtkinter.CTk):
     def on_closing(self):
         tasks_executor.stop()
         self.quit()
-

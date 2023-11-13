@@ -178,7 +178,8 @@ class RightFrame(customtkinter.CTkFrame):
             "private_key",
             "pair_address",
             "proxy",
-            "type"]
+            "type",
+            "cairo_version",]
         ]
         for wallet in self.wallets:
             wallets.append([
@@ -186,7 +187,8 @@ class RightFrame(customtkinter.CTkFrame):
                 wallet.private_key,
                 wallet.pair_address if wallet.pair_address else "",
                 wallet.proxy.to_string() if wallet.proxy else "",
-                wallet.type.value
+                wallet.type.value,
+                wallet.cairo_version,
             ])
 
         filepath = tkinter.filedialog.asksaveasfilename(

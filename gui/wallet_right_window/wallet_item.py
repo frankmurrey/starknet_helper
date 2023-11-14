@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, TYPE_CHECKING
 
 import customtkinter
 from PIL import Image
@@ -7,7 +7,11 @@ from src.paths import GUI_DIR
 from src.schemas.proxy_data import ProxyData
 from src.schemas.wallet_data import WalletData
 from gui.wallet_right_window.wallet_window import WalletWindow
+from gui.wallet_right_window.wallet_info_window import WalletInfoWindow
 from gui import constants
+
+if TYPE_CHECKING:
+    from gui.wallet_right_window.wallets_table import WalletsTable
 
 
 class WalletItem(customtkinter.CTkFrame):
@@ -21,6 +25,8 @@ class WalletItem(customtkinter.CTkFrame):
     ):
 
         super().__init__(master)
+
+        self.master: 'WalletsTable' = master
 
         self.wallet_data = wallet_data
         # self.on_wallet_save = on_wallet_save
@@ -134,7 +140,7 @@ class WalletItem(customtkinter.CTkFrame):
             width=5,
             image=info_image,
             hover=False,
-            command=self.edit_wallet_button_clicked
+            command=self.info_wallet_button_clicked
         )
         self.info_button.grid(
             row=0,
@@ -169,6 +175,9 @@ class WalletItem(customtkinter.CTkFrame):
 
         # EDIT WALLET
         self.edit_window = None
+
+        # INFO WALLET
+        self.info_window = None
 
     def select_checkbox_event(self):
         self.master.update_selected_wallets_labels()
@@ -244,6 +253,19 @@ class WalletItem(customtkinter.CTkFrame):
             "WM_DELETE_WINDOW", self.close_edit_wallet_window
         )
 
+    def info_wallet_button_clicked(self):
+        if self.info_window is not None:
+            return
+
+        self.info_window = WalletInfoWindow(
+            master=self.master,
+            wallet_data=self.wallet_data,
+        )
+
+        self.info_window.protocol(
+            "WM_DELETE_WINDOW", self.close_info_wallet_window
+        )
+
     def edit_wallet_callback(self, wallet_data: WalletData):
         if wallet_data is None:
             return
@@ -254,6 +276,10 @@ class WalletItem(customtkinter.CTkFrame):
     def close_edit_wallet_window(self):
         self.edit_window.close()
         self.edit_window = None
+
+    def close_info_wallet_window(self):
+        self.info_window.close()
+        self.info_window = None
 
     def set_wallet_active(self):
         self.frame.configure(border_width=1, border_color=constants.ACTIVE_ACTION_HEX)

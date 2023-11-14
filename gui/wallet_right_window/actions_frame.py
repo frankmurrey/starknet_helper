@@ -1,6 +1,6 @@
 import tkinter.messagebox
 from tkinter import Variable, filedialog
-from typing import List, Union, Callable
+from typing import List, Dict, Union, Callable, TYPE_CHECKING
 from uuid import UUID
 
 import customtkinter
@@ -18,6 +18,10 @@ from gui.modules.frames import FloatSpinbox
 from gui.wallet_right_window.wallets_table import WalletsTable
 from src import enums
 
+if TYPE_CHECKING:
+    from gui.wallet_right_window.right_frame import RightFrame
+    from gui.wallet_right_window.wallet_item import WalletItem
+
 
 class ActionsFrame(customtkinter.CTkFrame):
     def __init__(
@@ -32,7 +36,7 @@ class ActionsFrame(customtkinter.CTkFrame):
         tasks_executor.event_manager.on_task_completed(self.on_task_completed)
         tasks_executor.event_manager.on_wallet_completed(self.on_wallet_completed)
 
-        self.master = master
+        self.master: 'RightFrame' = master
         self.wallets_table: WalletsTable = self.master.wallets_table
 
         self.app_config = Storage().app_config
@@ -41,6 +45,9 @@ class ActionsFrame(customtkinter.CTkFrame):
         self.grid_columnconfigure(1, weight=0)
 
         self.is_running = False
+        self.active_wallet = None
+
+        self.wallets_completed_tasks: Dict[UUID, List[TaskBase]] = {}
 
         self.action_storage = ActionStorage()
         self.actions: List[dict] = []
@@ -112,6 +119,15 @@ class ActionsFrame(customtkinter.CTkFrame):
             pady=5,
             sticky="w"
         )
+
+    def get_wallet_actions(self, wallet_id: UUID) -> List[TaskBase]:
+        for key, values in self.wallets_completed_tasks.items():
+            value: List[TaskBase]
+            if key == wallet_id:
+
+                return [task for task in values if not task.test_mode]
+
+        return []
 
     @property
     def tasks(self):
@@ -270,6 +286,8 @@ class ActionsFrame(customtkinter.CTkFrame):
 
     def on_wallet_started(self, started_wallet: "WalletData"):
         wallet_item = self.wallets_table.get_wallet_item_by_wallet_id(wallet_id=started_wallet.wallet_id)
+        self.active_wallet = wallet_item
+        self.wallets_completed_tasks[started_wallet.wallet_id] = []
         wallet_item.set_wallet_active()
 
     def on_task_started(self, started_task: "TaskBase", current_wallet: "WalletData"):
@@ -282,17 +300,20 @@ class ActionsFrame(customtkinter.CTkFrame):
         if action_item is None:
             return
 
+        self.wallets_completed_tasks[current_wallet.wallet_id].append(completed_task)
+
         if completed_task.task_status == enums.TaskStatus.SUCCESS:
             action_item.set_task_completed()
-        else:
+        elif completed_task.task_status == enums.TaskStatus.FAILED:
             action_item.set_task_failed()
 
     def on_wallet_completed(self, completed_wallet: "WalletData"):
-        wallet_item =  self.wallets_table.get_wallet_item_by_wallet_id(wallet_id=completed_wallet.wallet_id)
+        wallet_item = self.wallets_table.get_wallet_item_by_wallet_id(wallet_id=completed_wallet.wallet_id)
         wallet_item.set_wallet_completed()
         if not self.current_wallet_action_items:
             return
 
+        self.active_wallet = None
         self.set_running_state(False)
 
         for action_item in self.current_wallet_action_items:

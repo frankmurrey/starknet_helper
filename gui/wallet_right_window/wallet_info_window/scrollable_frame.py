@@ -1,13 +1,16 @@
 import asyncio
 import tkinter
 import tkinter.messagebox
-from typing import Callable, Union, List
-from threading import Thread
+from typing import Callable, Union, List, TYPE_CHECKING
+
+from src.schemas.tasks import TaskBase
 
 import customtkinter
 
-from src import enums
-from gui.wallet_right_window.wallet_info_window.info_table_top import WalletInfoTopFrame
+from gui.wallet_right_window.wallet_info_window.item import WalletInfoItem
+
+if TYPE_CHECKING:
+    from gui.wallet_right_window.wallet_info_window.window import WalletInfoWindow
 
 
 class WalletInfoScrollableFrame(customtkinter.CTkScrollableFrame):
@@ -19,71 +22,40 @@ class WalletInfoScrollableFrame(customtkinter.CTkScrollableFrame):
     ):
         super().__init__(master, **kwargs)
 
+        self.master: 'WalletInfoWindow' = master
+
+        self.current_items: List['WalletInfoItem'] = []
+
         self.grid(**grid)
 
-        self.items: List[WalletInfoTopFrame] = []
+        self.grid_columnconfigure(0, weight=1)
 
-    def set_item(self, item: WalletInfoTopFrame):
-        self.items.append(item)
-        self.redraw_frame()
+    def clear_frame(self):
+        if not self.current_items:
+            return
 
-    def redraw_frame(self):
-        for item in self.items:
+        for item in self.current_items:
             item.grid_forget()
             item.destroy()
 
-        if not self.items:
-            return
+        self.current_items = []
+
+    def draw_frame(self, tasks: List['TaskBase']):
+        self.clear_frame()
 
         start_row = 0
         start_column = 0
 
-        for item_index, item in enumerate(self.items):
-            item.grid(
-                row=start_row + item_index + 1,
-                column=start_column,
-                sticky="ew",
-                pady=3
+        for task_index, task in enumerate(tasks):
+            item = WalletInfoItem(
+                self,
+                task=task,
+                grid={
+                    "row": start_row + task_index,
+                    "column": start_column,
+                    "sticky": "ew",
+                    "padx": 5,
+                    "pady": 3,
+                }
             )
-
-
-class WalletInfoWindow(customtkinter.CTkToplevel):
-    def __init__(self, master):
-        super().__init__(master)
-        self.title("Wallet Info")
-        self.geometry("500x600")
-
-        self.after(10, self.focus_force)
-
-        self.resizable(False, False)
-
-        self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(0, weight=0)
-        self.grid_rowconfigure(1, weight=1)
-        self.protocol("WM_DELETE_WINDOW", self.close)
-
-        self.top_frame = WalletInfoTopFrame(
-            self,
-            grid={
-                "row": 0,
-                "column": 0,
-                "sticky": "ew",
-                "padx": 10,
-                "pady": 10,
-            }
-        )
-
-        self.frame = WalletInfoScrollableFrame(
-            self,
-            grid={
-                "row": 1,
-                "column": 0,
-                "sticky": "nsew",
-                "padx": 10,
-                "pady": 10,
-            }
-        )
-
-    def close(self):
-        self.frame.destroy()
-        self.destroy()
+            self.current_items.append(item)

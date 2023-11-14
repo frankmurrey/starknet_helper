@@ -12,20 +12,33 @@ class WalletInfoTopFrame(customtkinter.CTkFrame):
 
         self.grid(**grid)
 
-        self.grid_columnconfigure((0, 1, 2, 3), weight=1, uniform="uniform")
+        self.grid_columnconfigure((0, 1, 2, 3, 4), weight=1, uniform="uniform")
         self.grid_rowconfigure(0, weight=1)
 
-        self.action_name_label = customtkinter.CTkLabel(
+        self.module_name_label = customtkinter.CTkLabel(
             self,
-            text="Action",
+            text="Name",
             font=customtkinter.CTkFont(size=12, weight="bold")
         )
-        self.action_name_label.grid(
+        self.module_name_label.grid(
             row=0,
             column=0,
-            padx=(20, 0),
+            padx=(40, 0),
             pady=5,
-            sticky="w",
+            sticky="ew",
+        )
+
+        self.module_type_label = customtkinter.CTkLabel(
+            self,
+            text="Type",
+            font=customtkinter.CTkFont(size=12, weight="bold")
+        )
+        self.module_type_label.grid(
+            row=0,
+            column=1,
+            padx=(0, 0),
+            pady=5,
+            sticky="ew",
         )
 
         self.status_bool_label = customtkinter.CTkLabel(
@@ -35,23 +48,23 @@ class WalletInfoTopFrame(customtkinter.CTkFrame):
         )
         self.status_bool_label.grid(
             row=0,
-            column=1,
-            padx=(0, 0),
+            column=2,
+            padx=(0, 20),
             pady=5,
-            sticky="w",
+            sticky="ew",
         )
 
         self.status_info_label = customtkinter.CTkLabel(
             self,
-            text="Info",
+            text="Status info",
             font=customtkinter.CTkFont(size=12, weight="bold")
         )
         self.status_info_label.grid(
             row=0,
-            column=2,
-            padx=(0, 0),
+            column=3,
+            padx=(0, 20),
             pady=5,
-            sticky="w",
+            sticky="ew",
         )
 
         self.txn_hash_label = customtkinter.CTkLabel(
@@ -61,8 +74,8 @@ class WalletInfoTopFrame(customtkinter.CTkFrame):
         )
         self.txn_hash_label.grid(
             row=0,
-            column=3,
-            padx=(0, 0),
+            column=4,
+            padx=(0, 40),
             pady=5,
-            sticky="w",
+            sticky="ew",
         )

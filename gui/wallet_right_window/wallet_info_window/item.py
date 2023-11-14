@@ -23,7 +23,6 @@ class WalletInfoItem(customtkinter.CTkFrame):
         self.task = task
 
         self.configure(fg_color="grey20")
-        self.set_border_color()
         self.grid(**grid)
 
         self.grid_columnconfigure((0, 1, 2, 3, 4), weight=1, uniform="uniform")

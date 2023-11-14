@@ -69,6 +69,7 @@ class TaskStatus(str, Enum):
     PROCESSING = "processing"
     SUCCESS = "success"
     FAILED = "failed"
+    TEST_MODE = "test_mode"
 
 
 class WalletStatus(str, Enum):

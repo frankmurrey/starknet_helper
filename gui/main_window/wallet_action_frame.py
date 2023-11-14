@@ -122,6 +122,12 @@ class WalletActionFrame(customtkinter.CTkFrame):
         except IndexError:
             pass
 
+    def set_task_test_mode(self):
+        try:
+            self.configure(border_width=1, border_color=constants.TEST_MODE_GREY_HEX)
+        except IndexError:
+            pass
+
     def set_task_empty(self):
         try:
             self.configure(border_width=0)

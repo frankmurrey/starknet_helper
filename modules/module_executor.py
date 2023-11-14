@@ -45,15 +45,18 @@ class ModuleExecutor:
 
         self.wallet_data = wallet
 
-    async def start(self) -> bool:
+    async def start(self) -> ModuleExecutionResult:
         print_module_config(task=self.task)
         time.sleep(cfg.DEFAULT_DELAY_SEC)
 
         if not self.app_config.rpc_url:
             logger.error("Please, set RPC URL in tools window or app_config.json file")
-            return False
+            return ModuleExecutionResult(
+                execution_status=False,
+                execution_info="Set RPC URL in tools window or app_config.json file",
+            )
 
-        execute_status: bool = await self.execute_module(
+        execute_status: ModuleExecutionResult = await self.execute_module(
             wallet_data=self.wallet_data, base_url=self.app_config.rpc_url
         )
 
@@ -63,7 +66,7 @@ class ModuleExecutor:
             self,
             wallet_data: WalletData,
             base_url: str
-    ) -> Union[bool, None]:
+    ) -> Union[ModuleExecutionResult, None]:
         proxy_data = wallet_data.proxy
         proxy_manager = ProxyManager(proxy_data)
 
@@ -78,11 +81,15 @@ class ModuleExecutor:
         custom_session = proxy_manager.get_session()
 
         current_ip = await proxy_manager.get_ip()
+        # TODO - логирование добавить
         if current_ip is None and proxy_data:
             err_msg = f"Proxy {wallet_data.proxy.host}:{wallet_data.proxy.port} is not valid or bad auth params"
             action_log_data.set_error(err_msg)
 
-            return False
+            return ModuleExecutionResult(
+                execution_status=False,
+                execution_info=err_msg,
+            )
 
         logger.info(f"Current ip: {current_ip}")
 
@@ -102,7 +109,7 @@ class ModuleExecutor:
             if gas_price is None:
                 err_msg = f"Error while getting gas price"
                 action_log_data.set_error(err_msg)
-                return False
+                return
 
             if status is False:
                 err_msg = (
@@ -110,7 +117,10 @@ class ModuleExecutor:
                     f"{self.app_config.time_to_wait_target_gas_price_sec}. Aborting transaction."
                 )
                 action_log_data.set_error(err_msg)
-                return False
+                return ModuleExecutionResult(
+                    execution_status=False,
+                    execution_info=err_msg,
+                )
 
             logger.info(
                 f"Gas price is under target value ({self.app_config.target_gas_price}), "
@@ -175,4 +185,4 @@ class ModuleExecutor:
         await custom_session.close()
         await proxy_manager.close_connector()
 
-        return execution_status.execution_status
+        return execution_status

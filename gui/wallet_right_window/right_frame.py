@@ -17,7 +17,9 @@ from src.storage import Storage
 class RightFrame(customtkinter.CTkFrame):
     def __init__(self, master: any, **kwargs):
         super().__init__(master, **kwargs)
+
         self.master = master
+
         self.actions_top_level_window = None
 
         self.grid(row=0, column=1, sticky="nsew", padx=20, pady=20)

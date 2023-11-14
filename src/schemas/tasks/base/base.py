@@ -20,6 +20,9 @@ class TaskBase(BaseModel):
     task_id: UUID = Field(default_factory=uuid4)
     task_status: enums.TaskStatus = enums.TaskStatus.CREATED
 
+    result_hash: Optional[str] = None
+    result_info: Optional[str] = None
+
     forced_gas_limit: bool = False
     max_fee: Optional[int]
 

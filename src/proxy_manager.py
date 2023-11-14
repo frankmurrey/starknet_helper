@@ -55,7 +55,7 @@ class ProxyManager:
             return response['ip']
 
         except Exception as ex:
-            logger.error(f"Failed to get ip or")
+            logger.error(f"Failed to get ip or bad auth params")
             await session.close()
             await self.close_connector()
             return None

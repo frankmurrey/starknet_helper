@@ -89,17 +89,6 @@ class AppConfigFrame(customtkinter.CTkFrame):
         )
         self.target_eth_gas_price_spinbox.grid(row=5, column=0, sticky="w", pady=(0, 10), padx=15)
 
-        self.current_gas_price_button = customtkinter.CTkButton(
-            master=self,
-            text="Get current gas price",
-            text_color="gray70",
-            fg_color='transparent',
-            hover=False,
-            font=customtkinter.CTkFont(size=12, underline=True, weight="bold"),
-            command=self.current_gas_price_button_event
-        )
-        self.current_gas_price_button.grid(row=5, column=0, sticky="w", pady=(0, 10), padx=(140, 15))
-
         self.max_time_to_wait_target_gas_price_label = customtkinter.CTkLabel(
             master=self, text="Time to wait target gas price (sec):", font=customtkinter.CTkFont(size=12, weight="bold")
         )
@@ -198,32 +187,6 @@ class AppConfigFrame(customtkinter.CTkFrame):
             self.preserve_logs_checkbox.configure(
                 text_color="#F47174"
             )
-
-    def current_gas_price_button_event(self):
-        gas_price = GasPrice(block_number="pending")
-
-        loop = asyncio.get_event_loop()
-        current_gas_price = loop.run_until_complete(gas_price.get_stark_block_gas_price())
-
-        current_gas_price = current_gas_price / 10 ** 9
-        if current_gas_price is None:
-            messagebox.showerror("Error", "Can't get current gas price")
-            return
-
-        if int(current_gas_price) <= 20:
-            color = constants.SUCCESS_HEX
-
-        elif int(current_gas_price) > 20:
-            color = constants.WARNING_HEX
-
-        elif int(current_gas_price) > 50:
-            color = constants.ERROR_HEX
-
-        else:
-            color = constants.ERROR_HEX
-
-        self.current_gas_price_button.configure(text=f"Gas price: {round(current_gas_price, 2)} Gwei",
-                                                text_color=color)
 
     def use_proxy_checkbox_event(self):
         if self.use_proxy_checkbox.get():

@@ -50,7 +50,7 @@ class ModuleBase:
         self.tokens = Tokens()
 
         self.task = task
-        self.module_execution_result = ModuleExecutionResult()
+        self.module_execution_result = ModuleExecutionResult(test_mode=self.task.test_mode)
 
     def i16(
             self,
@@ -647,14 +647,14 @@ class ModuleBase:
             self.module_execution_result.execution_info = err_msg
             return self.module_execution_result
 
-        logger.success(
-            f"Transaction estimation success, overall fee: "
-            f"{estimate_gas_decimals} ETH."
-        )
+        estimate_msg = f"Transaction estimation success, overall fee: {estimate_gas_decimals} ETH."
+        logger.success(estimate_msg)
 
         max_fee = int(self.task.max_fee) if self.task.forced_gas_limit is True else None
 
         if self.task.test_mode is True:
+            self.module_execution_result.execution_info = estimate_msg
+            self.module_execution_result.execution_status = True
             logger.info(f"Test mode enabled. Skipping transaction")
             return self.module_execution_result
 

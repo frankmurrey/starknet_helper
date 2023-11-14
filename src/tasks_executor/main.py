@@ -2,13 +2,14 @@ import random
 import asyncio
 import multiprocessing as mp
 from datetime import datetime, timedelta
-from typing import Optional, List, Callable
+from typing import Optional, List
 
 from loguru import logger
 
 import config
 from src import enums
 from modules.module_executor import ModuleExecutor
+from src.schemas.action_models import ModuleExecutionResult
 from src.schemas.app_config import AppConfigSchema
 from src.schemas.tasks.base.base import TaskBase
 from src.schemas.wallet_data import WalletData
@@ -52,9 +53,12 @@ class TasksExecutor:
         logger.debug(f"Processing task: {task.task_id} with wallet: {wallet.name}")
         module_executor = ModuleExecutor(task=task, wallet=wallet)
 
-        task_result = await module_executor.start()
+        task_result: ModuleExecutionResult = await module_executor.start()
 
-        task.task_status = enums.TaskStatus.SUCCESS if task_result else enums.TaskStatus.FAILED
+        task_status = enums.TaskStatus.SUCCESS if task_result.execution_status else enums.TaskStatus.FAILED
+        task.task_status = task_status
+        task.result_hash = task_result.hash
+        task.result_info = task_result.execution_info
         self.event_manager.set_task_completed(task, wallet)
 
         if not task_result or task.test_mode:

@@ -114,7 +114,8 @@ def print_module_config(task: TaskBase):
         "task_id",
         "task_status",
         "reverse_action_task",
-        'result_info'
+        'result_info',
+        'result_hash',
     })
 
     max_key_width = max(len(key) for key in task_dict.keys())

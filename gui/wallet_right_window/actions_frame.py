@@ -313,11 +313,27 @@ class ActionsFrame(customtkinter.CTkFrame):
         if not self.current_wallet_action_items:
             return
 
+        if self.is_wallet_failed(wallet_id=completed_wallet.wallet_id):
+            wallet_item.set_wallet_failed()
+        else:
+            wallet_item.set_wallet_completed()
+
         self.active_wallet = None
         self.set_running_state(False)
 
         for action_item in self.current_wallet_action_items:
             action_item.set_task_empty()
+
+    def is_wallet_failed(self, wallet_id: UUID) -> bool:
+        for key, values in self.wallets_completed_tasks.items():
+            value: List[TaskBase]
+            if key == wallet_id:
+                for task in values:
+
+                    if task.task_status == enums.TaskStatus.FAILED:
+                        return True
+
+        return False
 
     def on_start_button_click(self):
 

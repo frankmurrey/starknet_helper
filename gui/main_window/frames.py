@@ -154,7 +154,7 @@ class SidebarFrame(customtkinter.CTkFrame):
         )
         self.github_button = customtkinter.CTkButton(
             self,
-            text="v1.1.0 Github origin",
+            text="v1.1.1 Github origin",
             font=link_font,
             width=140,
             anchor="c",

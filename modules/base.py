@@ -650,7 +650,7 @@ class ModuleBase:
         estimate_msg = f"Transaction estimation success, overall fee: {estimate_gas_decimals} ETH."
         logger.success(estimate_msg)
 
-        max_fee = int(self.task.max_fee) if self.task.forced_gas_limit is True else None
+        max_fee = int(self.task.max_fee) * 10 ** 9 if self.task.forced_gas_limit is True else None
 
         if self.task.test_mode is True:
             self.module_execution_result.execution_info = estimate_msg

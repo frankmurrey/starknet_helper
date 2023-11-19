@@ -131,7 +131,7 @@ class WalletActionFrame(customtkinter.CTkFrame):
     def set_task_empty(self):
         try:
             self.configure(border_width=0)
-        except IndexError:
+        except Exception as ex:
             pass
 
     def delete_button_event(self):

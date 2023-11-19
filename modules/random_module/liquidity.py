@@ -9,7 +9,8 @@ from contracts.tokens.main import Tokens
 LIQUIDITY_TASKS = [
     tasks.SithSwapAddLiquidityTask,
     tasks.JediSwapAddLiquidityTask,
-    tasks.MySwapAddLiquidityTask
+    tasks.MySwapAddLiquidityTask,
+    tasks.K10SwapAddLiquidityTask,
 ]
 
 
@@ -28,6 +29,7 @@ class RandomAddLiquidity(LiquidityModuleBase):
                                             "module_type",
                                             "module"})
         random_task: AddLiquidityTaskBase = random_task_class(**task_dict)
+        self.task = random_task
         if random_task.random_y_coin:
             protocol_coins_obj = Tokens().get_tokens_by_protocol(random_task.module_name)
             protocol_coins = [coin.symbol for coin in protocol_coins_obj]

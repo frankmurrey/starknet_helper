@@ -287,6 +287,9 @@ class WalletItem(customtkinter.CTkFrame):
     def set_wallet_completed(self):
         self.frame.configure(border_width=1, border_color=constants.SUCCESS_HEX)
 
+    def set_wallet_failed(self):
+        self.frame.configure(border_width=1, border_color=constants.ERROR_HEX)
+
     def set_wallet_inactive(self):
         self.frame.configure(border_width=0)
 

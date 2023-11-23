@@ -6,8 +6,10 @@ import httpx
 import aiohttp
 from aiohttp.client import ClientSession
 from starknet_py.net.gateway_client import GatewayClient
+import numpy as np
 from loguru import logger
 
+from utils.repr.gas_price import gas_price_waiting_msg
 import config
 
 
@@ -45,6 +47,14 @@ async def get_eth_mainnet_gas_price_async(rpc_url: str):
             return await response.json()
 
 
+def get_time(
+        gas_price: Union[tuple, list, int, float],
+        sigmoid_params: list = config.GAS_TIME_EXP_PARAMS,
+):
+    a, b, c, d = sigmoid_params
+    return a / (1 + np.exp(-(c * np.abs(gas_price) + d))) + b
+
+
 class GasPrice:
     def __init__(
             self,
@@ -53,6 +63,7 @@ class GasPrice:
     ):
         self.block_number = block_number
         self.session = session
+
 
     async def get_stark_block_gas_price(self) -> Union[int, None]:
         try:
@@ -94,17 +105,19 @@ class GasPrice:
         if current_gas_price <= target_price_wei:
             return True, current_gas_price
 
-        msg = f"Waiting for gas price to be lower than {target_price_wei / 10 ** 9} Gwei. " \
-              f"(Current - {round(current_gas_price / 10 ** 9, 2)} Gwei) "
-
-        if is_timeout_needed is True:
-            msg += f"Timeout: {time_out_sec} sec."
+        msg = gas_price_waiting_msg(
+            target_price_wei=target_price_wei,
+            current_gas_price=current_gas_price,
+            is_timeout_needed=is_timeout_needed,
+            time_out_sec=time_out_sec,
+        )
 
         logger.info(msg)
 
         start_time = time.time()
         delay = config.DEFAULT_DELAY_SEC
         while True:
+
             current_gas_price = await self.get_stark_block_gas_price()
             if current_gas_price is None:
                 continue
@@ -113,7 +126,11 @@ class GasPrice:
                 return True, current_gas_price
 
             if is_timeout_needed is True:
-                delay *= 2
+                # delay *= 2
+                delay = (
+                        get_time(current_gas_price, *config.GAS_TIME_EXP_PARAMS) -
+                        get_time(target_price_wei, *config.GAS_TIME_EXP_PARAMS)
+                )
                 if time.time() - start_time > time_out_sec:
                     return False, current_gas_price
 

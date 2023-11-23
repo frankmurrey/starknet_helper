@@ -115,7 +115,7 @@ class WalletInfoItem(customtkinter.CTkFrame):
 
             self.txn_hash_element = LinkButton(
                 master=self,
-                link=f"{config.EXPLORER_PREFIX}/tx/{task.result_hash}",
+                link=f"{config.EXPLORER_BASE_URL}/tx/{task.result_hash}",
                 grid=hash_grid,
             )
 

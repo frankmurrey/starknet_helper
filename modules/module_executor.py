@@ -100,7 +100,7 @@ class ModuleExecutor:
                 execution_info=err_msg,
             )
 
-        logger.info(f"Current ip: {current_ip}")
+        logger.info(f"Current ip: {current_ip}\n")
 
         client = FullNodeClient(node_url=base_url, session=custom_session)
 
@@ -110,21 +110,11 @@ class ModuleExecutor:
                 session=custom_session
             )
             status, gas_price = await gas_price.check_loop(
-                target_price_wei=self.app_config.target_gas_price * 10 ** 9,
-                time_out_sec=self.app_config.time_to_wait_target_gas_price_sec,
-                is_timeout_needed=self.app_config.is_gas_price_wait_timeout_needed
+                target_price_gwei=self.app_config.target_gas_price,
             )
 
             if gas_price is None:
                 err_msg = f"Error while getting gas price"
-                action_log_data.set_error(err_msg)
-                return
-
-            if status is False:
-                err_msg = (
-                    f"Gas price is too high ({gas_price / 10 ** 9} Gwei) after "
-                    f"{self.app_config.time_to_wait_target_gas_price_sec}. Aborting transaction."
-                )
                 action_log_data.set_error(err_msg)
                 return ModuleExecutionResult(
                     execution_status=False,

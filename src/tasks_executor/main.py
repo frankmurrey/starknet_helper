@@ -19,7 +19,7 @@ from utils.repr.misc import print_wallet_execution
 from src.logger import configure_logger
 
 
-class TasksExecutor:
+class TaskExecutor:
     def __init__(self):
         self.processing_process: Optional[mp.Process] = None
         self.event_manager: Optional[TasksExecEventManager] = TasksExecEventManager()
@@ -207,4 +207,4 @@ class TasksExecutor:
         self.processing_process = None
 
 
-tasks_executor = TasksExecutor()
+tasks_executor = TaskExecutor()

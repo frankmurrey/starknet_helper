@@ -81,10 +81,19 @@ class ModuleExecutor:
         custom_session = proxy_manager.get_session()
 
         current_ip = await proxy_manager.get_ip()
-        # TODO - логирование добавить
         if current_ip is None and proxy_data:
             err_msg = f"Proxy {wallet_data.proxy.host}:{wallet_data.proxy.port} is not valid or bad auth params"
             action_log_data.set_error(err_msg)
+
+            action_log_data.module_name = self.module_name.value
+            action_log_data.module_type = self.module_type.value
+
+            action_log_data.is_success = False
+            action_log_data.status = err_msg
+
+            action_logger = ActionLogger()
+            action_logger.add_action_to_log_storage(action_data=action_log_data)
+            action_logger.log_action_from_storage()
 
             return ModuleExecutionResult(
                 execution_status=False,

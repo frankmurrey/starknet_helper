@@ -121,12 +121,14 @@ class ActionsFrame(customtkinter.CTkFrame):
             sticky="w"
         )
 
-    def get_wallet_actions(self, wallet_id: UUID) -> List[TaskBase]:
+    def get_wallet_actions(
+            self,
+            wallet_id: UUID
+    ) -> List[TaskBase]:
         for key, values in self.wallets_completed_tasks.items():
             value: List[TaskBase]
             if key == wallet_id:
-
-                return [task for task in values if not task.test_mode]
+                return [task for task in values]
 
         return []
 

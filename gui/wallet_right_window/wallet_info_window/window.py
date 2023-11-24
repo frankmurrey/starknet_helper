@@ -148,19 +148,11 @@ class WalletInfoWindow(customtkinter.CTkToplevel):
             self.refresh_button.configure(image=self.refresh_image, text="- refresh data")
 
     def set_new_data(self):
+        try:
+            wallet_tasks = self.master.master.actions_frame.get_wallet_actions(
+                wallet_id=self.wallet_data.wallet_id
+            )
+            self.scrollable_frame.draw_frame(tasks=wallet_tasks)
 
-        def _():
-            try:
-                wallet_tasks = self.master.master.actions_frame.get_wallet_actions(
-                    wallet_id=self.wallet_data.wallet_id
-                )
-                self.scrollable_frame.draw_frame(tasks=wallet_tasks)
-
-            except RuntimeError as e:
-                return
-
-        Thread(
-            target=_,
-            args=(),
-            name="wallet_log_thread"
-        ).start()
+        except Exception as e:
+            return

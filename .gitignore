@@ -164,3 +164,4 @@ cython_debug/
 *.xlsx
 *.csv
 trash/
+notebooks/

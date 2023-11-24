@@ -160,6 +160,7 @@ class OrbiterBridge(ModuleBase):
 
         amount_out_wei = await self.calculate_amount_out_from_balance(self.coin_x)
         if not amount_out_wei:
+            logger.error(f"Failed to calculate amount out")
             return None
 
         amount_out_wei_fee_removed = amount_out_wei - self.chain_data.tradingFee * 10 ** self.token_x_decimals
@@ -185,7 +186,9 @@ class OrbiterBridge(ModuleBase):
             )
             return None
 
-        amount_out_wei = amount_out_wei + self.dst_chain.orbiter_id
+        subtrahend = 20000
+        value_after_subtrahend = amount_out_wei - subtrahend
+        amount_out_wei = (value_after_subtrahend // 10000 * 10000) + self.dst_chain.orbiter_id
 
         approve_call = self.build_token_approve_call(
             token_addr=self.coin_x.contract_address,

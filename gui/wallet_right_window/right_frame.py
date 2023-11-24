@@ -81,6 +81,31 @@ class RightFrame(customtkinter.CTkFrame):
         )
         self.selected_wallets_label.grid(row=0, column=4, padx=20, pady=10, sticky="wn")
 
+        self.completed_wallets_stats_label = customtkinter.CTkLabel(
+            self.button_frame,
+            text=f"Completed: 0/{len(self.wallets)}",
+            font=customtkinter.CTkFont(size=12, weight="bold"),
+        )
+        self.completed_wallets_stats_label.grid(
+            row=0, column=5, padx=20, pady=10, sticky="wn"
+        )
+
+        self.failed_wallets_stats_label = customtkinter.CTkLabel(
+            self.button_frame,
+            text="Failed: 0",
+            font=customtkinter.CTkFont(size=12, weight="bold"),
+        )
+        self.failed_wallets_stats_label.grid(
+            row=0, column=6, padx=20, pady=10, sticky="wn"
+        )
+
+        self.active_wallet_label = customtkinter.CTkLabel(
+            self.button_frame,
+            text="Active wallet: None",
+            font=customtkinter.CTkFont(size=12, weight="bold"),
+        )
+        self.active_wallet_label.grid(row=0, column=7, padx=20, pady=10, sticky="wn")
+
         self.actions_frame = ActionsFrame(self)
         self.actions_frame.grid(row=9, column=0, padx=20, pady=10, sticky="nsew")
 
@@ -92,6 +117,19 @@ class RightFrame(customtkinter.CTkFrame):
         return [
             wallet_item.wallet_data for wallet_item in self.wallets_table.wallets_items
         ]
+
+    def update_active_wallet_label(self, wallet_name: str):
+        self.active_wallet_label.configure(
+            text=f"Active: {wallet_name}"
+        )
+
+    def update_wallets_stats_labels(self, completed_wallets: int, failed_wallets: int):
+        self.completed_wallets_stats_label.configure(
+            text=f"Completed: {completed_wallets}/{len(self.wallets_table.selected_wallets)}"
+        )
+        self.failed_wallets_stats_label.configure(
+            text=f"Failed: {failed_wallets}"
+        )
 
     def set_wallets(self, wallets: List[WalletData]):
 

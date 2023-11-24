@@ -32,6 +32,7 @@ class TasksExecutor:
             wallet_index: int,
             wallet: "WalletData",
 
+            is_last_wallet: bool = False,
             is_last_task: bool = False,
     ):
         """
@@ -40,6 +41,7 @@ class TasksExecutor:
             task: task to process
             wallet_index: index of wallet_
             wallet: wallet for task
+            is_last_wallet: is current wallet the last
             is_last_task: is current task the last
         """
 
@@ -69,11 +71,21 @@ class TasksExecutor:
                 task.max_delay_sec
             )
 
-        if not is_last_task:
-            continue_datetime = datetime.now() + timedelta(seconds=time_to_sleep)
-            logger.info(f"Time to sleep for {time_to_sleep} seconds... "
-                        f"Continue at {continue_datetime.strftime('%H:%M:%S')}")
-            await asyncio.sleep(time_to_sleep)
+        if is_last_task:
+            self.event_manager.set_wallet_completed(wallet)
+
+            if not is_last_wallet:
+                continue_datetime = datetime.now() + timedelta(seconds=time_to_sleep)
+                logger.info(f"Time to sleep for {time_to_sleep} seconds... "
+                            f"Continue at {continue_datetime.strftime('%H:%M:%S')}")
+                await asyncio.sleep(time_to_sleep)
+
+        if not is_last_wallet:
+            if not is_last_task:
+                continue_datetime = datetime.now() + timedelta(seconds=time_to_sleep)
+                logger.info(f"Time to sleep for {time_to_sleep} seconds... "
+                            f"Continue at {continue_datetime.strftime('%H:%M:%S')}")
+                await asyncio.sleep(time_to_sleep)
         else:
             logger.success(f"All wallets and tasks completed!")
 
@@ -96,17 +108,14 @@ class TasksExecutor:
         self.event_manager.set_wallet_started(wallet)
 
         print_wallet_execution(wallet, wallet_index)
-
         for task_index, task in enumerate(tasks):
             await self.process_task(
                 task=task,
                 wallet_index=wallet_index,
                 wallet=wallet,
-
-                is_last_task=(task_index == len(tasks) - 1) and is_last_wallet,
+                is_last_wallet=is_last_wallet,
+                is_last_task=task_index == len(tasks) - 1,
             )
-
-        self.event_manager.set_wallet_completed(wallet)
 
     async def _start_processing_async(
             self,

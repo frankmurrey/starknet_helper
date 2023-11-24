@@ -20,7 +20,6 @@ from src import enums
 
 if TYPE_CHECKING:
     from gui.wallet_right_window.right_frame import RightFrame
-    from gui.wallet_right_window.wallet_item import WalletItem
 
 
 class ActionsFrame(customtkinter.CTkFrame):
@@ -44,8 +43,10 @@ class ActionsFrame(customtkinter.CTkFrame):
         self.grid_rowconfigure((0, 1, 3, 4), weight=1)
         self.grid_columnconfigure(1, weight=0)
 
-        self.is_running = False
         self.active_wallet = None
+
+        self.failed_wallets_amount = 0
+        self.completed_wallets_amount = 0
 
         self.wallets_completed_tasks: Dict[UUID, List[TaskBase]] = {}
 
@@ -130,6 +131,10 @@ class ActionsFrame(customtkinter.CTkFrame):
         return []
 
     @property
+    def is_running(self):
+        return tasks_executor.is_running()
+
+    @property
     def tasks(self):
         tasks = []
         for action in self.actions:
@@ -140,6 +145,7 @@ class ActionsFrame(customtkinter.CTkFrame):
             task.min_delay_sec = int(self.run_settings_frame.min_delay_entry_spinbox.entry.get())
             task.max_delay_sec = self.run_settings_frame.max_delay_entry_spinbox.entry.get()
             task.wait_for_receipt = bool(self.run_settings_frame.wait_for_receipt_checkbox.get())
+            task.retries = int(self.run_settings_frame.retries_spinbox.entry.get())
 
             txn_wait_timeout_sec = self.run_settings_frame.txn_wait_timeout_seconds_spinbox.entry.get()
             task.txn_wait_timeout_sec = int(txn_wait_timeout_sec) if txn_wait_timeout_sec else 120
@@ -281,12 +287,10 @@ class ActionsFrame(customtkinter.CTkFrame):
         self.current_wallet_action_items = []
         self.redraw_current_actions_frame()
 
-    def set_running_state(self, is_running: bool):
-        self.is_running = is_running
-
     def on_wallet_started(self, started_wallet: "WalletData"):
         wallet_item = self.wallets_table.get_wallet_item_by_wallet_id(wallet_id=started_wallet.wallet_id)
         self.active_wallet = wallet_item
+        self.master.update_active_wallet_label(wallet_name=started_wallet.name)
         self.wallets_completed_tasks[started_wallet.wallet_id] = []
         wallet_item.set_wallet_active()
 
@@ -313,13 +317,20 @@ class ActionsFrame(customtkinter.CTkFrame):
         if not self.current_wallet_action_items:
             return
 
+        self.completed_wallets_amount += 1
         if self.is_wallet_failed(wallet_id=completed_wallet.wallet_id):
             wallet_item.set_wallet_failed()
+            self.failed_wallets_amount += 1
         else:
             wallet_item.set_wallet_completed()
 
         self.active_wallet = None
-        self.set_running_state(False)
+        self.master.update_wallets_stats_labels(
+            completed_wallets=self.completed_wallets_amount,
+            failed_wallets=self.failed_wallets_amount
+        )
+
+        self.master.update_active_wallet_label(wallet_name="None")
 
         for action_item in self.current_wallet_action_items:
             action_item.set_task_empty()
@@ -339,6 +350,11 @@ class ActionsFrame(customtkinter.CTkFrame):
 
         if tasks_executor.is_running():
             return
+
+        self.completed_wallets_amount = 0
+        self.failed_wallets_amount = 0
+
+        self.master.update_wallets_stats_labels(0, 0)
 
         for wallet_item in self.wallets_table.wallets_items:
             wallet_item.set_wallet_inactive()
@@ -374,8 +390,6 @@ class ActionsFrame(customtkinter.CTkFrame):
             amount = self.app_config.wallets_amount_to_execute_in_test_mode
             wallets = wallets[:amount]
 
-        self.set_running_state(True)
-
         tasks_executor.process(
             wallets=wallets,
             tasks=self.tasks,
@@ -384,8 +398,10 @@ class ActionsFrame(customtkinter.CTkFrame):
         )
 
     def on_stop_button_click(self):
+        for action_item in self.action_items:
+            action_item.set_task_empty()
+
         logger.critical("Stopped tasks processing")
-        self.set_running_state(False)
         tasks_executor.stop()
 
 
@@ -688,6 +704,7 @@ class ButtonActionsFrame(customtkinter.CTkFrame):
             )
             return
 
+        self.parent.remove_all_actions()
         self.parent.set_actions(actions)
         self.parent.run_settings_frame.upload_from_config(run_settings_config)
 
@@ -840,7 +857,7 @@ class RunSettingsFrame(customtkinter.CTkFrame):
                                                              width=105)
         self.txn_wait_timeout_seconds_spinbox.entry.configure(
             state="normal",
-            textvariable=Variable(value=120)
+            textvariable=Variable(value=240)
         )
         self.txn_wait_timeout_seconds_spinbox.add_button.configure(
             state="normal"

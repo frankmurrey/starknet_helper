@@ -24,7 +24,7 @@ class TaskExecutor:
         self.processing_process: Optional[mp.Process] = None
         self.event_manager: Optional[TasksExecEventManager] = TasksExecEventManager()
 
-        self.__app_config_dict: Optional[dict] = None
+        self._app_config_dict: Optional[dict] = None
 
     async def process_task(
             self,
@@ -128,7 +128,7 @@ class TaskExecutor:
         Start processing async
         """
 
-        Storage().update_app_config(config=AppConfigSchema(**self.__app_config_dict))
+        Storage().update_app_config(config=AppConfigSchema(**self._app_config_dict))
         configure_logger()
 
         for wallet_index, wallet in enumerate(wallets):
@@ -186,7 +186,7 @@ class TaskExecutor:
         if shuffle_tasks:
             random.shuffle(tasks)
 
-        self.__app_config_dict = Storage().app_config.dict()
+        self._app_config_dict = Storage().app_config.dict()
 
         self.processing_process = mp.Process(target=self._start_processing, args=(wallets, tasks))
         self.processing_process.start()

@@ -45,10 +45,6 @@ class TaskExecutor:
             is_last_task: is current task the last
         """
 
-        if wallet_index == 0 and task.test_mode is False:
-            ActionStorage().reset_all_actions()
-            ActionStorage().create_and_set_new_logs_dir()
-
         task.task_status = enums.TaskStatus.PROCESSING
         self.event_manager.set_task_started(task, wallet)
 
@@ -180,6 +176,10 @@ class TaskExecutor:
         """
         logger.debug("Starting tasks executor")
 
+        if tasks[0].test_mode is False:
+            ActionStorage().reset_all_actions()
+            ActionStorage().create_and_set_new_logs_dir()
+
         if shuffle_wallets:
             random.shuffle(wallets)
 
@@ -207,4 +207,4 @@ class TaskExecutor:
         self.processing_process = None
 
 
-tasks_executor = TaskExecutor()
+task_executor = TaskExecutor()

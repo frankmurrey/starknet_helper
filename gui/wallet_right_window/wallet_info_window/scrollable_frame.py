@@ -38,7 +38,7 @@ class WalletInfoScrollableFrame(customtkinter.CTkScrollableFrame):
             item.grid_forget()
             item.destroy()
 
-        self.current_items = []
+        self.current_items.clear()
 
     def draw_frame(self, tasks: List['TaskBase']):
         self.clear_frame()

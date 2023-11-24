@@ -1,4 +1,3 @@
-import asyncio
 import time
 from typing import Union
 
@@ -9,7 +8,7 @@ from starknet_py.net.gateway_client import GatewayClient
 import numpy as np
 from loguru import logger
 
-from utils.repr.gas_price import gas_price_waiting_msg
+from utils.repr.gas_price import gas_price_wait_loop
 import config
 
 
@@ -58,12 +57,11 @@ def get_time(
 class GasPrice:
     def __init__(
             self,
-            block_number: Union[int, str],
+            block_number: Union[int, str] = 'pending',
             session: ClientSession = None
     ):
         self.block_number = block_number
         self.session = session
-
 
     async def get_stark_block_gas_price(self) -> Union[int, None]:
         try:
@@ -82,14 +80,10 @@ class GasPrice:
     async def check_loop(
             self,
             target_price_wei: int,
-            time_out_sec: int,
-            is_timeout_needed: bool
     ) -> tuple:
         """
         Checks the current gas price on Starkent pending block and waits until it is lower than the target price.
-        :param is_timeout_needed:
         :param target_price_wei:
-        :param time_out_sec:
         :return:
         """
 
@@ -105,38 +99,30 @@ class GasPrice:
         if current_gas_price <= target_price_wei:
             return True, current_gas_price
 
-        msg = gas_price_waiting_msg(
-            target_price_wei=target_price_wei,
-            current_gas_price=current_gas_price,
-            is_timeout_needed=is_timeout_needed,
-            time_out_sec=time_out_sec,
-        )
-
-        logger.info(msg)
-
-        start_time = time.time()
         delay = config.DEFAULT_DELAY_SEC
-        while True:
 
+        while True:
             current_gas_price = await self.get_stark_block_gas_price()
             if current_gas_price is None:
                 continue
 
             if current_gas_price <= target_price_wei:
+                gas_price_wait_loop(
+                    target_price_wei=target_price_wei,
+                    current_gas_price=current_gas_price,
+                    time_out_sec=int(delay),
+                    end='\n'
+                )
                 return True, current_gas_price
 
-            if is_timeout_needed is True:
-                # delay *= 2
-                delay = (
-                        get_time(current_gas_price, *config.GAS_TIME_EXP_PARAMS) -
-                        get_time(target_price_wei, *config.GAS_TIME_EXP_PARAMS)
-                )
-                if time.time() - start_time > time_out_sec:
-                    return False, current_gas_price
+            delay = (
+                    get_time(current_gas_price, config.GAS_TIME_EXP_PARAMS) -
+                    get_time(target_price_wei, config.GAS_TIME_EXP_PARAMS)
+            )
+            gas_price_wait_loop(
+                target_price_wei=target_price_wei,
+                current_gas_price=current_gas_price,
+                time_out_sec=int(delay),
+                end=''
+            )
 
-            time.sleep(delay)
-
-
-if __name__ == '__main__':
-    gas = asyncio.run(get_eth_mainnet_gas_price_async('https://rpc.ankr.com/eth'))
-    print(gas)

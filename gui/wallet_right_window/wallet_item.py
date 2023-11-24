@@ -289,8 +289,12 @@ class WalletItem(customtkinter.CTkFrame):
 
     def set_wallet_failed(self):
         self.frame.configure(border_width=1, border_color=constants.ERROR_HEX)
+        info_image_failed = customtkinter.CTkImage(
+            light_image=Image.open(f"{GUI_DIR}/images/info_button_red.png"),
+            dark_image=Image.open(f"{GUI_DIR}/images/info_button_red.png"),
+            size=(20, 20)
+        )
+        self.info_button.configure(image=info_image_failed)
 
     def set_wallet_inactive(self):
         self.frame.configure(border_width=0)
-
-

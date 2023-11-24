@@ -1,26 +1,44 @@
-from typing import Union, Optional
+import time
+from typing import Union
+from colorama import Fore
 
 
-def gas_price_waiting_msg(
+def gas_price_wait_loop(
     target_price_wei: Union[int, float],
     current_gas_price: Union[int, float],
-    is_timeout_needed: bool = False,
     time_out_sec: Union[int, float] = None,
-) -> str:
-    """
-    Get message string for gas price waiting
-    Args:
-        target_price_wei: Target gas price (wei)
-        current_gas_price: Current gas price
-        is_timeout_needed: Is timeout needed
-        time_out_sec: Time out (sec)
+    end: str = ''
+):
 
-    Returns: message string for gas price waiting
-    """
-    msg = f"Waiting for gas price to be lower than {target_price_wei / 10 ** 9} Gwei. " \
-          f"(Current - {round(current_gas_price / 10 ** 9, 2)} Gwei)"
+    t_len = len(str(time_out_sec))
 
-    if is_timeout_needed:
-        msg += f" | Timeout: {time_out_sec} sec."
+    target_gas_price_str = f"{Fore.LIGHTCYAN_EX}{target_price_wei} GWEI{Fore.RESET}"
+    current_gas_price_str = f"{Fore.LIGHTCYAN_EX}{current_gas_price} GWEI{Fore.RESET}"
 
-    return msg
+    info_message = Fore.LIGHTMAGENTA_EX + "Waiting for gas price < "
+    info_message += target_gas_price_str
+
+    info_message += Fore.LIGHTMAGENTA_EX + ". Last checked gas price: "
+    info_message += current_gas_price_str
+
+    for i in range(time_out_sec):
+        iter_message = f"\r{Fore.LIGHTCYAN_EX}[{i:{t_len}}s/{time_out_sec}]"
+        iter_message += Fore.RESET
+
+        iter_message += Fore.RED + " - "
+        iter_message += Fore.RESET
+
+        iter_message += info_message
+
+        print(iter_message, end='')
+        time.sleep(1)
+
+    iter_message = f"\r{Fore.LIGHTCYAN_EX}[{time_out_sec:{t_len}}s/{time_out_sec}]"
+    iter_message += Fore.RESET
+
+    iter_message += Fore.RED + " - "
+    iter_message += Fore.RESET
+
+    iter_message += info_message
+
+    print(f"\r[{time_out_sec:{t_len}}s/{time_out_sec}] | {iter_message}", end=end)

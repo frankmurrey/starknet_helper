@@ -79,11 +79,11 @@ class GasPrice:
 
     async def check_loop(
             self,
-            target_price_wei: int,
+            target_price_gwei: int,
     ) -> tuple:
         """
         Checks the current gas price on Starkent pending block and waits until it is lower than the target price.
-        :param target_price_wei:
+        :param target_price_gwei:
         :return:
         """
 
@@ -96,7 +96,8 @@ class GasPrice:
             if current_gas_price is None:
                 return False, current_gas_price
 
-        if current_gas_price <= target_price_wei:
+        current_gas_price_gwei = current_gas_price / 1e9
+        if current_gas_price_gwei <= target_price_gwei:
             return True, current_gas_price
 
         delay = config.DEFAULT_DELAY_SEC
@@ -106,22 +107,23 @@ class GasPrice:
             if current_gas_price is None:
                 continue
 
-            if current_gas_price <= target_price_wei:
+            current_gas_price_gwei = current_gas_price / 1e9
+            if current_gas_price_gwei <= target_price_gwei:
                 gas_price_wait_loop(
-                    target_price_wei=target_price_wei,
-                    current_gas_price=current_gas_price,
+                    target_price_wei=target_price_gwei,
+                    current_gas_price=current_gas_price_gwei,
                     time_out_sec=int(delay),
                     end='\n'
                 )
                 return True, current_gas_price
 
             delay = (
-                    get_time(current_gas_price, config.GAS_TIME_EXP_PARAMS) -
-                    get_time(target_price_wei, config.GAS_TIME_EXP_PARAMS)
+                    get_time(current_gas_price_gwei, config.GAS_TIME_EXP_PARAMS) -
+                    get_time(target_price_gwei, config.GAS_TIME_EXP_PARAMS)
             )
             gas_price_wait_loop(
-                target_price_wei=target_price_wei,
-                current_gas_price=current_gas_price,
+                target_price_wei=target_price_gwei,
+                current_gas_price=current_gas_price_gwei,
                 time_out_sec=int(delay),
                 end=''
             )

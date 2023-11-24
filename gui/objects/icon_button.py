@@ -12,6 +12,11 @@ class IconButton(customtkinter.CTkButton):
             dark_icon: Union[str, Image.Image] = None,
             command: Callable[[], None] = lambda: None,
 
+            text: str = "",
+            text_color: str = "grey",
+            size: tuple[int, int] = (20, 20),
+
+
             width: int = 5,
     ):
 
@@ -35,16 +40,19 @@ class IconButton(customtkinter.CTkButton):
         self.ctk_icon = customtkinter.CTkImage(
             light_image=self.icon,
             dark_image=self.dark_icon,
+            size=size
         )
 
         self.ctk_icon_hover = customtkinter.CTkImage(
             light_image=self.hover_icon,
             dark_image=self.hover_dark_icon,
+            size=size
         )
 
         super().__init__(
             master,
-            text="",
+            text=text,
+            text_color=text_color,
             bg_color="transparent",
             fg_color="transparent",
             image=self.ctk_icon,

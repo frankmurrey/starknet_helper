@@ -9,6 +9,7 @@ from src.schemas.wallet_data import WalletData
 from gui.wallet_right_window.wallet_window import WalletWindow
 from gui.wallet_right_window.wallet_info_window import WalletInfoWindow
 from gui import constants
+from gui.objects.icon_button import IconButton
 
 if TYPE_CHECKING:
     from gui.wallet_right_window.wallets_table import WalletsTable
@@ -127,19 +128,10 @@ class WalletItem(customtkinter.CTkFrame):
             sticky="e"
         )
 
-        info_image = customtkinter.CTkImage(
-            light_image=Image.open(f"{GUI_DIR}/images/info_button.png"),
-            dark_image=Image.open(f"{GUI_DIR}/images/info_button.png"),
-            size=(20, 20)
-        )
-        self.info_button = customtkinter.CTkButton(
+        self.info_button = IconButton(
             self.frame,
-            text="",
-            bg_color='transparent',
-            fg_color='transparent',
             width=5,
-            image=info_image,
-            hover=False,
+            icon=Image.open(f"{GUI_DIR}/images/info_button.png"),
             command=self.info_wallet_button_clicked
         )
         self.info_button.grid(
@@ -149,20 +141,10 @@ class WalletItem(customtkinter.CTkFrame):
             pady=pad_y,
             sticky="e"
         )
-
-        edit_image = customtkinter.CTkImage(
-            light_image=Image.open(f"{GUI_DIR}/images/edit_button.png"),
-            dark_image=Image.open(f"{GUI_DIR}/images/edit_button.png"),
-            size=(20, 20)
-        )
-        self.edit_button = customtkinter.CTkButton(
+        self.edit_button = IconButton(
             self.frame,
-            text="",
-            bg_color='transparent',
-            fg_color='transparent',
             width=5,
-            image=edit_image,
-            hover=False,
+            icon=Image.open(f"{GUI_DIR}/images/edit_button.png"),
             command=self.edit_wallet_button_clicked
         )
         self.edit_button.grid(

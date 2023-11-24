@@ -8,6 +8,7 @@ from src.schemas.tasks.base.swap import TaskBase
 from src.paths import GUI_DIR
 from src import enums
 from gui import constants
+from gui.objects.icon_button import IconButton
 
 if TYPE_CHECKING:
     from gui.wallet_right_window.actions_frame import CurrentActionsFrame
@@ -63,41 +64,21 @@ class WalletActionFrame(customtkinter.CTkFrame):
         )
         self.repeats_label.grid(row=0, column=3, padx=(40, 0), pady=2, sticky="we")
 
-        edit_image = customtkinter.CTkImage(
-            light_image=Image.open(f"{GUI_DIR}/images/edit_button.png"),
-            dark_image=Image.open(f"{GUI_DIR}/images/edit_button.png"),
-            size=(20, 20)
-        )
-
-        self.edit_button = customtkinter.CTkButton(
+        self.edit_button = IconButton(
             self,
-            text="",
+            icon=Image.open(f"{GUI_DIR}/images/edit_button.png"),
             width=5,
-            bg_color='transparent',
-            fg_color='transparent',
-            text_color='blue',
-            image=edit_image,
-            hover=False,
-            command=self.edit_button_event
+            command=self.edit_button_event,
+            size=(18, 18)
         )
         self.edit_button.grid(row=0, column=4, padx=(0, 35), pady=2, sticky="e")
 
-        delete_image = customtkinter.CTkImage(
-            light_image=Image.open(f"{GUI_DIR}/images/minus_button.png"),
-            dark_image=Image.open(f"{GUI_DIR}/images/minus_button.png"),
-            size=(12, 12)
-        )
-
-        self.delete_button = customtkinter.CTkButton(
+        self.delete_button = IconButton(
             self,
-            text="",
             width=5,
-            bg_color='transparent',
-            fg_color='transparent',
-            text_color='red',
-            image=delete_image,
-            hover=False,
-            command=self.delete_button_event
+            icon=Image.open(f"{GUI_DIR}/images/minus_button.png"),
+            command=self.delete_button_event,
+            size=(17, 17)
         )
         self.delete_button.grid(row=0, column=4, padx=(0, 10), pady=2, sticky="e")
 

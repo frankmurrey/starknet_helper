@@ -49,20 +49,19 @@ class MySwapAddLiquidity(MySwapBase, LiquidityModuleBase):
         if reserves_data is None:
             return None
 
-        amount_out_y_wei = await self.get_amount_in(
+        amount_out_y_wei_and_fee = await self.get_amount_in_and_dao_fee(
             reserves_data=reserves_data,
             amount_out_wei=amount_out_x_wei,
             coin_x_obj=self.coin_x,
-            coin_y_obj=self.coin_y,
-            slippage=0
+            coin_y_obj=self.coin_y
         )
 
-        if amount_out_y_wei is None:
+        if amount_out_y_wei_and_fee is None:
             return None
 
         return {
             self.coin_x.contract_address: amount_out_x_wei,
-            self.coin_y.contract_address: amount_out_y_wei
+            self.coin_y.contract_address: amount_out_y_wei_and_fee[0]
         }
 
     async def build_txn_payload_data(self) -> Union[TransactionPayloadData, None]:
@@ -107,18 +106,19 @@ class MySwapAddLiquidity(MySwapBase, LiquidityModuleBase):
                 )
                 return None
 
-            amount1_wei = await self.get_amount_in(
+            amount1_wei_and_dao_fee = await self.get_amount_in_and_dao_fee(
                 reserves_data=reserves_data,
                 amount_out_wei=amount0_wei,
                 coin_x_obj=self.coin_x,
                 coin_y_obj=self.coin_y,
-                slippage=0
             )
-            if amount1_wei is None:
+            if amount1_wei_and_dao_fee is None:
                 logger.error(
                     f"Failed to calculate amount out for {self.coin_y.symbol.upper()}"
                 )
                 return None
+
+            amount1_wei, dao_fee = amount1_wei_and_dao_fee
 
             if amount1_wei > self.initial_balance_y_wei:
                 logger.error(
@@ -151,18 +151,19 @@ class MySwapAddLiquidity(MySwapBase, LiquidityModuleBase):
                 )
                 return None
 
-            amount0_wei = await self.get_amount_in(
+            amount0_wei_and_dao_fee = await self.get_amount_in_and_dao_fee(
                 reserves_data=reserves_data,
                 amount_out_wei=amount1_wei,
                 coin_x_obj=self.coin_x,
                 coin_y_obj=self.coin_y,
-                slippage=0
             )
-            if amount0_wei is None:
+            if amount0_wei_and_dao_fee is None:
                 logger.error(
                     f"Failed to calculate amount out for {self.coin_x.symbol.upper()}"
                 )
                 return None
+
+            amount0_wei, dao_fee = amount0_wei_and_dao_fee
 
             if amount0_wei > self.initial_balance_y_wei:
                 logger.error(

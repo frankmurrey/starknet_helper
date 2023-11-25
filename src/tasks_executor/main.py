@@ -1,3 +1,4 @@
+import time
 import random
 import asyncio
 import multiprocessing as mp
@@ -26,7 +27,7 @@ class TaskExecutor:
 
         self._app_config_dict: Optional[dict] = None
 
-    async def process_task(
+    def process_task(
             self,
             task: "TaskBase",
             wallet_index: int,
@@ -51,7 +52,9 @@ class TaskExecutor:
         logger.debug(f"Processing task: {task.task_id} with wallet: {wallet.name}")
         module_executor = ModuleExecutor(task=task, wallet=wallet)
 
-        task_result: ModuleExecutionResult = await module_executor.start()
+        loop = asyncio.get_event_loop()
+        task_result_coroutine = module_executor.start()
+        task_result: ModuleExecutionResult = loop.run_until_complete(task_result_coroutine)
 
         task_status = enums.TaskStatus.SUCCESS if task_result.execution_status else enums.TaskStatus.FAILED
         task.task_status = task_status
@@ -74,14 +77,14 @@ class TaskExecutor:
                 continue_datetime = datetime.now() + timedelta(seconds=time_to_sleep)
                 logger.info(f"Time to sleep for {time_to_sleep} seconds... "
                             f"Continue at {continue_datetime.strftime('%H:%M:%S')}")
-                await asyncio.sleep(time_to_sleep)
+                time.sleep(time_to_sleep)
 
         if not is_last_wallet:
             if not is_last_task:
                 continue_datetime = datetime.now() + timedelta(seconds=time_to_sleep)
                 logger.info(f"Time to sleep for {time_to_sleep} seconds... "
                             f"Continue at {continue_datetime.strftime('%H:%M:%S')}")
-                await asyncio.sleep(time_to_sleep)
+                time.sleep(time_to_sleep)
         else:
             if not is_last_task:
                 continue_datetime = datetime.now() + timedelta(seconds=time_to_sleep)
@@ -91,7 +94,7 @@ class TaskExecutor:
             else:
                 logger.success(f"All wallets and tasks completed!")
 
-    async def process_wallet(
+    def process_wallet(
             self,
             wallet: "WalletData",
             wallet_index: int,
@@ -111,7 +114,7 @@ class TaskExecutor:
 
         print_wallet_execution(wallet, wallet_index)
         for task_index, task in enumerate(tasks):
-            await self.process_task(
+            self.process_task(
                 task=task,
                 wallet_index=wallet_index,
                 wallet=wallet,
@@ -119,7 +122,7 @@ class TaskExecutor:
                 is_last_task=task_index == len(tasks) - 1,
             )
 
-    async def _start_processing_async(
+    def _start_processing(
             self,
             wallets: List["WalletData"],
             tasks: List["TaskBase"],
@@ -132,24 +135,13 @@ class TaskExecutor:
         configure_logger()
 
         for wallet_index, wallet in enumerate(wallets):
-            await self.process_wallet(
+            self.process_wallet(
                 wallet=wallet,
                 wallet_index=wallet_index,
                 tasks=tasks,
 
                 is_last_wallet=wallet_index == len(wallets) - 1
             )
-
-    def _start_processing(
-        self,
-        wallets: List["WalletData"],
-        tasks: List["TaskBase"],
-    ):
-        """
-        Start processing
-        """
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(self._start_processing_async(wallets, tasks))
 
     def is_running(self):
         """

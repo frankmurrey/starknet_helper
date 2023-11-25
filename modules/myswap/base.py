@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Tuple
 from typing import TYPE_CHECKING
 
 from contracts.base import TokenBase
@@ -150,14 +150,13 @@ class MySwapBase(ModuleBase):
             "pool_id": reserves_data['pool_id']
         }
 
-    async def get_amount_in(
+    async def get_amount_in_and_dao_fee(
             self,
             reserves_data: dict,
             amount_out_wei,
             coin_x_obj: TokenBase,
-            coin_y_obj: TokenBase,
-            slippage: int
-    ) -> Union[int, None]:
+            coin_y_obj: TokenBase
+    ) -> Union[Tuple[int, float], None]:
         """
         Get amount in wei from reserves data
         :param reserves_data:
@@ -183,7 +182,4 @@ class MySwapBase(ModuleBase):
         )
         fee = sorted_reserves['fee']
 
-        amount_in_after_slippage = amount_in_wei * (1 - (slippage / 100))
-        amount_in_after_dao_fee = amount_in_after_slippage * (1 - (fee / 100000))
-
-        return int(amount_in_after_dao_fee)
+        return amount_in_wei, float(fee)

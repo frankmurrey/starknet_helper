@@ -175,7 +175,7 @@ class SithSwap(SithBase, SwapModuleBase):
             txn_payload_data=txn_payload_data
         )
 
-        if not txn_status:
+        if not txn_status.execution_status:
             self.module_execution_result.execution_info = f"Failed to send swap type txn"
             return self.module_execution_result
 

@@ -702,7 +702,8 @@ class ModuleBase:
             )
 
             self.module_execution_result.execution_status = True
-            self.module_execution_result.execution_info = f"Txn success, status: {txn_status}"
+            self.module_execution_result.execution_info = f"Txn success, status: {txn_status}," \
+                                                          f" fee: {txn_receipt.actual_fee / 10 ** 18} ETH"
             self.module_execution_result.hash = hex(txn_hash)
             return self.module_execution_result
 

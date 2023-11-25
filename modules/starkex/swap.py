@@ -164,7 +164,7 @@ class StarkExSwap(StarkExBase, SwapModuleBase):
             txn_payload_data=txn_payload_data
         )
 
-        if txn_status is False:
+        if txn_status.execution_status is False:
             self.module_execution_result.execution_info = f"Failed to send swap type txn"
             return self.module_execution_result
 

@@ -1,4 +1,4 @@
-from typing import Callable, Optional
+from typing import Callable, Optional, Union
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel
@@ -17,7 +17,7 @@ class TaskBase(BaseModel):
     module_name: enums.ModuleName
     module: Optional[Callable]
 
-    task_id: UUID = Field(default_factory=uuid4)
+    task_id: Union[UUID, str] = Field(default_factory=uuid4)
     task_status: enums.TaskStatus = enums.TaskStatus.CREATED
 
     result_hash: Optional[str] = None

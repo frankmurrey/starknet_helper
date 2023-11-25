@@ -87,7 +87,13 @@ class TasksExecutor:
                             f"Continue at {continue_datetime.strftime('%H:%M:%S')}")
                 await asyncio.sleep(time_to_sleep)
         else:
-            logger.success(f"All wallets and tasks completed!")
+            if not is_last_task:
+                continue_datetime = datetime.now() + timedelta(seconds=time_to_sleep)
+                logger.info(f"Time to sleep for {time_to_sleep} seconds... "
+                            f"Continue at {continue_datetime.strftime('%H:%M:%S')}")
+                await asyncio.sleep(time_to_sleep)
+            else:
+                logger.success(f"All wallets and tasks completed!")
 
     async def process_wallet(
             self,

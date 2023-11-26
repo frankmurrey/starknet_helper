@@ -2,22 +2,28 @@ import time
 import random
 import asyncio
 import multiprocessing as mp
-from datetime import datetime, timedelta
+from datetime import datetime
+from datetime import timedelta
 from typing import Optional, List
 
 from loguru import logger
 
-import config
-from src import enums
 from modules.module_executor import ModuleExecutor
+from src.tasks_executor.event_manager import TasksExecEventManager
 from src.schemas.action_models import ModuleExecutionResult
 from src.schemas.app_config import AppConfigSchema
 from src.schemas.tasks.base.base import TaskBase
 from src.schemas.wallet_data import WalletData
-from src.storage import ActionStorage, Storage
-from src.tasks_executor.event_manager import TasksExecEventManager
-from utils.repr.misc import print_wallet_execution
+from src.storage import ActionStorage
+from src.storage import Storage
 from src.logger import configure_logger
+from src import enums
+
+from utils.repr import misc as repr_misc_utils
+from utils.repr import message as repr_message_utils
+from utils import task as task_utils
+
+import config
 
 
 class TaskExecutor:
@@ -32,20 +38,14 @@ class TaskExecutor:
             task: "TaskBase",
             wallet_index: int,
             wallet: "WalletData",
-
-            is_last_wallet: bool = False,
-            is_last_task: bool = False,
-    ):
+    ) -> ModuleExecutionResult:
         """
         Process a task
         Args:
             task: task to process
             wallet_index: index of wallet_
             wallet: wallet for task
-            is_last_wallet: is current wallet the last
-            is_last_task: is current task the last
         """
-
         task.task_status = enums.TaskStatus.PROCESSING
         self.event_manager.set_task_started(task, wallet)
 
@@ -62,45 +62,13 @@ class TaskExecutor:
         task.result_info = task_result.execution_info
         self.event_manager.set_task_completed(task, wallet)
 
-        if not task_result or task.test_mode:
-            time_to_sleep = config.DEFAULT_DELAY_SEC
-        else:
-            time_to_sleep = random.randint(
-                task.min_delay_sec,
-                task.max_delay_sec
-            )
-
-        if is_last_task:
-            self.event_manager.set_wallet_completed(wallet)
-
-            if not is_last_wallet:
-                continue_datetime = datetime.now() + timedelta(seconds=time_to_sleep)
-                logger.info(f"Time to sleep for {time_to_sleep} seconds... "
-                            f"Continue at {continue_datetime.strftime('%H:%M:%S')}")
-                time.sleep(time_to_sleep)
-
-        if not is_last_wallet:
-            if not is_last_task:
-                continue_datetime = datetime.now() + timedelta(seconds=time_to_sleep)
-                logger.info(f"Time to sleep for {time_to_sleep} seconds... "
-                            f"Continue at {continue_datetime.strftime('%H:%M:%S')}")
-                time.sleep(time_to_sleep)
-        else:
-            if not is_last_task:
-                continue_datetime = datetime.now() + timedelta(seconds=time_to_sleep)
-                logger.info(f"Time to sleep for {time_to_sleep} seconds... "
-                            f"Continue at {continue_datetime.strftime('%H:%M:%S')}")
-                await asyncio.sleep(time_to_sleep)
-            else:
-                logger.success(f"All wallets and tasks completed!")
+        return task_result
 
     def process_wallet(
             self,
             wallet: "WalletData",
             wallet_index: int,
             tasks: List["TaskBase"],
-
-            is_last_wallet: bool = False
     ):
         """
         Process a wallet
@@ -108,19 +76,26 @@ class TaskExecutor:
             wallet: wallet to process
             wallet_index: index of wallet
             tasks: list of tasks to process
-            is_last_wallet: is current wallet the last
         """
         self.event_manager.set_wallet_started(wallet)
 
-        print_wallet_execution(wallet, wallet_index)
+        repr_misc_utils.print_wallet_execution(wallet, wallet_index)
+
         for task_index, task in enumerate(tasks):
-            self.process_task(
+            task_result = self.process_task(
                 task=task,
                 wallet_index=wallet_index,
                 wallet=wallet,
-                is_last_wallet=is_last_wallet,
-                is_last_task=task_index == len(tasks) - 1,
             )
+
+            time_to_sleep = task_utils.get_time_to_sleep(task=task, task_result=task_result)
+            is_last_task = task_index == len(tasks) - 1
+
+            if not is_last_task:
+                logger.info(repr_message_utils.task_exec_sleep_message(time_to_sleep))
+                time.sleep(time_to_sleep)
+
+        self.event_manager.set_wallet_completed(wallet)
 
     def _start_processing(
             self,
@@ -139,9 +114,16 @@ class TaskExecutor:
                 wallet=wallet,
                 wallet_index=wallet_index,
                 tasks=tasks,
-
-                is_last_wallet=wallet_index == len(wallets) - 1
             )
+
+            time_to_sleep = config.DEFAULT_DELAY_SEC
+            is_last_wallet = wallet_index == len(wallets) - 1
+
+            if not is_last_wallet:
+                logger.info(repr_message_utils.task_exec_sleep_message(time_to_sleep))
+                time.sleep(time_to_sleep)
+
+        logger.success("All wallets processed")
 
     def is_running(self):
         """
@@ -177,6 +159,16 @@ class TaskExecutor:
 
         if shuffle_tasks:
             random.shuffle(tasks)
+
+        # TODO: separate method (for Kumushik)
+        for task_index, task in enumerate(tasks):
+            if task.reverse_action:
+                virtual_task = task_utils.create_virtual_task(task)
+
+                # TODO: tasks[task_index].min_delay_sec = task.reverse_action_min_delay_sec
+                # TODO: tasks[task_index].max_delay_sec = task.reverse_action_max_delay_sec
+
+                tasks.insert(task_index + 1, virtual_task)
 
         self._app_config_dict = Storage().app_config.dict()
 

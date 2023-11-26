@@ -5,15 +5,12 @@ from typing import Optional, List
 
 from loguru import logger
 
-from modules.module_executor import ModuleExecutor
-from src.schemas.action_models import ModuleExecutionResult
 from src.schemas.app_config import AppConfigSchema
 from src.schemas.tasks.base.base import TaskBase
 from src.schemas.wallet_data import WalletData
 from src.storage import Storage
 from src.tasks_executor.main import TaskExecutor
 from src.logger import configure_logger
-from src import enums
 
 from utils.repr import misc as repr_misc_utils
 from utils.repr import message as repr_message_utils

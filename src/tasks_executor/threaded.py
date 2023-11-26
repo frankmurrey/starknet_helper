@@ -1,9 +1,6 @@
 import time
-import random
 import asyncio
 import threading as th
-import multiprocessing as mp
-from datetime import datetime, timedelta
 from typing import Optional, List
 
 from loguru import logger
@@ -13,15 +10,13 @@ from src.schemas.action_models import ModuleExecutionResult
 from src.schemas.app_config import AppConfigSchema
 from src.schemas.tasks.base.base import TaskBase
 from src.schemas.wallet_data import WalletData
-from src.storage import ActionStorage, Storage
+from src.storage import Storage
 from src.tasks_executor.main import TaskExecutor
-from src.tasks_executor.event_manager import TasksExecEventManager
 from src.logger import configure_logger
 from src import enums
 
 from utils.repr import misc as repr_misc_utils
 from utils.repr import message as repr_message_utils
-from utils import iter as iter_utils
 from utils import task as task_utils
 
 import config
@@ -144,22 +139,11 @@ class ThreadedTaskExecutor(TaskExecutor):
             wallet: "WalletData",
     ):
         with self.lock:
-            task.task_status = enums.TaskStatus.PROCESSING
-            self.event_manager.set_task_started(task, wallet)
-
-            logger.debug(f"Processing task: {task.task_id} with wallet: {wallet.name}")
-
-            module_executor = ModuleExecutor(task=task, wallet=wallet)
-
-            loop = asyncio.get_event_loop()
-            task_execution_coroutine = module_executor.start()
-            task_result: ModuleExecutionResult = loop.run_until_complete(task_execution_coroutine)
-
-            task_status = enums.TaskStatus.SUCCESS if task_result.execution_status else enums.TaskStatus.FAILED
-            task.task_status = task_status
-            task.result_hash = task_result.hash
-            task.result_info = task_result.execution_info
-            self.event_manager.set_task_completed(task, wallet)
+            task_result = super().process_task(
+                task=task,
+                wallet_index=wallet_index,
+                wallet=wallet,
+            )
 
         return task_result
 

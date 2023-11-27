@@ -32,6 +32,10 @@ class TaskBase(BaseModel):
 
     reverse_action: bool = False
     reverse_action_task: Optional[Callable] = None
+
+    reverse_action_min_delay_sec: int = 1
+    reverse_action_max_delay_sec: int = 2
+
     retries: int = 3
 
     min_delay_sec: float = 1
@@ -78,6 +82,22 @@ class TaskBase(BaseModel):
 
         value = validation.get_converted_to_float(value, "Max Delay")
         value = validation.get_greater(value, values["min_delay_sec"], "Max Delay")
+
+        return value
+
+    @validator("reverse_action_min_delay_sec", pre=True)
+    def validate_reverse_action_min_delay_sec_pre(cls, value):
+
+        value = validation.get_converted_to_float(value, "Reverse Action Min Delay")
+        value = validation.get_positive(value, "Reverse Action Min Delay")
+
+        return value
+
+    @validator("reverse_action_max_delay_sec", pre=True)
+    def validate_reverse_action_max_delay_sec_pre(cls, value, values):
+
+        value = validation.get_converted_to_float(value, "Reverse Action Max Delay")
+        value = validation.get_greater(value, values["reverse_action_min_delay_sec"], "Reverse Action Max Delay")
 
         return value
 

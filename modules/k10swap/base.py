@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from loguru import logger
 
 from contracts.base import TokenBase
-from modules.base import SwapModuleBase
+from modules.base import ModuleBase
 from contracts.k10swap.main import K10SwapContracts
 from starknet_py.serialization import TupleDataclass
 
@@ -13,9 +13,10 @@ if TYPE_CHECKING:
     from src.schemas.tasks.k10swap import K10SwapTask
     from src.schemas.tasks.k10swap import K10SwapAddLiquidityTask
     from src.schemas.tasks.k10swap import K10SwapRemoveLiquidityTask
+    from src.schemas.wallet_data import WalletData
 
 
-class K10SwapBase(SwapModuleBase):
+class K10SwapBase(ModuleBase):
     def __init__(
             self,
             account,
@@ -24,10 +25,12 @@ class K10SwapBase(SwapModuleBase):
                 'K10SwapAddLiquidityTask',
                 'K10SwapRemoveLiquidityTask'
             ],
+            wallet_data: 'WalletData',
     ):
         super().__init__(
             account=account,
             task=task,
+            wallet_data=wallet_data,
         )
 
         self.k10_contracts = K10SwapContracts()
@@ -70,23 +73,27 @@ class K10SwapBase(SwapModuleBase):
             return amounts_out
 
         except Exception as e:
-            logger.error(f'Error while getting amount in: {e}')
+            self.log_error(f'Error while getting amount in: {e}')
             return None
 
-    async def get_token_pair_address(self) -> Union[int, None]:
+    async def get_token_pair_address(
+            self,
+            coin_x: TokenBase,
+            coin_y: TokenBase,
+    ) -> Union[int, None]:
         """
         Get the token pair.
         :return:
         """
         try:
             pair = await self.factory_contract.functions["getPair"].call(
-                int(self.coin_x.contract_address, 16),
-                int(self.coin_y.contract_address, 16)
+                int(coin_x.contract_address, 16),
+                int(coin_y.contract_address, 16)
             )
             return pair.pair
 
         except Exception as e:
-            logger.error(f'Error while getting pool data: {e}')
+            self.log_error(f'Error while getting pool data: {e}')
             return None
 
     async def get_token_pair(
@@ -110,7 +117,7 @@ class K10SwapBase(SwapModuleBase):
             return token0_address.token0, token1_address.token1
 
         except Exception as e:
-            logger.error(f'Error while getting pool data: {e}')
+            self.log_error(f'Error while getting pool data: {e}')
             return None
 
 

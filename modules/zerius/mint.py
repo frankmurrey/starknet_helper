@@ -12,6 +12,7 @@ from src.schemas.action_models import ModuleExecutionResult, TransactionPayloadD
 
 if TYPE_CHECKING:
     from src.schemas.tasks.zerius import ZeriusMintTask
+    from src.schemas.wallet_data import WalletData
 
 
 class ZeriusMint(ModuleBase):
@@ -22,11 +23,13 @@ class ZeriusMint(ModuleBase):
     def __init__(
             self,
             account,
-            task: 'ZeriusMintTask'
+            task: 'ZeriusMintTask',
+            wallet_data: 'WalletData',
     ):
         super().__init__(
             account=account,
             task=task,
+            wallet_data=wallet_data,
         )
         self.task = task
         self.account = account
@@ -46,7 +49,7 @@ class ZeriusMint(ModuleBase):
             return mint_fee_wei[0], token_uri[0]
 
         except Exception as e:
-            logger.error(f"Failed to get fee and token uri: {e}")
+            self.log_error(f"Failed to get fee and token uri: {e}")
             return None
 
     async def build_txn_payload_data(self) -> Union[TransactionPayloadData, None]:
@@ -61,6 +64,7 @@ class ZeriusMint(ModuleBase):
 
         mint_data = await self.get_fee_and_token_uri(contract=router_contract)
         if mint_data is None:
+            self.log_error(f"Failed to get fee and token uri")
             return None
 
         mint_fee_wei, token_uri = mint_data
@@ -100,7 +104,7 @@ class ZeriusMint(ModuleBase):
         """
         txn_payload_data = await self.build_txn_payload_data()
         if txn_payload_data is None:
-            self.module_execution_result.execution_info = f"Failed to build txn payload data"
+            self.log_error(f"Failed to build txn payload data")
             return self.module_execution_result
 
         txn_info_message = f"Mint NFT (Zerius). Mint fee: {txn_payload_data.amount_x_decimals} ETH, " \

@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 from starknet_py.net.client_models import Call
+from loguru import logger
 
 from modules.base import ModuleBase
 from modules.dmail.random_generator import generate_random_profile
@@ -11,6 +12,7 @@ from utils.sha256 import sha256_hash
 
 if TYPE_CHECKING:
     from src.schemas.tasks.dmail import DmailSendMailTask
+    from src.schemas.wallet_data import WalletData
 
 
 class DmailSendMail(ModuleBase):
@@ -20,11 +22,13 @@ class DmailSendMail(ModuleBase):
             self,
             account,
             task: 'DmailSendMailTask',
+            wallet_data: 'WalletData',
     ):
 
         super().__init__(
             account=account,
             task=task,
+            wallet_data=wallet_data,
         )
 
         self.task = task
@@ -63,7 +67,7 @@ class DmailSendMail(ModuleBase):
         """
         txn_payload_calls = await self.build_txn_payload_calls()
         if txn_payload_calls is None:
-            self.module_execution_result.execution_info = "Failed to build transaction payload calls"
+            self.log_error("Failed to build transaction payload data")
             return self.module_execution_result
 
         txn_info_message = f"Send mail (Dmail). Receiver: {self.profile.email}. Theme: {self.profile.theme}"

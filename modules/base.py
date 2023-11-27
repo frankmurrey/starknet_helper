@@ -2,6 +2,7 @@ import random
 import time
 from typing import Union
 from typing import TYPE_CHECKING
+from typing import Callable
 
 from starknet_py.net.account.account import Account
 from starknet_py.net.models import StarknetChainId
@@ -19,6 +20,7 @@ from utils.key_manager.key_manager import get_braavos_addr_from_private_key
 from src.schemas.action_models import ModuleExecutionResult, TransactionPayloadData
 from src.gecko_pricer import GeckoPricer
 from src.storage import Storage
+from src.execution_storage import ExecutionStorage
 from src import paths
 from src import enums
 from utils.file_manager import FileManager
@@ -32,6 +34,7 @@ if TYPE_CHECKING:
     from src.schemas.tasks.base.add_liquidity import AddLiquidityTaskBase
     from src.schemas.tasks.base.remove_liquidity import RemoveLiquidityTaskBase
     from src.schemas.tasks.base import TaskBase
+    from src.schemas.wallet_data import WalletData
 
 
 class ModuleBase:
@@ -40,7 +43,8 @@ class ModuleBase:
     def __init__(
             self,
             account: Account,
-            task: 'TaskBase'
+            task: 'TaskBase',
+            wallet_data: 'WalletData'
     ):
         self.account = account
         self.client = account.client
@@ -48,8 +52,13 @@ class ModuleBase:
         self.gecko_pricer = GeckoPricer(client=self.client)
         self.storage = Storage()
         self.tokens = Tokens()
+        self.is_task_virtual = getattr(task, 'is_virtual', False)
 
         self.task = task
+        self.wallet_data = wallet_data
+
+        self.execution_storage = ExecutionStorage()
+
         self.module_execution_result = ModuleExecutionResult(test_mode=self.task.test_mode)
 
     def i16(
@@ -57,6 +66,11 @@ class ModuleBase:
             hex_d: str
     ):
         return int(hex_d, 16)
+
+    def log_error(self, msg: str):
+        logger.error(msg)
+        self.module_execution_result.execution_status = False
+        self.module_execution_result.execution_info += msg + " "
 
     async def get_cairo_version_for_txn_execution(
             self,
@@ -530,12 +544,32 @@ class ModuleBase:
             logger.error(f"Error while signing transaction: {ex}")
             return None
 
+    async def build_txn_payload_data(self) -> TransactionPayloadData:
+        """
+        ABC method for building transaction payload data. Must be implemented in child classes.
+        :return:
+        """
+        raise NotImplementedError
+
+    async def build_reverse_txn_payload_data(self) -> TransactionPayloadData:
+        """
+        ABC method for building reverse transaction payload data. Must be implemented in child classes.
+        :return:
+        """
+        raise NotImplementedError
+
+    async def send_txn(self) -> ModuleExecutionResult:
+        """
+        ABC method for sending a transaction. Must be implemented in child classes.
+        :return:
+        """
+
     async def try_send_txn(
             self,
             retries: int = 1,
     ) -> ModuleExecutionResult:
         """
-        Tries to send a transaction.
+        Tries to send a transaction. Retries if needed.
         :param retries:
         :return:
         """
@@ -564,13 +598,6 @@ class ModuleBase:
             logger.error(f"Failed to send txn after {retries} attempts")
             return result
 
-    async def send_txn(self):
-        """
-        ABS method for sending a transaction.
-        :return:
-        """
-        raise NotImplementedError
-
     async def simulate_and_send_transfer_type_transaction(
             self,
             account: Account,
@@ -588,7 +615,7 @@ class ModuleBase:
 
         cairo_version = await self.get_cairo_version_for_txn_execution(account=account)
         if cairo_version is None:
-            err_msg = "Error while getting Cairo version. Aborting transaction."
+            err_msg = "Error while getting Cairo version"
             logger.error(err_msg)
 
             self.module_execution_result.execution_status = False
@@ -602,7 +629,7 @@ class ModuleBase:
             auto_estimate=not self.task.forced_gas_limit
         )
         if signed_invoke_transaction is None:
-            err_msg = "Error while signing transaction. Aborting transaction."
+            err_msg = "Error while signing transaction (Usually caused by incorrect payload data)"
             logger.error(err_msg)
 
             self.module_execution_result.execution_status = False
@@ -615,8 +642,8 @@ class ModuleBase:
             transaction=signed_invoke_transaction
         )
         if estimate_transaction is None:
-            err_msg = "Transaction estimation failed."
-            logger.error(f"{err_msg} Aborting transaction.")
+            err_msg = "Transaction estimation failed"
+            logger.error(f"{err_msg} Aborting transaction")
 
             self.module_execution_result.execution_status = False
             self.module_execution_result.execution_info = err_msg
@@ -625,7 +652,7 @@ class ModuleBase:
         estimate_gas_decimals = estimate_transaction / 10 ** 18
         wallet_eth_balance = await self.get_eth_balance(account=account)
         if wallet_eth_balance is None:
-            err_msg = "Error while getting wallet ETH balance. Aborting transaction."
+            err_msg = "Error while getting wallet ETH balance"
             logger.error(err_msg)
 
             self.module_execution_result.execution_status = False
@@ -690,6 +717,7 @@ class ModuleBase:
                 logger.error(f"{err_msg}. Txn Hash: {hex(txn_hash)}")
 
                 self.module_execution_result.execution_status = False
+                self.module_execution_result.hash = hex(txn_hash)
                 self.module_execution_result.execution_info = err_msg
                 return self.module_execution_result
 
@@ -711,7 +739,7 @@ class ModuleBase:
             logger.success(f"Txn sent. Txn Hash: {hex(txn_hash)}")
 
             self.module_execution_result.execution_status = True
-            self.module_execution_result.execution_info = "Txn sent"
+            self.module_execution_result.execution_info = "Txn sent (Receipt not requested)"
             self.module_execution_result.hash = hex(txn_hash)
 
             return self.module_execution_result
@@ -723,18 +751,38 @@ class SwapModuleBase(ModuleBase):
     def __init__(
             self,
             account,
-            task: 'SwapTaskBase'
+            task: 'SwapTaskBase',
+            wallet_data: 'WalletData'
     ):
-        super().__init__(account=account, task=task)
+        super().__init__(account=account, task=task, wallet_data=wallet_data)
         self.account: Account = account
 
         if not self.task.coin_y == enums.MiscTypes.RANDOM:
 
-            self.coin_x = self.tokens.get_by_name(self.task.coin_x)
-            self.coin_y = self.tokens.get_by_name(self.task.coin_y)
+            if not self.is_task_virtual:
 
-            self.initial_balance_x_wei = None
-            self.initial_balance_y_wei = None
+                self.coin_x = self.tokens.get_by_name(self.task.coin_x)
+                self.coin_y = self.tokens.get_by_name(self.task.coin_y)
+
+                self.initial_balance_x_wei = None
+                self.initial_balance_y_wei = None
+
+                self.build_payload_data: Callable = self.build_txn_payload_data
+
+            else:
+                self.coin_x = self.tokens.get_by_name(self.task.coin_y)
+                self.coin_y = self.tokens.get_by_name(self.task.coin_x)
+
+                self.initial_balance_x_wei = self.execution_storage.get_by_wallet_id_and_task_id(
+                    wallet_id=self.wallet_data.wallet_id,
+                    task_id=self.task.task_id
+                ).get('initial_balance_y_wei')
+                self.initial_balance_y_wei = self.execution_storage.get_by_wallet_id_and_task_id(
+                    wallet_id=self.wallet_data.wallet_id,
+                    task_id=self.task.task_id
+                ).get('initial_balance_x_wei')
+
+                self.build_payload_data: Callable = self.build_reverse_txn_payload_data
 
             self.token_x_decimals = None
             self.token_y_decimals = None
@@ -751,6 +799,15 @@ class SwapModuleBase(ModuleBase):
         self.initial_balance_y_wei = await self.get_token_balance(
             token_address=self.coin_y.contract_address,
             account=self.account
+        )
+
+        self.execution_storage.set_pre_execution_data(
+            wallet_id=self.wallet_data.wallet_id,
+            task_id=self.task.task_id,
+            data={
+                'initial_balance_x_wei': self.initial_balance_x_wei,
+                'initial_balance_y_wei': self.initial_balance_y_wei
+            },
         )
 
         self.token_x_decimals = await self.get_token_decimals(
@@ -784,7 +841,7 @@ class SwapModuleBase(ModuleBase):
         """
 
         if self.initial_balance_x_wei == 0:
-            logger.error(f"Wallet {coin_x.symbol.upper()} balance = 0")
+            self.log_error(f"Wallet {coin_x.symbol.upper()} balance = 0")
             return None
 
         wallet_token_x_balance_decimals = self.initial_balance_x_wei / 10 ** self.token_x_decimals
@@ -799,7 +856,7 @@ class SwapModuleBase(ModuleBase):
             amount_out_wei = int(self.initial_balance_x_wei * percent)
 
         elif wallet_token_x_balance_decimals < self.task.min_amount_out:
-            logger.error(
+            self.log_error(
                 f"Wallet {coin_x.symbol.upper()} balance less than min amount out, "
                 f"balance: {wallet_token_x_balance_decimals}, min amount out: {self.task.min_amount_out}"
             )
@@ -821,34 +878,38 @@ class SwapModuleBase(ModuleBase):
 
         return amount_out_wei
 
-    async def send_swap_type_txn(
-            self,
-            account: Account,
-            txn_payload_data: TransactionPayloadData,
-            is_reverse: bool = False
-    ) -> ModuleExecutionResult:
+    async def send_txn(self) -> ModuleExecutionResult:
         """
-        Sends a swap type transaction.
-        :param account:
-        :param txn_payload_data:
-        :param is_reverse:
+        Sends a swap transaction. Reimplemented from parent 'ModuleBase' class.
         :return:
         """
 
+        await self.set_fetched_tokens_data()
+
+        if self.check_local_tokens_data() is False:
+            self.module_execution_result.execution_info = f"Failed to fetch local tokens data in swap module"
+            return self.module_execution_result
+
+        txn_payload_data = await self.build_payload_data()
+        if txn_payload_data is None:
+            self.module_execution_result.execution_info = f"Failed to build transaction payload data"
+            return self.module_execution_result
+
         self.task: 'SwapTaskBase'
-        self.account = account
 
         module_name = self.task.module_name.title()
 
         out_decimals = txn_payload_data.amount_x_decimals
         in_decimals = txn_payload_data.amount_y_decimals
 
-        coin_x_symbol = self.task.coin_x.upper() if is_reverse is False else self.task.coin_x.upper()
-        coin_y_symbol = self.task.coin_y.upper() if is_reverse is False else self.task.coin_y.upper()
+        coin_x_symbol = self.task.coin_x.upper()
+        coin_y_symbol = self.task.coin_y.upper()
 
         slippage: Union[float, int] = self.task.slippage
 
-        txn_info_message = f"Swap ({module_name}) | " \
+        is_reverse_label = f"Reverse " if self.is_task_virtual else ""
+
+        txn_info_message = f"{is_reverse_label}Swap ({module_name}) | " \
                            f"{out_decimals} ({coin_x_symbol}) -> " \
                            f"{in_decimals} ({coin_y_symbol}). " \
                            f"Slippage: {slippage}%."
@@ -857,9 +918,11 @@ class SwapModuleBase(ModuleBase):
             coin_x_cg_id = self.tokens.get_cg_id_by_name(coin_x_symbol)
             coin_y_cg_id = self.tokens.get_cg_id_by_name(coin_y_symbol)
             if coin_x_cg_id is None or coin_y_cg_id is None:
-                logger.error(
-                    f"Error while getting CoinGecko IDs for {coin_x_symbol.upper()} and {coin_y_symbol.upper()}")
+                err_msg = f"Error while getting CoinGecko IDs for {coin_x_symbol.upper()} and {coin_y_symbol.upper()}"
+                logger.error(err_msg)
 
+                self.module_execution_result.execution_status = False
+                self.module_execution_result.execution_info = err_msg
                 return self.module_execution_result
 
             max_price_difference_percent: Union[float, int] = self.task.max_price_difference_percent
@@ -873,10 +936,13 @@ class SwapModuleBase(ModuleBase):
 
             is_price_valid, price_data = swap_price_validation_data
             if is_price_valid is False:
-                logger.error(f"Swap rate is not valid ({module_name}). "
-                             f"Gecko rate: {price_data['gecko_price']}, "
-                             f"Swap rate: {price_data['target_price']}")
+                err_msg = f"Swap rate is not valid ({module_name}). " \
+                            f"Gecko rate: {price_data['gecko_price']}, " \
+                            f"Swap rate: {price_data['target_price']}"
+                logger.error(err_msg)
 
+                self.module_execution_result.execution_status = False
+                self.module_execution_result.execution_info = err_msg
                 return self.module_execution_result
 
             logger.info(f"Swap rate is valid ({module_name}). "
@@ -884,7 +950,7 @@ class SwapModuleBase(ModuleBase):
                         f"Swap rate: {price_data['target_price']}.")
 
         txn_status = await self.simulate_and_send_transfer_type_transaction(
-            account=account,
+            account=self.account,
             calls=txn_payload_data.calls,
             txn_info_message=txn_info_message
         )
@@ -898,9 +964,10 @@ class LiquidityModuleBase(ModuleBase):
     def __init__(
             self,
             account,
+            wallet_data: 'WalletData',
             task: Union['AddLiquidityTaskBase', 'RemoveLiquidityTaskBase']
     ):
-        super().__init__(account=account, task=task)
+        super().__init__(account=account, task=task, wallet_data=wallet_data)
         self._account = account
 
         if not self.task.coin_y == enums.MiscTypes.RANDOM:
@@ -908,8 +975,22 @@ class LiquidityModuleBase(ModuleBase):
             self.coin_x = self.tokens.get_by_name(self.task.coin_x)
             self.coin_y = self.tokens.get_by_name(self.task.coin_y)
 
-            self.initial_balance_x_wei = None
-            self.initial_balance_y_wei = None
+            if not self.is_task_virtual:
+
+                self.initial_balance_x_wei = None
+                self.initial_balance_y_wei = None
+
+                self.build_payload_data: Callable = self.build_txn_payload_data
+
+            else:
+
+                self.reverse_task = self.task.reverse_action_task
+                self.reverse_task: 'RemoveLiquidityTaskBase'
+
+                self.reverse_module = self.reverse_task.module
+                self.reverse_module: 'LiquidityModuleBase'
+
+                self.build_payload_data: Callable = self.reverse_module.build_txn_payload_data
 
             self.token_x_decimals = None
             self.token_y_decimals = None
@@ -996,29 +1077,39 @@ class LiquidityModuleBase(ModuleBase):
 
         return amount_out_wei
 
-    async def send_liquidity_type_txn(
-            self,
-            account: Account,
-            txn_payload_data: TransactionPayloadData,
-            is_reverse: bool = False
-    ) -> ModuleExecutionResult:
+    async def send_txn(self) -> ModuleExecutionResult:
         """
-        Sends a liquidity type transaction.
-        :param account:
-        :param txn_payload_data:
-        :param is_reverse:
+        Sends a liquidity transaction. Reimplemented from parent 'ModuleBase' class.
         :return:
         """
-        self.account = account
+
+        await self.set_fetched_tokens_data()
+
+        if self.check_local_tokens_data() is False:
+            err_msg = f"Failed to fetch local tokens data in swap module"
+            logger.error(err_msg)
+
+            self.module_execution_result.execution_info = err_msg
+            self.module_execution_result.execution_status = False
+            return self.module_execution_result
+
+        txn_payload_data = await self.build_payload_data()
+        if txn_payload_data is None:
+            err_msg = f"Failed to build transaction payload data"
+            logger.error(err_msg)
+
+            self.module_execution_result.execution_info = err_msg
+            self.module_execution_result.execution_status = False
+            return self.module_execution_result
+
         module_name = self.task.module_name.title()
-        module_type = ("Add liquidity" if self.task.module_type == enums.ModuleType.LIQUIDITY_ADD
-                       else "Remove liquidity")
+        module_type = "Add liquidity" if not self.is_task_virtual else "Remove liquidity"
 
         out_decimals = txn_payload_data.amount_x_decimals
         in_decimals = txn_payload_data.amount_y_decimals
 
-        coin_x_symbol = self.coin_x.symbol.upper() if is_reverse is False else self.coin_x.symbol.upper()
-        coin_y_symbol = self.coin_y.symbol.upper() if is_reverse is False else self.coin_y.symbol.upper()
+        coin_x_symbol = self.coin_x.symbol.upper()
+        coin_y_symbol = self.coin_y.symbol.upper()
 
         txn_info_message = f"{module_type} ({module_name}) | " \
                            f"{out_decimals} ({coin_x_symbol.upper()}) + " \
@@ -1026,10 +1117,9 @@ class LiquidityModuleBase(ModuleBase):
                            f"Slippage: {self.task.slippage}%."
 
         txn_status = await self.simulate_and_send_transfer_type_transaction(
-            account=account,
+            account=self.account,
             calls=txn_payload_data.calls,
             txn_info_message=txn_info_message
         )
 
         return txn_status
-

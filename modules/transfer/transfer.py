@@ -65,7 +65,7 @@ class Transfer(ModuleBase):
         :return:
         """
         if self.initial_balance_x_wei is None and self.coin_x_decimals is None:
-            logger.error(f"Token {self.coin_x.symbol.upper()} decimals not fetched")
+            self.log_error(f"Token {self.coin_x.symbol.upper()} decimals not fetched")
             return False
 
     async def estimate_eth_transfer_fee(self) -> Union[int, None]:
@@ -98,7 +98,7 @@ class Transfer(ModuleBase):
                 cairo_version=cairo_version
             )
             if signed_invoke_transaction is None:
-                logger.error(f"Error while signing invoke transaction")
+                self.log_error(f"Error while signing invoke transaction")
                 return None
 
             estimate_transaction = await self.get_estimated_transaction_fee(
@@ -109,7 +109,7 @@ class Transfer(ModuleBase):
             return estimate_transaction
 
         except ClientError:
-            logger.error(f"Error while estimating ETH transfer fee")
+            self.log_error(f"Error while estimating ETH transfer fee")
             return None
 
     def calculate_amount_out_from_balance(self) -> Union[int, None]:
@@ -119,11 +119,11 @@ class Transfer(ModuleBase):
         """
 
         if self.initial_balance_x_wei == 0:
-            logger.error(f"Wallet {self.coin_x.symbol.upper()} balance = 0")
+            self.log_error(f"Wallet {self.coin_x.symbol.upper()} balance = 0")
             return None
 
         if self.coin_x_decimals is None:
-            logger.error(f"Token {self.coin_x.symbol.upper()} decimals not fetched")
+            self.log_error(f"Token {self.coin_x.symbol.upper()} decimals not fetched")
             return None
 
         wallet_token_x_balance_decimals = self.initial_balance_x_wei / 10 ** self.coin_x_decimals
@@ -136,7 +136,7 @@ class Transfer(ModuleBase):
             amount_out_wei = int(self.initial_balance_x_wei * percent)
 
         elif wallet_token_x_balance_decimals < self.task.min_amount_out:
-            logger.error(
+            self.log_error(
                 f"Wallet {self.coin_x.symbol.upper()} balance less than min amount out, "
                 f"balance: {wallet_token_x_balance_decimals}, min amount out: {self.task.min_amount_out}"
             )
@@ -164,21 +164,23 @@ class Transfer(ModuleBase):
         :return:
         """
         if self.wallet_data.pair_address is None:
-            logger.error(f"Pair address not set")
+            self.log_error(f"Pair address not set")
             return None
 
         if len(self.wallet_data.pair_address) != config.STARK_KEY_LENGTH:
-            logger.error(f"Pair address is not valid")
+            self.log_error(f"Pair address is not valid")
             return None
 
         amount_out_wei = self.calculate_amount_out_from_balance()
         if amount_out_wei is None:
+            self.log_error(f"Error while calculating amount out for {self.coin_x.symbol.upper()}")
             return None
 
         if self.coin_x.symbol.upper() == 'ETH':
             if self.task.use_all_balance is True:
                 eth_transfer_fee = await self.estimate_eth_transfer_fee()
                 if eth_transfer_fee is None:
+                    self.log_error(f"Error while estimating ETH transfer fee")
                     return None
 
                 amount_out_wei -= int(eth_transfer_fee * 1.8)
@@ -201,18 +203,18 @@ class Transfer(ModuleBase):
 
     async def send_txn(self) -> ModuleExecutionResult:
         """
-        Send the transaction.
+        Send the transaction. Implements the abstract method from the base 'ModuleBase' class.
         :return:
         """
         await self.set_fetched_tokens_data()
 
         if self.check_local_tokens_data() is False:
-            self.module_execution_result.execution_info = f"Failed to fetch local tokens data"
+            self.log_error(f"Failed to fetch local tokens data")
             return self.module_execution_result
 
         payload_data = await self.build_txn_payload_data()
         if payload_data is None:
-            self.module_execution_result.execution_info = f"Failed to build transaction payload data"
+            self.log_error(f"Failed to build transaction payload data")
             return self.module_execution_result
 
         txn_info_message = (

@@ -1,9 +1,12 @@
 import random
+
 from modules.base import SwapModuleBase
-from src.schemas.action_models import ModuleExecutionResult
-from src.schemas.tasks.base.swap import SwapTaskBase
-from src.schemas import tasks
 from contracts.tokens.main import Tokens
+
+from src.schemas import tasks
+from src.schemas.wallet_data import WalletData
+from src.schemas.tasks.base.swap import SwapTaskBase
+from src.schemas.action_models import ModuleExecutionResult
 
 SWAP_TASKS = [
     tasks.SithSwapTask,
@@ -20,10 +23,12 @@ class RandomSwap(SwapModuleBase):
             self,
             account,
             task: SwapTaskBase,
+            wallet_data: WalletData,
     ):
         super().__init__(
             account=account,
             task=task,
+            wallet_data=wallet_data,
         )
         random_task_class = random.choice(SWAP_TASKS)
         task_dict = self.task.dict(exclude={"module_name",
@@ -63,7 +68,8 @@ class RandomSwap(SwapModuleBase):
 
         module = self.task.module(
             account=self.account,
-            task=self.task
+            task=self.task,
+            wallet_data=self.wallet_data,
         )
 
         return await module.try_send_txn(retries=retries)

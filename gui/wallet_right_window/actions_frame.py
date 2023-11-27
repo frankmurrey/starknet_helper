@@ -311,12 +311,12 @@ class ActionsFrame(customtkinter.CTkFrame):
 
         if completed_task.task_status == enums.TaskStatus.SUCCESS:
             action_item.set_task_completed()
+
         elif completed_task.task_status == enums.TaskStatus.FAILED:
             action_item.set_task_failed()
 
     def on_wallet_completed(self, completed_wallet: "WalletData"):
         wallet_item = self.wallets_table.get_wallet_item_by_wallet_id(wallet_id=completed_wallet.wallet_id)
-        wallet_item.set_wallet_completed()
         if not self.current_wallet_action_items:
             return
 
@@ -327,6 +327,9 @@ class ActionsFrame(customtkinter.CTkFrame):
         else:
             wallet_item.set_wallet_completed()
 
+        for action_item in self.current_wallet_action_items:
+            action_item.set_task_empty()
+
         self.active_wallet = None
         self.master.update_wallets_stats_labels(
             completed_wallets=self.completed_wallets_amount,
@@ -334,9 +337,6 @@ class ActionsFrame(customtkinter.CTkFrame):
         )
 
         self.master.update_active_wallet_label(wallet_name="None")
-
-        for action_item in self.current_wallet_action_items:
-            action_item.set_task_empty()
 
     def is_wallet_failed(self, wallet_id: UUID) -> bool:
         for key, values in self.wallets_completed_tasks.items():

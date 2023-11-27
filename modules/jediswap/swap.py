@@ -13,6 +13,7 @@ from utils.get_delay import get_delay
 
 if TYPE_CHECKING:
     from src.schemas.tasks.jediswap import JediSwapTask
+    from src.schemas.wallet_data import WalletData
 
 
 class JediSwap(JediSwapBase, SwapModuleBase):
@@ -23,10 +24,12 @@ class JediSwap(JediSwapBase, SwapModuleBase):
             self,
             account,
             task: 'JediSwapTask',
+            wallet_data: 'WalletData',
     ):
         super().__init__(
             account=account,
             task=task,
+            wallet_data=wallet_data,
         )
 
         self.task = task
@@ -39,6 +42,7 @@ class JediSwap(JediSwapBase, SwapModuleBase):
         """
         amount_out_wei = await self.calculate_amount_out_from_balance(coin_x=self.coin_x)
         if amount_out_wei is None:
+            self.log_error(f"Failed to calculate amount out for {self.coin_x.symbol.upper()}")
             return None
 
         amount_in_wei = await self.get_amount_in(
@@ -48,6 +52,7 @@ class JediSwap(JediSwapBase, SwapModuleBase):
             router_contract=self.router_contract
         )
         if amount_in_wei is None:
+            self.log_error(f"Failed to calculate amount in for {self.coin_x.symbol.upper()}")
             return None
 
         amount_in_wei_with_slippage = int(amount_in_wei * (1 - (self.task.slippage / 100)))
@@ -90,12 +95,12 @@ class JediSwap(JediSwapBase, SwapModuleBase):
         )
 
         if wallet_y_balance_wei == 0:
-            logger.error(f"Wallet {self.coin_y.symbol.upper()} balance = 0")
+            self.log_error(f"Wallet {self.coin_y.symbol.upper()} balance = 0")
             return None
 
         amount_out_y_wei = wallet_y_balance_wei - self.initial_balance_y_wei
         if amount_out_y_wei <= 0:
-            logger.error(f"Wallet {self.coin_y.symbol.upper()} balance less than initial balance")
+            self.log_error(f"Wallet {self.coin_y.symbol.upper()} balance less than initial balance")
             return None
 
         amount_in_wei = await self.get_amount_in(
@@ -105,6 +110,7 @@ class JediSwap(JediSwapBase, SwapModuleBase):
             router_contract=self.router_contract
         )
         if amount_in_wei is None:
+            self.log_error(f"Failed to calculate amount in for {self.coin_y.symbol.upper()}")
             return None
 
         amount_in_wei_with_slippage = int(amount_in_wei * (1 - (self.task.slippage / 100)))
@@ -140,47 +146,3 @@ class JediSwap(JediSwapBase, SwapModuleBase):
             amount_x_decimals=amount_out_y_wei / 10 ** self.token_y_decimals,
             amount_y_decimals=amount_in_wei / 10 ** self.token_x_decimals
         )
-
-    async def send_txn(self) -> ModuleExecutionResult:
-        """
-        Sends swap type transaction, if reverse action is enabled in task, sends reverse swap type transaction
-        :return:
-        """
-        await self.set_fetched_tokens_data()
-
-        if self.check_local_tokens_data() is False:
-            self.module_execution_result.execution_info = f"Failed to fetch local tokens data"
-            return self.module_execution_result
-
-        txn_payload_data = await self.build_txn_payload_data()
-        if txn_payload_data is None:
-            self.module_execution_result.execution_info = f"Failed to build transaction payload data"
-            return self.module_execution_result
-
-        txn_status = await self.send_swap_type_txn(
-            account=self.account,
-            txn_payload_data=txn_payload_data
-        )
-
-        if txn_status.execution_status is False:
-            self.module_execution_result.execution_info = f"Failed to send swap type txn"
-            return self.module_execution_result
-
-        if self.task.reverse_action is True:
-            delay = get_delay(self.task.min_delay_sec, self.task.max_delay_sec)
-            logger.info(f"Waiting {delay} seconds before reverse action")
-            time.sleep(delay)
-
-            reverse_txn_payload_data = await self.build_reverse_txn_payload_data()
-            if reverse_txn_payload_data is None:
-                self.module_execution_result.execution_info = f"Failed to build reverse transaction payload data"
-                return self.module_execution_result
-
-            reverse_txn_status = await self.send_swap_type_txn(
-                account=self.account,
-                txn_payload_data=reverse_txn_payload_data
-            )
-
-            return reverse_txn_status
-
-        return txn_status

@@ -1,4 +1,3 @@
-import time
 from typing import Union
 from typing import TYPE_CHECKING
 
@@ -7,15 +6,14 @@ from starknet_py.net.http_client import HttpMethod
 from starknet_py.net.client_errors import ClientError
 from loguru import logger
 
-from modules.jediswap.base import JediSwapBase
 from modules.base import SwapModuleBase
-from src.schemas.action_models import ModuleExecutionResult, TransactionPayloadData
-from utils.get_delay import get_delay
+from src.schemas.action_models import TransactionPayloadData
 from contracts.fibrous.main import FibrousContracts
 
 
 if TYPE_CHECKING:
     from src.schemas.tasks.fibrous import FibrousSwapTask
+    from src.schemas.wallet_data import WalletData
 
 
 class FibrousSwap(SwapModuleBase):
@@ -25,11 +23,13 @@ class FibrousSwap(SwapModuleBase):
     def __init__(
             self,
             account,
+            wallet_data: 'WalletData',
             task: 'FibrousSwapTask',
     ):
         super().__init__(
             account=account,
             task=task,
+            wallet_data=wallet_data,
         )
 
         self.task = task
@@ -42,12 +42,17 @@ class FibrousSwap(SwapModuleBase):
             provider=account
         )
 
-    async def get_execute_data(self, amount_out_wei: int) -> list:
+    async def get_execute_data(
+            self,
+            amount_out_wei: int,
+            coin_x_address: str,
+            coin_y_address: str,
+    ) -> list:
         url = "https://api.fibrous.finance/execute"
 
         payload = {
-            "tokenInAddress": self.coin_x.contract_address,
-            "tokenOutAddress": self.coin_y.contract_address,
+            "tokenInAddress": coin_x_address,
+            "tokenOutAddress": coin_y_address,
             "amount": hex(amount_out_wei),
             "slippage": self.task.slippage / 100,
             "destination": hex(self.account.address),
@@ -89,7 +94,7 @@ class FibrousSwap(SwapModuleBase):
             return response
 
         except ClientError:
-            logger.error("Failed to get swap data")
+            self.log_error("Failed to get swap data")
             return None
 
     def _i16(self, value) -> int:
@@ -119,6 +124,9 @@ class FibrousSwap(SwapModuleBase):
 
         amount_x_wei = await self.calculate_amount_out_from_balance(coin_x=self.coin_x)
         if amount_x_wei is None:
+            self.log_error(
+                f"Failed to calculate amount out for {self.coin_x.symbol.upper()} -> {self.coin_y.symbol.upper()}"
+            )
             return None
 
         approve_call = self.build_token_approve_call(
@@ -127,9 +135,17 @@ class FibrousSwap(SwapModuleBase):
             amount_wei=int(amount_x_wei)
         )
 
-        payload = await self.get_execute_data(amount_out_wei=amount_x_wei)
+        payload = await self.get_execute_data(
+            amount_out_wei=amount_x_wei,
+            coin_x_address=self.coin_x.contract_address,
+            coin_y_address=self.coin_y.contract_address,
+        )
         if payload is None:
+            self.log_error(
+                f"Failed to get execute data for {self.coin_x.symbol.upper()} -> {self.coin_y.symbol.upper()}"
+            )
             return None
+
         payload_decoded = self.rebuild_payload(payload)
 
         amount_y_wei = payload_decoded[4] * 100 / (100 - self.task.slippage)
@@ -148,48 +164,53 @@ class FibrousSwap(SwapModuleBase):
         )
 
     async def build_reverse_txn_payload_data(self) -> Union[TransactionPayloadData, None]:
-        pass
-
-    async def send_txn(self) -> ModuleExecutionResult:
         """
-        Send swap type transaction
+        Builds reverse transaction payload data
         :return:
         """
-        await self.set_fetched_tokens_data()
-
-        if self.check_local_tokens_data() is False:
-            self.module_execution_result.execution_info = f"Failed to fetch local tokens data"
-            return self.module_execution_result
-
-        txn_payload_data = await self.build_txn_payload_data()
-        if txn_payload_data is None:
-            self.module_execution_result.execution_info = f"Failed to build transaction payload data"
-            return self.module_execution_result
-
-        txn_status = await self.send_swap_type_txn(
-            account=self.account,
-            txn_payload_data=txn_payload_data
+        wallet_y_balance_wei = await self.get_token_balance(
+            token_address=self.coin_y.contract_address,
+            account=self.account
         )
 
-        if txn_status.execution_status is False:
-            self.module_execution_result.execution_info = f"Failed to send swap type txn"
-            return self.module_execution_result
+        if wallet_y_balance_wei == 0:
+            self.log_error(f"Wallet {self.coin_y.symbol.upper()} balance = 0")
+            return None
 
-        if self.task.reverse_action is True:
-            delay = get_delay(self.task.min_delay_sec, self.task.max_delay_sec)
-            logger.info(f"Waiting {delay} seconds before reverse action")
-            time.sleep(delay)
+        amount_out_y_wei = wallet_y_balance_wei - self.initial_balance_y_wei
+        if amount_out_y_wei <= 0:
+            self.log_error(f"Wallet {self.coin_y.symbol.upper()} balance less than initial balance")
+            return None
 
-            reverse_txn_payload_data = await self.build_reverse_txn_payload_data()
-            if reverse_txn_payload_data is None:
-                self.module_execution_result.execution_info = f"Failed to build reverse transaction payload data"
-                return self.module_execution_result
+        approve_call = self.build_token_approve_call(
+            token_addr=self.coin_y.contract_address,
+            spender=hex(self.router_contract.address),
+            amount_wei=int(amount_out_y_wei)
+        )
 
-            reverse_txn_status = await self.send_swap_type_txn(
-                account=self.account,
-                txn_payload_data=reverse_txn_payload_data
+        payload = await self.get_execute_data(
+            amount_out_wei=amount_out_y_wei,
+            coin_x_address=self.coin_y.contract_address,
+            coin_y_address=self.coin_x.contract_address,
+        )
+        if payload is None:
+            self.log_error(
+                f"Failed to get execute data for {self.coin_y.symbol.upper()} -> {self.coin_x.symbol.upper()}"
             )
+            return None
 
-            return reverse_txn_status
+        payload_decoded = self.rebuild_payload(payload)
+        amount_x_wei = payload_decoded[4] * 100 / (100 - self.task.slippage)
 
-        return txn_status
+        swap_call = self.build_call(
+            to_addr=self.router_contract.address,
+            func_name='swap',
+            call_data=payload_decoded
+        )
+
+        calls = [approve_call, swap_call]
+        return TransactionPayloadData(
+            calls=calls,
+            amount_x_decimals=amount_out_y_wei / 10 ** self.token_y_decimals,
+            amount_y_decimals=amount_x_wei / 10 ** self.token_x_decimals
+        )

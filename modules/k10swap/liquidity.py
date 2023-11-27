@@ -15,6 +15,7 @@ from utils.get_delay import get_delay
 if TYPE_CHECKING:
     from src.schemas.tasks.k10swap import K10SwapAddLiquidityTask
     from src.schemas.tasks.k10swap import K10SwapRemoveLiquidityTask
+    from src.schemas.wallet_data import WalletData
 
 
 class K10SwapAddLiquidity(K10SwapBase, LiquidityModuleBase):
@@ -23,11 +24,13 @@ class K10SwapAddLiquidity(K10SwapBase, LiquidityModuleBase):
     def __init__(
             self,
             account,
-            task: 'K10SwapAddLiquidityTask'
+            task: 'K10SwapAddLiquidityTask',
+            wallet_data: 'WalletData',
     ):
         super().__init__(
             account=account,
             task=task,
+            wallet_data=wallet_data,
         )
         self.task = task
         self.account = account
@@ -37,14 +40,17 @@ class K10SwapAddLiquidity(K10SwapBase, LiquidityModuleBase):
         Build the transaction payload data for the add liquidity type transaction.
         :return:
         """
-        pool_address = await self.get_token_pair_address()
+        pool_address = await self.get_token_pair_address(
+            coin_x=self.coin_x,
+            coin_y=self.coin_y
+        )
         if pool_address is None:
-            logger.error(f'Failed to get pool address for {self.coin_x.symbol.upper()}-{self.coin_y.symbol.upper()}')
+            self.log_error(f'Failed to get pool address for {self.coin_x.symbol.upper()}-{self.coin_y.symbol.upper()}')
             return None
 
         token_pair = await self.get_token_pair(token_pair_address=pool_address)
         if token_pair is None:
-            logger.error(f'Failed to get token pair for {self.coin_x.symbol.upper()}-{self.coin_y.symbol.upper()}')
+            self.log_error(f'Failed to get token pair for {self.coin_x.symbol.upper()}-{self.coin_y.symbol.upper()}')
             return None
 
         token0_address, token1_address = token_pair
@@ -52,11 +58,11 @@ class K10SwapAddLiquidity(K10SwapBase, LiquidityModuleBase):
         if token0_address == self.i16(self.coin_x.contract_address):
             amount0_wei = await self.calculate_amount_out_from_balance(coin_x=self.coin_x)
             if amount0_wei is None:
-                logger.error(f'Failed to calculate amount out for {self.coin_x.symbol.upper()}')
+                self.log_error(f'Failed to calculate amount out for {self.coin_x.symbol.upper()}')
                 return None
 
             if amount0_wei > self.initial_balance_x_wei:
-                logger.error(
+                self.log_error(
                     f"Amount out {self.coin_x.symbol.upper()} ({amount0_wei / 10 ** self.token_x_decimals}) "
                     f"is greater than actual balance: {self.initial_balance_x_wei / 10 ** self.token_x_decimals}"
                 )
@@ -68,13 +74,13 @@ class K10SwapAddLiquidity(K10SwapBase, LiquidityModuleBase):
                 coin_y=self.coin_y,
             )
             if amount1_wei is None:
-                logger.error(f'Failed to calculate amount in for {self.coin_y.symbol.upper()}')
+                self.log_error(f'Failed to calculate amount in for {self.coin_y.symbol.upper()}')
                 return None
 
             amount1_wei = amount1_wei.amounts[1]
 
             if amount1_wei > self.initial_balance_y_wei:
-                logger.error(
+                self.log_error(
                     f"Amount out {self.coin_y.symbol.upper()} ({amount1_wei / 10 ** self.token_y_decimals}) "
                     f"is greater than actual balance: {self.initial_balance_y_wei / 10 ** self.token_y_decimals}"
                 )
@@ -84,11 +90,11 @@ class K10SwapAddLiquidity(K10SwapBase, LiquidityModuleBase):
 
             amount1_wei = await self.calculate_amount_out_from_balance(coin_x=self.coin_x)
             if amount1_wei is None:
-                logger.error(f'Failed to calculate amount out for {self.coin_x.symbol.upper()}')
+                self.log_error(f'Failed to calculate amount out for {self.coin_x.symbol.upper()}')
                 return None
 
             if amount1_wei > self.initial_balance_x_wei:
-                logger.error(
+                self.log_error(
                     f"Amount out {self.coin_x.symbol.upper()} ({amount1_wei / 10 ** self.token_x_decimals}) "
                     f"is greater than actual balance: {self.initial_balance_x_wei / 10 ** self.token_x_decimals}"
                 )
@@ -100,7 +106,7 @@ class K10SwapAddLiquidity(K10SwapBase, LiquidityModuleBase):
                 coin_y=self.coin_y,
             )
             if amount0_wei is None:
-                logger.error(f'Failed to calculate amount in for {self.coin_y.symbol.upper()}')
+                self.log_error(f'Failed to calculate amount in for {self.coin_y.symbol.upper()}')
                 return None
 
             amount0_wei = amount0_wei.amounts[1]
@@ -151,50 +157,6 @@ class K10SwapAddLiquidity(K10SwapBase, LiquidityModuleBase):
             amount_y_decimals=amount1_wei / 10 ** self.token_y_decimals
         )
 
-    async def send_txn(self) -> ModuleExecutionResult:
-        """
-        Send the add liquidity transaction.
-        :return:
-        """
-        await self.set_fetched_tokens_data()
-
-        if self.check_local_tokens_data() is False:
-            self.module_execution_result.execution_info = f"Failed to fetch local tokens data"
-            return self.module_execution_result
-
-        txn_payload_data = await self.build_txn_payload_data()
-        if txn_payload_data is None:
-            self.module_execution_result.execution_info = f"Failed to build transaction payload calls"
-            return self.module_execution_result
-
-        txn_status = await self.send_liquidity_type_txn(
-            account=self.account,
-            txn_payload_data=txn_payload_data
-        )
-
-        if not txn_status.execution_status:
-            return txn_status
-
-        if self.task.reverse_action is True:
-            delay = get_delay(self.task.min_delay_sec, self.task.max_delay_sec)
-            logger.info(f"Waiting {delay} seconds before reverse action")
-            time.sleep(delay)
-
-            old_task = self.task.dict(exclude={"module_name",
-                                               "module_type",
-                                               "module"})
-            new_task = self.task.reverse_action_task(**old_task)
-
-            reverse_action_module = K10SwapRemoveLiquidity(
-                account=self.account,
-                task=new_task
-            )
-            reverse_txn_status = await reverse_action_module.send_txn()
-
-            return reverse_txn_status
-
-        return txn_status
-
 
 class K10SwapRemoveLiquidity(K10SwapBase, LiquidityModuleBase):
     task = 'K10SwapRemoveLiquidityTask'
@@ -202,11 +164,14 @@ class K10SwapRemoveLiquidity(K10SwapBase, LiquidityModuleBase):
     def __init__(
             self,
             account,
-            task: 'K10SwapRemoveLiquidityTask'
+            task: 'K10SwapRemoveLiquidityTask',
+            wallet_data: 'WalletData',
+
     ):
         super().__init__(
             account=account,
             task=task,
+            wallet_data=wallet_data,
         )
         self.task = task
         self.account = account
@@ -231,7 +196,7 @@ class K10SwapRemoveLiquidity(K10SwapBase, LiquidityModuleBase):
             return resp[0]
 
         except Exception as ex:
-            logger.error(f"Error while getting LP supply")
+            self.log_error(f"Error while getting LP supply")
             return None
 
     async def get_reserves(
@@ -254,7 +219,7 @@ class K10SwapRemoveLiquidity(K10SwapBase, LiquidityModuleBase):
             return resp[0], resp[1]
 
         except Exception as ex:
-            logger.error(f"Error while getting reserves")
+            self.log_error(f"Error while getting reserves")
             return None
 
     async def get_amounts_out(
@@ -287,7 +252,7 @@ class K10SwapRemoveLiquidity(K10SwapBase, LiquidityModuleBase):
             return output
 
         except Exception as ex:
-            logger.error(f"Error while getting amounts out")
+            self.log_error(f"Error while getting amounts out")
             return None
 
     async def build_txn_payload_data(self) -> Union[TransactionPayloadData, None]:
@@ -295,19 +260,22 @@ class K10SwapRemoveLiquidity(K10SwapBase, LiquidityModuleBase):
         Build the transaction payload data for the remove liquidity type transaction.
         :return:
         """
-        pair_address = await self.get_token_pair_address()
+        pair_address = await self.get_token_pair_address(
+            coin_x=self.coin_x,
+            coin_y=self.coin_y
+        )
         if pair_address is None:
-            logger.error(f'Failed to get pair address for {self.coin_x.symbol.upper()}-{self.coin_y.symbol.upper()}')
+            self.log_error(f'Failed to get pair address for {self.coin_x.symbol.upper()}-{self.coin_y.symbol.upper()}')
             return None
 
         token_pair = await self.get_token_pair(token_pair_address=pair_address)
         if token_pair is None:
-            logger.error(f'Failed to get token pair for {self.coin_x.symbol.upper()}-{self.coin_y.symbol.upper()}')
+            self.log_error(f'Failed to get token pair for {self.coin_x.symbol.upper()}-{self.coin_y.symbol.upper()}')
             return None
 
         reserves = await self.get_reserves(pair_address=pair_address)
         if reserves is None:
-            logger.error(f'Failed to get reserves for {self.coin_x.symbol.upper()}-{self.coin_y.symbol.upper()}')
+            self.log_error(f'Failed to get reserves for {self.coin_x.symbol.upper()}-{self.coin_y.symbol.upper()}')
             return None
 
         wallet_lp_balance = await self.get_token_balance(
@@ -315,7 +283,7 @@ class K10SwapRemoveLiquidity(K10SwapBase, LiquidityModuleBase):
             account=self.account
         )
         if wallet_lp_balance == 0:
-            logger.error(f"Wallet LP ({self.coin_x.symbol.upper()} + {self.coin_y.symbol.upper()}) balance = 0")
+            self.log_error(f"Wallet LP ({self.coin_x.symbol.upper()} + {self.coin_y.symbol.upper()}) balance = 0")
             return None
 
         amounts_out = await self.get_amounts_out(
@@ -325,7 +293,7 @@ class K10SwapRemoveLiquidity(K10SwapBase, LiquidityModuleBase):
             reserve_y=reserves[1]
         )
         if amounts_out is None:
-            logger.error(f'Failed to get amounts out for {self.coin_x.symbol.upper()}-{self.coin_y.symbol.upper()}')
+            self.log_error(f'Failed to get amounts out for {self.coin_x.symbol.upper()}-{self.coin_y.symbol.upper()}')
             return None
 
         approve_call = self.build_token_approve_call(
@@ -366,26 +334,3 @@ class K10SwapRemoveLiquidity(K10SwapBase, LiquidityModuleBase):
             amount_x_decimals=amount_x_out_wei / 10 ** self.token_x_decimals,
             amount_y_decimals=amount_y_out_wei / 10 ** self.token_y_decimals
         )
-
-    async def send_txn(self) -> ModuleExecutionResult:
-        """
-        Send the remove liquidity transaction.
-        :return:
-        """
-        await self.set_fetched_tokens_data()
-
-        if self.check_local_tokens_data() is False:
-            self.module_execution_result.execution_info = f"Failed to fetch local tokens data"
-            return self.module_execution_result
-
-        txn_payload_data = await self.build_txn_payload_data()
-        if txn_payload_data is None:
-            self.module_execution_result.execution_info = f"Failed to build transaction payload calls"
-            return self.module_execution_result
-
-        txn_status = await self.send_liquidity_type_txn(
-            account=self.account,
-            txn_payload_data=txn_payload_data
-        )
-
-        return txn_status

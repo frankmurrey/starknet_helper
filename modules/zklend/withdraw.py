@@ -10,6 +10,7 @@ from src.schemas.action_models import ModuleExecutionResult
 
 if TYPE_CHECKING:
     from src.schemas.tasks.zklend import ZkLendWithdrawTask
+    from src.schemas.wallet_data import WalletData
 
 
 class ZkLendWithdraw(ModuleBase):
@@ -18,11 +19,13 @@ class ZkLendWithdraw(ModuleBase):
     def __init__(
             self,
             account,
-            task: 'ZkLendWithdrawTask'
+            task: 'ZkLendWithdrawTask',
+            wallet_data: 'WalletData',
     ):
         super().__init__(
             account=account,
             task=task,
+            wallet_data=wallet_data,
         )
 
         self.task = task
@@ -51,7 +54,7 @@ class ZkLendWithdraw(ModuleBase):
             account=self.account
         )
         if supplied_balance_wei == 0:
-            logger.error(f"Wallet {self.coin_zx.symbol.upper()} balance = 0, nothing to withdraw")
+            self.log_error(f"Wallet {self.coin_zx.symbol.upper()} balance = 0, nothing to withdraw")
             return None
 
         withdraw_call = self.build_call(
@@ -66,6 +69,7 @@ class ZkLendWithdraw(ModuleBase):
             provider=self.account
         )
         if token_decimals is None:
+            self.log_error(f"Failed to get {self.coin_zx.symbol.upper()} decimals")
             return None
 
         self.amount_out_decimals = supplied_balance_wei / 10 ** token_decimals
@@ -79,7 +83,7 @@ class ZkLendWithdraw(ModuleBase):
         """
         txn_payload_calls = await self.build_txn_payload_calls()
         if txn_payload_calls is None:
-            self.module_execution_result.execution_info = f"Failed to build transaction payload calls"
+            self.log_error(f"Failed to build transaction payload calls")
             return self.module_execution_result
 
         txn_info_message = f"Withdraw (ZkLend) | {round(self.amount_out_decimals, 4)} ({self.coin_x.symbol.upper()})."

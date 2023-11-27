@@ -14,6 +14,7 @@ from utils.get_delay import get_delay
 if TYPE_CHECKING:
     from src.schemas.tasks.jediswap import JediSwapAddLiquidityTask
     from src.schemas.tasks.jediswap import JediSwapRemoveLiquidityTask
+    from src.schemas.wallet_data import WalletData
 
 
 class JediSwapAddLiquidity(JediSwapBase, LiquidityModuleBase):
@@ -22,29 +23,35 @@ class JediSwapAddLiquidity(JediSwapBase, LiquidityModuleBase):
     def __init__(
             self,
             account,
-            task: 'JediSwapAddLiquidityTask'
+            task: 'JediSwapAddLiquidityTask',
+            wallet_data: 'WalletData',
     ):
 
         super().__init__(
             account=account,
             task=task,
+            wallet_data=wallet_data,
         )
         self.task = task
 
-    async def build_txn_payload_calls(self) -> Union[TransactionPayloadData, None]:
+    async def build_txn_payload_data(self) -> Union[TransactionPayloadData, None]:
         """
         Build the transaction payload calls for the add liquidity type transaction.
         :return:
         """
         amount_x_out_wei = await self.calculate_amount_out_from_balance(coin_x=self.coin_x)
         if amount_x_out_wei is None:
+            self.log_error(
+                f"Error while calculating amount out for {self.coin_x.symbol.upper()}"
+            )
             return None
 
         amount_x_out_wei_with_slippage = int(amount_x_out_wei * (1 - (self.task.slippage / 100)))
 
         if amount_x_out_wei > self.initial_balance_x_wei:
-            logger.error(f"Amount out {self.coin_x.symbol.upper()} ({amount_x_out_wei / 10 ** self.token_x_decimals}) "
-                         f"is greater than actual balance: {self.initial_balance_x_wei / 10 ** self.token_x_decimals}")
+            self.log_error(
+                f"Amount out {self.coin_x.symbol.upper()} ({amount_x_out_wei / 10 ** self.token_x_decimals}) "
+                f"is greater than actual balance: {self.initial_balance_x_wei / 10 ** self.token_x_decimals}")
             return None
 
         amount_y_out_wei: int = await self.get_amount_in(
@@ -54,12 +61,14 @@ class JediSwapAddLiquidity(JediSwapBase, LiquidityModuleBase):
             router_contract=self.router_contract
         )
         if amount_y_out_wei is None:
+            self.log_error(f"Error while calculating amount in for {self.coin_y.symbol.upper()}")
             return None
-        amount_y_out_wei_with_slippage = int(amount_y_out_wei * (1 - (self.task.slippage / 100)))
 
+        amount_y_out_wei_with_slippage = int(amount_y_out_wei * (1 - (self.task.slippage / 100)))
         if amount_y_out_wei > self.initial_balance_y_wei:
-            logger.error(f"Amount out {self.coin_y.symbol.upper()} ({amount_y_out_wei / 10 ** self.token_y_decimals}) "
-                         f"is greater than actual balance: {self.initial_balance_y_wei / 10 ** self.token_y_decimals}")
+            self.log_error(
+                f"Amount out {self.coin_y.symbol.upper()} ({amount_y_out_wei / 10 ** self.token_y_decimals}) "
+                f"is greater than actual balance: {self.initial_balance_y_wei / 10 ** self.token_y_decimals}")
             return None
 
         txn_deadline = int(time.time() + 3600)
@@ -103,50 +112,6 @@ class JediSwapAddLiquidity(JediSwapBase, LiquidityModuleBase):
             amount_y_decimals=amount_y_out_wei / 10 ** self.token_y_decimals
         )
 
-    async def send_txn(self) -> ModuleExecutionResult:
-        """
-        Send the add liquidity transaction.
-        :return:
-        """
-        await self.set_fetched_tokens_data()
-
-        if self.check_local_tokens_data() is False:
-            self.module_execution_result.execution_info = f"Failed to fetch local tokens data"
-            return self.module_execution_result
-
-        txn_payload_data = await self.build_txn_payload_calls()
-        if txn_payload_data is None:
-            self.module_execution_result.execution_info = f"Failed to build transaction payload calls"
-            return self.module_execution_result
-
-        txn_status = await self.send_liquidity_type_txn(
-            account=self.account,
-            txn_payload_data=txn_payload_data
-        )
-
-        if not txn_status.execution_status:
-            return txn_status
-
-        if self.task.reverse_action is True:
-            delay = get_delay(self.task.min_delay_sec, self.task.max_delay_sec)
-            logger.info(f"Waiting {delay} seconds before reverse action")
-            time.sleep(delay)
-
-            old_task = self.task.dict(exclude={"module_name",
-                                               "module_type",
-                                               "module"})
-            new_task = self.task.reverse_action_task(**old_task)
-
-            reverse_action_module = JediSwapRemoveLiquidity(
-                account=self.account,
-                task=new_task
-            )
-            reverse_txn_status = await reverse_action_module.send_txn()
-
-            return reverse_txn_status
-
-        return txn_status
-
 
 class JediSwapRemoveLiquidity(JediSwapBase, LiquidityModuleBase):
     task: 'JediSwapRemoveLiquidityTask'
@@ -154,11 +119,13 @@ class JediSwapRemoveLiquidity(JediSwapBase, LiquidityModuleBase):
     def __init__(
             self,
             account,
-            task: 'JediSwapRemoveLiquidityTask'
+            task: 'JediSwapRemoveLiquidityTask',
+            wallet_data: 'WalletData',
     ):
         super().__init__(
             account=account,
             task=task,
+            wallet_data=wallet_data,
         )
 
         self.task = task
@@ -178,14 +145,14 @@ class JediSwapRemoveLiquidity(JediSwapBase, LiquidityModuleBase):
             pool_addr = response.pair
 
             if pool_addr == 0:
-                logger.error(f"Can not find pool address for "
-                             f"{self.coin_x.symbol.upper()} and {self.coin_y.symbol.upper()}")
+                self.log_error(f"Can not find pool address for "
+                               f"{self.coin_x.symbol.upper()} and {self.coin_y.symbol.upper()}")
                 return None
 
             return pool_addr
 
         except ClientError:
-            logger.error(f"Error while getting pool address")
+            self.log_error(f"Error while getting pool address")
             return None
 
     async def get_lp_supply(
@@ -208,11 +175,10 @@ class JediSwapRemoveLiquidity(JediSwapBase, LiquidityModuleBase):
             return resp[0]
 
         except ClientError:
-            logger.error(f"Error while getting LP supply")
+            self.log_error(f"Error while getting LP supply")
             return None
 
-    async def get_token_0_in_pool(self,
-                                  pool_addr) -> Union[int, None]:
+    async def get_token_0_in_pool(self, pool_addr) -> Union[int, None]:
         """
         Get the token 0 address in the pool.
         :param pool_addr:
@@ -228,7 +194,7 @@ class JediSwapRemoveLiquidity(JediSwapBase, LiquidityModuleBase):
             return resp[0]
 
         except ClientError:
-            logger.error(f"Error while getting token 0 address in the pool")
+            self.log_error(f"Error while getting token 0 address in the pool")
             return None
 
     async def get_token_1_in_pool(
@@ -250,7 +216,7 @@ class JediSwapRemoveLiquidity(JediSwapBase, LiquidityModuleBase):
             return resp[0]
 
         except ClientError:
-            logger.error(f"Error while getting token 1 address in the pool")
+            self.log_error(f"Error while getting token 1 address in the pool")
             return None
 
     async def get_amounts_out(
@@ -267,6 +233,7 @@ class JediSwapRemoveLiquidity(JediSwapBase, LiquidityModuleBase):
         token0_addr = await self.get_token_0_in_pool(pool_addr=pool_addr)
         token1_addr = await self.get_token_1_in_pool(pool_addr=pool_addr)
         if token0_addr is None or token1_addr is None:
+            self.log_error(f"Error while getting token addresses in the pool")
             return None
 
         pool_token0_balance = await self.get_token_balance_for_address(
@@ -280,10 +247,12 @@ class JediSwapRemoveLiquidity(JediSwapBase, LiquidityModuleBase):
             address=pool_addr
         )
         if pool_token0_balance is None or pool_token1_balance is None:
+            self.log_error(f"Error while getting token balances in the pool")
             return None
 
         lp_supply = await self.get_lp_supply(lp_addr=pool_addr)
         if lp_supply is None:
+            self.log_error(f"Error while getting LP supply")
             return None
 
         output: tuple = get_lp_burn_output(
@@ -301,6 +270,7 @@ class JediSwapRemoveLiquidity(JediSwapBase, LiquidityModuleBase):
         """
         pool_addr = await self.get_pool_address()
         if pool_addr is None:
+            self.log_error(f"Error while getting pool address")
             return None
 
         wallet_lp_balance = await self.get_token_balance(
@@ -309,7 +279,7 @@ class JediSwapRemoveLiquidity(JediSwapBase, LiquidityModuleBase):
         )
 
         if wallet_lp_balance == 0:
-            logger.error(f"Wallet LP ({self.coin_x.symbol.upper()} + {self.coin_y.symbol.upper()}) balance = 0")
+            self.log_error(f"Wallet LP ({self.coin_x.symbol.upper()} + {self.coin_y.symbol.upper()}) balance = 0")
             return None
 
         amounts_out: tuple = await self.get_amounts_out(
@@ -317,6 +287,7 @@ class JediSwapRemoveLiquidity(JediSwapBase, LiquidityModuleBase):
             lp_amount_out_wei=wallet_lp_balance
         )
         if amounts_out is None:
+            self.log_error(f"Error while getting amounts out")
             return None
 
         approve_call = self.build_token_approve_call(
@@ -357,26 +328,3 @@ class JediSwapRemoveLiquidity(JediSwapBase, LiquidityModuleBase):
             amount_x_decimals=amount_x_out_wei / 10 ** self.token_x_decimals,
             amount_y_decimals=amount_y_out_wei / 10 ** self.token_y_decimals
         )
-
-    async def send_txn(self) -> ModuleExecutionResult:
-        """
-        Send the remove liquidity transaction.
-        :return:
-        """
-        await self.set_fetched_tokens_data()
-
-        if self.check_local_tokens_data() is False:
-            self.module_execution_result.execution_info = f"Failed to fetch local tokens data"
-            return self.module_execution_result
-
-        txn_payload_data = await self.build_txn_payload_data()
-        if txn_payload_data is None:
-            self.module_execution_result.execution_info = f"Failed to build transaction payload calls"
-            return self.module_execution_result
-
-        txn_status = await self.send_liquidity_type_txn(
-            account=self.account,
-            txn_payload_data=txn_payload_data
-        )
-
-        return txn_status

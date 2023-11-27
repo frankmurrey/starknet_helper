@@ -1,8 +1,8 @@
 import random
-
 from typing import TYPE_CHECKING
 
 from starknet_py.net.client_models import Call
+from loguru import logger
 
 from modules.base import ModuleBase
 from contracts.flex.main import FlexContracts
@@ -10,6 +10,7 @@ from src.schemas.action_models import ModuleExecutionResult
 
 if TYPE_CHECKING:
     from src.schemas.tasks.flex import FlexCancelOrdersTask
+    from src.schemas.wallet_data import WalletData
 
 
 class CancelOrders(ModuleBase):
@@ -18,11 +19,13 @@ class CancelOrders(ModuleBase):
     def __init__(
             self,
             account,
-            task: 'FlexCancelOrdersTask'
+            task: 'FlexCancelOrdersTask',
+            wallet_data: 'WalletData',
     ):
         super().__init__(
             account=account,
             task=task,
+            wallet_data=wallet_data,
         )
 
         self.account = account
@@ -35,7 +38,7 @@ class CancelOrders(ModuleBase):
             provider=account
         )
 
-    async def build_txn_payload_calls(self) -> list[Call]:
+    async def build_txn_payload_data(self) -> list[Call]:
         """
         Build the transaction payload calls for the identity mint transaction.
         :return:
@@ -56,16 +59,13 @@ class CancelOrders(ModuleBase):
         Send the identity mint transaction.
         :return:
         """
-        txn_payload_calls = await self.build_txn_payload_calls()
-        if txn_payload_calls is None:
-            self.module_execution_result.execution_info = f"Failed to build transaction payload calls"
-            return self.module_execution_result
+        txn_payload_data = await self.build_txn_payload_data()
 
         txn_info_message = f"Flex - cancel maker order"
 
         txn_status = await self.simulate_and_send_transfer_type_transaction(
             account=self.account,
-            calls=txn_payload_calls,
+            calls=txn_payload_data,
             txn_info_message=txn_info_message
         )
 

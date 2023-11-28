@@ -70,7 +70,7 @@ class ModuleBase:
     def log_error(self, msg: str):
         logger.error(msg)
         self.module_execution_result.execution_status = False
-        self.module_execution_result.execution_info += msg + " "
+        self.module_execution_result.execution_info += msg + "\n"
 
     async def get_cairo_version_for_txn_execution(
             self,
@@ -615,11 +615,7 @@ class ModuleBase:
 
         cairo_version = await self.get_cairo_version_for_txn_execution(account=account)
         if cairo_version is None:
-            err_msg = "Error while getting Cairo version"
-            logger.error(err_msg)
-
-            self.module_execution_result.execution_status = False
-            self.module_execution_result.execution_info = err_msg
+            self.log_error("Error while getting Cairo version")
             return self.module_execution_result
 
         signed_invoke_transaction = await self.sign_invoke_transaction(
@@ -629,11 +625,7 @@ class ModuleBase:
             auto_estimate=not self.task.forced_gas_limit
         )
         if signed_invoke_transaction is None:
-            err_msg = "Error while signing transaction (Usually caused by incorrect payload data)"
-            logger.error(err_msg)
-
-            self.module_execution_result.execution_status = False
-            self.module_execution_result.execution_info = err_msg
+            self.log_error("Error while signing transaction (Usually caused by incorrect payload data)")
             return self.module_execution_result
 
         time.sleep(1)
@@ -642,21 +634,13 @@ class ModuleBase:
             transaction=signed_invoke_transaction
         )
         if estimate_transaction is None:
-            err_msg = "Transaction estimation failed"
-            logger.error(f"{err_msg} Aborting transaction")
-
-            self.module_execution_result.execution_status = False
-            self.module_execution_result.execution_info = err_msg
+            self.log_error("Transaction estimation failed")
             return self.module_execution_result
 
         estimate_gas_decimals = estimate_transaction / 10 ** 18
         wallet_eth_balance = await self.get_eth_balance(account=account)
         if wallet_eth_balance is None:
-            err_msg = "Error while getting wallet ETH balance"
-            logger.error(err_msg)
-
-            self.module_execution_result.execution_status = False
-            self.module_execution_result.execution_info = err_msg
+            self.log_error("Error while getting wallet ETH balance")
             return self.module_execution_result
 
         wallet_eth_balance_decimals = wallet_eth_balance / 10 ** 18
@@ -666,12 +650,7 @@ class ModuleBase:
                 f"Insufficient ETH balance for txn fees (balance: {wallet_eth_balance_decimals}, "
                 f"need {estimate_gas_decimals} ETH)"
             )
-            logger.error(
-                f"{err_msg}. Aborting transaction."
-            )
-
-            self.module_execution_result.execution_status = False
-            self.module_execution_result.execution_info = err_msg
+            self.log_error(err_msg)
             return self.module_execution_result
 
         estimate_msg = f"Transaction estimation success, overall fee: {estimate_gas_decimals} ETH."
@@ -680,7 +659,7 @@ class ModuleBase:
         max_fee = int(self.task.max_fee) * 10 ** 9 if self.task.forced_gas_limit is True else None
 
         if self.task.test_mode is True:
-            self.module_execution_result.execution_info = estimate_msg
+            self.module_execution_result.execution_info += estimate_msg
             self.module_execution_result.execution_status = True
             logger.info(f"Test mode enabled. Skipping transaction")
             return self.module_execution_result
@@ -694,10 +673,7 @@ class ModuleBase:
         )
         response_status, response = response_data
         if response_status is False:
-            err_msg = f"Error while sending txn, {response}"
-
-            self.module_execution_result.execution_status = False
-            self.module_execution_result.execution_info = err_msg
+            self.log_error(f"Error while sending txn, {response}")
             return self.module_execution_result
 
         txn_hash = response.transaction_hash
@@ -713,12 +689,8 @@ class ModuleBase:
                 time_out_sec=int(self.task.txn_wait_timeout_sec)
             )
             if txn_receipt is None:
-                err_msg = f"Transaction failed or not in blockchain after {self.task.txn_wait_timeout_sec}s"
-                logger.error(f"{err_msg}. Txn Hash: {hex(txn_hash)}")
-
-                self.module_execution_result.execution_status = False
+                self.log_error(f"Transaction failed or not in blockchain after {self.task.txn_wait_timeout_sec}s")
                 self.module_execution_result.hash = hex(txn_hash)
-                self.module_execution_result.execution_info = err_msg
                 return self.module_execution_result
 
             txn_status = txn_receipt.execution_status.value if txn_receipt.execution_status is not None else None
@@ -730,8 +702,8 @@ class ModuleBase:
             )
 
             self.module_execution_result.execution_status = True
-            self.module_execution_result.execution_info = f"Txn success, status: {txn_status}," \
-                                                          f" fee: {txn_receipt.actual_fee / 10 ** 18} ETH"
+            self.module_execution_result.execution_info += f"Txn success, status: {txn_status}," \
+                                                           f" fee: {txn_receipt.actual_fee / 10 ** 18} ETH"
             self.module_execution_result.hash = hex(txn_hash)
             return self.module_execution_result
 
@@ -739,7 +711,7 @@ class ModuleBase:
             logger.success(f"Txn sent. Txn Hash: {hex(txn_hash)}")
 
             self.module_execution_result.execution_status = True
-            self.module_execution_result.execution_info = "Txn sent (Receipt not requested)"
+            self.module_execution_result.execution_info += "Txn sent (Receipt not requested)"
             self.module_execution_result.hash = hex(txn_hash)
 
             return self.module_execution_result
@@ -887,12 +859,12 @@ class SwapModuleBase(ModuleBase):
         await self.set_fetched_tokens_data()
 
         if self.check_local_tokens_data() is False:
-            self.module_execution_result.execution_info = f"Failed to fetch local tokens data in swap module"
+            self.module_execution_result.execution_info += f"Failed to fetch local tokens data in swap module"
             return self.module_execution_result
 
         txn_payload_data = await self.build_payload_data()
         if txn_payload_data is None:
-            self.module_execution_result.execution_info = f"Failed to build transaction payload data"
+            self.module_execution_result.execution_info += f"Failed to build transaction payload data"
             return self.module_execution_result
 
         self.task: 'SwapTaskBase'
@@ -918,11 +890,7 @@ class SwapModuleBase(ModuleBase):
             coin_x_cg_id = self.tokens.get_cg_id_by_name(coin_x_symbol)
             coin_y_cg_id = self.tokens.get_cg_id_by_name(coin_y_symbol)
             if coin_x_cg_id is None or coin_y_cg_id is None:
-                err_msg = f"Error while getting CoinGecko IDs for {coin_x_symbol.upper()} and {coin_y_symbol.upper()}"
-                logger.error(err_msg)
-
-                self.module_execution_result.execution_status = False
-                self.module_execution_result.execution_info = err_msg
+                self.log_error(f"Error while getting CoinGecko IDs for {coin_x_symbol.upper()} and {coin_y_symbol.upper()}")
                 return self.module_execution_result
 
             max_price_difference_percent: Union[float, int] = self.task.max_price_difference_percent
@@ -939,10 +907,7 @@ class SwapModuleBase(ModuleBase):
                 err_msg = f"Swap rate is not valid ({module_name}). " \
                             f"Gecko rate: {price_data['gecko_price']}, " \
                             f"Swap rate: {price_data['target_price']}"
-                logger.error(err_msg)
-
-                self.module_execution_result.execution_status = False
-                self.module_execution_result.execution_info = err_msg
+                self.log_error(err_msg)
                 return self.module_execution_result
 
             logger.info(f"Swap rate is valid ({module_name}). "
@@ -1055,7 +1020,7 @@ class LiquidityModuleBase(ModuleBase):
             amount_out_wei = int(self.initial_balance_x_wei * percent)
 
         elif wallet_token_x_balance_decimals < self.task.min_amount_out:
-            logger.error(
+            self.log_error(
                 f"Wallet {coin_x.symbol.upper()} balance less than min amount out, "
                 f"balance: {wallet_token_x_balance_decimals}, min amount out: {self.task.min_amount_out}"
             )
@@ -1086,20 +1051,12 @@ class LiquidityModuleBase(ModuleBase):
         await self.set_fetched_tokens_data()
 
         if self.check_local_tokens_data() is False:
-            err_msg = f"Failed to fetch local tokens data in swap module"
-            logger.error(err_msg)
-
-            self.module_execution_result.execution_info = err_msg
-            self.module_execution_result.execution_status = False
+            self.log_error(f"Failed to fetch local tokens data in swap module")
             return self.module_execution_result
 
         txn_payload_data = await self.build_payload_data()
         if txn_payload_data is None:
-            err_msg = f"Failed to build transaction payload data"
-            logger.error(err_msg)
-
-            self.module_execution_result.execution_info = err_msg
-            self.module_execution_result.execution_status = False
+            self.log_error(f"Failed to build transaction payload data")
             return self.module_execution_result
 
         module_name = self.task.module_name.title()

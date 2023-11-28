@@ -41,8 +41,6 @@ class ActionsFrame(customtkinter.CTkFrame):
         self.master: 'RightFrame' = master
         self.wallets_table: WalletsTable = self.master.wallets_table
 
-        self.app_config = Storage().app_config
-
         self.grid_rowconfigure((0, 1, 3, 4), weight=1)
         self.grid_columnconfigure(1, weight=0)
 
@@ -291,7 +289,7 @@ class ActionsFrame(customtkinter.CTkFrame):
         self.redraw_current_actions_frame()
 
     def on_wallet_started(self, started_wallet: "WalletData"):
-        repr_misc_utils.print_wallet_execution(wallet, wallet_index)
+        repr_misc_utils.print_wallet_execution(started_wallet)
 
         wallet_item = self.wallets_table.get_wallet_item_by_wallet_id(wallet_id=started_wallet.wallet_id)
         self.active_wallet = wallet_item
@@ -392,7 +390,7 @@ class ActionsFrame(customtkinter.CTkFrame):
             return
 
         if bool(self.run_settings_frame.test_mode_checkbox.get()):
-            amount = self.app_config.wallets_amount_to_execute_in_test_mode
+            amount = Storage().app_config.wallets_amount_to_execute_in_test_mode
             wallets = wallets[:amount]
 
         task_executor.process(
@@ -401,7 +399,7 @@ class ActionsFrame(customtkinter.CTkFrame):
             shuffle_wallets=bool(self.run_settings_frame.shuffle_wallets_checkbox.get()),
             shuffle_tasks=bool(self.run_settings_frame.shuffle_task_checkbox.get()),
 
-            multithread=self.app_config.run_mode == enums.RunMode.ASYNC,
+            run_mode=Storage().app_config.run_mode,
         )
 
     def on_stop_button_click(self):

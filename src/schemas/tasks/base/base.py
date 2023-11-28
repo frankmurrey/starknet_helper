@@ -20,6 +20,8 @@ class TaskBase(BaseModel):
     task_id: Union[UUID, str] = Field(default_factory=uuid4)
     task_status: enums.TaskStatus = enums.TaskStatus.CREATED
 
+    probability: int = 100
+
     result_hash: Optional[str] = None
     result_info: Optional[str] = None
 

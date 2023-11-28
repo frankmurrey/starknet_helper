@@ -54,7 +54,8 @@ class Templates:
                     data_keys = list(data.keys())
                     template_keys = list(templates.APP_CONFIG.keys())
 
-                    if data_keys != template_keys:
+                    diff_keys = list(set(template_keys) - set(data_keys))
+                    if diff_keys:
                         non_matching_files.append(file_path)
 
             return non_matching_files

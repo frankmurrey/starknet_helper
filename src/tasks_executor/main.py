@@ -55,7 +55,6 @@ class TaskExecutor:
         loop = asyncio.get_event_loop()
         task_result_coroutine = module_executor.start()
         task_result: ModuleExecutionResult = loop.run_until_complete(task_result_coroutine)
-        print(task_result)
 
         task_status = enums.TaskStatus.SUCCESS if task_result.execution_status else enums.TaskStatus.FAILED
         task.task_status = task_status
@@ -162,6 +161,7 @@ class TaskExecutor:
             random.shuffle(tasks)
 
         # TODO: separate method (for Kumushik)
+
         for task_index, task in enumerate(tasks):
             if task.reverse_action:
                 virtual_task = task_utils.create_virtual_task(task)

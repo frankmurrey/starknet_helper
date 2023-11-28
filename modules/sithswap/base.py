@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from src.schemas.tasks.sithswap import SithSwapTask
     from src.schemas.tasks.sithswap import SithSwapAddLiquidityTask
     from src.schemas.tasks.sithswap import SithSwapRemoveLiquidityTask
+    from src.schemas.wallet_data import WalletData
 
 
 class SithBase(ModuleBase):
@@ -26,12 +27,14 @@ class SithBase(ModuleBase):
                 'SithSwapTask',
                 'SithSwapAddLiquidityTask',
                 'SithSwapRemoveLiquidityTask'
-            ]
+            ],
+            wallet_data: 'WalletData',
     ):
 
         super().__init__(
             account=account,
             task=task,
+            wallet_data=wallet_data,
         )
 
         self.tokens = Tokens()
@@ -82,7 +85,7 @@ class SithBase(ModuleBase):
             return response.res
 
         except ClientError:
-            logger.error(f"Can't get pool for pair {coin_x_address} {coin_y_address}")
+            self.log_error(f"Can't get pool for pair {coin_x_address} {coin_y_address}")
             return None
 
     async def get_sorted_tokens(
@@ -105,7 +108,7 @@ class SithBase(ModuleBase):
                     response.token1]
 
         except ClientError:
-            logger.error(f"Can't get sorted tokens for pool {pool_addr}")
+            self.log_error(f"Can't get sorted tokens for pool {pool_addr}")
             return None
 
     async def get_reserves(
@@ -136,7 +139,7 @@ class SithBase(ModuleBase):
             }
 
         except ClientError:
-            logger.error(f"Can't get reserves for {coin_x_address} {coin_y_address}")
+            self.log_error(f"Can't get reserves for {coin_x_address} {coin_y_address}")
             return None
 
     async def get_direct_amount_in_and_pool_type(
@@ -167,7 +170,7 @@ class SithBase(ModuleBase):
             }
 
         except ClientError:
-            logger.error(f"Can't get amount in for {coin_x.symbol.upper()} {coin_y.symbol.upper()}")
+            self.log_error(f"Can't get amount in for {coin_x.symbol.upper()} {coin_y.symbol.upper()}")
             return None
 
     async def get_amount_in_and_pool_type(
@@ -214,5 +217,5 @@ class SithBase(ModuleBase):
             }
 
         except Exception as e:
-            logger.error(f"Error while getting amount in and pool id: {e}")
+            self.log_error(f"Error while getting amount in and pool id: {e}")
             return None

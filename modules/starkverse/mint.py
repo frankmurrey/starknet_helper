@@ -10,6 +10,7 @@ from src.schemas.action_models import ModuleExecutionResult
 
 if TYPE_CHECKING:
     from src.schemas.tasks.starkverse import StarkVersePublicMintTask
+    from src.schemas.wallet_data import WalletData
 
 
 class PublicMint(ModuleBase):
@@ -19,11 +20,13 @@ class PublicMint(ModuleBase):
     def __init__(
             self,
             account,
-            task: 'StarkVersePublicMintTask'
+            task: 'StarkVersePublicMintTask',
+            wallet_data: 'WalletData',
     ):
         super().__init__(
             account=account,
             task=task,
+            wallet_data=wallet_data,
         )
         self.account = account
         self.task = task
@@ -65,5 +68,3 @@ class PublicMint(ModuleBase):
         )
 
         return txn_status
-
-

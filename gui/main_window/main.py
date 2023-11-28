@@ -1,6 +1,6 @@
 import customtkinter
 
-from src.tasks_executor import tasks_executor
+from src.tasks_executor import task_executor
 from src.logger import configure_logger
 from PIL import Image
 import pystray
@@ -80,5 +80,5 @@ class MainWindow(customtkinter.CTk):
         self.init_tray_icon()
 
     def on_closing(self):
-        tasks_executor.stop()
+        task_executor.stop()
         self.quit()

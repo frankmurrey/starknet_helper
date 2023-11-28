@@ -120,12 +120,3 @@ def print_wallet_execution(wallet: "WalletData", wallet_index: int):
         f" - "
         f"{Colors.CONFIG_VALUE_COLOR}{blur_private_key(wallet.private_key)}{Fore.RESET}"
     )
-
-
-if __name__ == '__main__':
-    wallet = WalletData(
-        name="Aidar",
-        private_key="0xbd910e6b3a04f879602656546b97291ca035cd46a01b812ef6bc66c97f75b477",
-    )
-
-    print_wallet_execution(wallet, 3)

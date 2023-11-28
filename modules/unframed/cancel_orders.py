@@ -10,6 +10,7 @@ from src.schemas.action_models import ModuleExecutionResult
 
 if TYPE_CHECKING:
     from src.schemas.tasks.unframed import UnframedCancelOrdersTask
+    from src.schemas.wallet_data import WalletData
 
 
 class CancelOrders(ModuleBase):
@@ -18,11 +19,13 @@ class CancelOrders(ModuleBase):
     def __init__(
             self,
             account,
-            task: 'UnframedCancelOrdersTask'
+            task: 'UnframedCancelOrdersTask',
+            wallet_data: 'WalletData',
     ):
         super().__init__(
             account=account,
             task=task,
+            wallet_data=wallet_data,
         )
 
         self.account = account
@@ -63,7 +66,7 @@ class CancelOrders(ModuleBase):
         """
         txn_payload_calls = await self.build_txn_payload_calls()
         if txn_payload_calls is None:
-            self.module_execution_result.execution_info = f"Failed to build transaction payload calls"
+            self.log_error(f"Failed to build transaction payload data")
             return self.module_execution_result
 
         txn_info_message = f"Unframed - cancel orders"

@@ -27,6 +27,7 @@ class StarkBridge(ModuleBase):
         super().__init__(
             account=account,
             task=task,
+            wallet_data=wallet_data,
         )
 
         self.task = task
@@ -59,7 +60,7 @@ class StarkBridge(ModuleBase):
         token_x_decimals = self.token_x_decimals
 
         if balance_x_wei == 0:
-            logger.error(f"Wallet {coin_x.symbol.upper()} balance = 0")
+            self.log_error(f"Wallet {coin_x.symbol.upper()} balance = 0")
             return None
 
         wallet_token_x_balance_decimals = balance_x_wei / 10 ** token_x_decimals
@@ -74,7 +75,7 @@ class StarkBridge(ModuleBase):
             amount_out_wei = int(balance_x_wei * percent)
 
         elif wallet_token_x_balance_decimals < self.task.min_amount_out:
-            logger.error(
+            self.log_error(
                 f"Wallet {coin_x.symbol.upper()} balance less than min amount out, "
                 f"balance: {wallet_token_x_balance_decimals}, min amount out: {self.task.min_amount_out}"
             )
@@ -105,15 +106,16 @@ class StarkBridge(ModuleBase):
         """
 
         if self.wallet_data.pair_address is None:
-            logger.error(f"Pair EVM address not set")
+            self.log_error(f"Pair EVM address not set")
             return None
 
         if len(self.wallet_data.pair_address) != config.EVM_ADDRESS_LENGTH:
-            logger.error(f"Pair EVM address is not valid, should be {config.EVM_ADDRESS_LENGTH} chars length")
+            self.log_error(f"Pair EVM address is not valid, should be {config.EVM_ADDRESS_LENGTH} chars length")
             return None
 
         amount_out_wei = await self.calculate_amount_out_from_balance(self.coin_x)
         if not amount_out_wei:
+            self.log_error(f"Error while calculating amount out of {self.coin_x.symbol.upper()} balance")
             return None
 
         bridge_call = self.build_call(
@@ -139,7 +141,7 @@ class StarkBridge(ModuleBase):
         """
         txn_payload_data = await self.build_txn_payload_data()
         if txn_payload_data is None:
-            self.module_execution_result.execution_info = f"Failed to build txn payload data"
+            self.log_error(f"Failed to build txn payload data")
             return self.module_execution_result
 
         txn_info_message = (

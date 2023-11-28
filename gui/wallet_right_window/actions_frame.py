@@ -8,7 +8,8 @@ from loguru import logger
 
 from src.schemas.tasks import TaskBase
 from src.schemas.wallet_data import WalletData
-from src.tasks_executor import tasks_executor
+# from src.tasks_executor import task_executor
+from src.tasks_executor.threaded import threaded_task_executor as task_executor
 from src.storage import ActionStorage
 from src.storage import Storage
 from utils.file_manager import FileManager
@@ -29,11 +30,11 @@ class ActionsFrame(customtkinter.CTkFrame):
             **kwargs):
         super().__init__(master, **kwargs)
 
-        tasks_executor.event_manager.on_wallet_started(self.on_wallet_started)
-        tasks_executor.event_manager.on_task_started(self.on_task_started)
+        task_executor.event_manager.on_wallet_started(self.on_wallet_started)
+        task_executor.event_manager.on_task_started(self.on_task_started)
 
-        tasks_executor.event_manager.on_task_completed(self.on_task_completed)
-        tasks_executor.event_manager.on_wallet_completed(self.on_wallet_completed)
+        task_executor.event_manager.on_task_completed(self.on_task_completed)
+        task_executor.event_manager.on_wallet_completed(self.on_wallet_completed)
 
         self.master: 'RightFrame' = master
         self.wallets_table: WalletsTable = self.master.wallets_table
@@ -134,7 +135,7 @@ class ActionsFrame(customtkinter.CTkFrame):
 
     @property
     def is_running(self):
-        return tasks_executor.is_running()
+        return task_executor.is_running()
 
     @property
     def tasks(self):
@@ -198,8 +199,6 @@ class ActionsFrame(customtkinter.CTkFrame):
             for action_index, action_data in enumerate(self.actions):
                 if action_data["task_config"].task_id == action["task_config"].task_id:
                     self.actions[action_index] = action
-                    self.action_items.pop(action_index)
-                    break
 
             self.redraw_current_actions_frame()
 
@@ -310,12 +309,12 @@ class ActionsFrame(customtkinter.CTkFrame):
 
         if completed_task.task_status == enums.TaskStatus.SUCCESS:
             action_item.set_task_completed()
+
         elif completed_task.task_status == enums.TaskStatus.FAILED:
             action_item.set_task_failed()
 
     def on_wallet_completed(self, completed_wallet: "WalletData"):
         wallet_item = self.wallets_table.get_wallet_item_by_wallet_id(wallet_id=completed_wallet.wallet_id)
-        wallet_item.set_wallet_completed()
         if not self.current_wallet_action_items:
             return
 
@@ -326,6 +325,9 @@ class ActionsFrame(customtkinter.CTkFrame):
         else:
             wallet_item.set_wallet_completed()
 
+        for action_item in self.current_wallet_action_items:
+            action_item.set_task_empty()
+
         self.active_wallet = None
         self.master.update_wallets_stats_labels(
             completed_wallets=self.completed_wallets_amount,
@@ -333,9 +335,6 @@ class ActionsFrame(customtkinter.CTkFrame):
         )
 
         self.master.update_active_wallet_label(wallet_name="None")
-
-        for action_item in self.current_wallet_action_items:
-            action_item.set_task_empty()
 
     def is_wallet_failed(self, wallet_id: UUID) -> bool:
         for key, values in self.wallets_completed_tasks.items():
@@ -350,7 +349,7 @@ class ActionsFrame(customtkinter.CTkFrame):
 
     def on_start_button_click(self):
 
-        if tasks_executor.is_running():
+        if task_executor.is_running():
             return
 
         self.completed_wallets_amount = 0
@@ -392,7 +391,7 @@ class ActionsFrame(customtkinter.CTkFrame):
             amount = self.app_config.wallets_amount_to_execute_in_test_mode
             wallets = wallets[:amount]
 
-        tasks_executor.process(
+        task_executor.process(
             wallets=wallets,
             tasks=self.tasks,
             shuffle_wallets=bool(self.run_settings_frame.shuffle_wallets_checkbox.get()),
@@ -404,7 +403,7 @@ class ActionsFrame(customtkinter.CTkFrame):
             action_item.set_task_empty()
 
         logger.critical("Stopped tasks processing")
-        tasks_executor.stop()
+        task_executor.stop()
 
 
 class TableTopFrame(customtkinter.CTkFrame):

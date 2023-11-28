@@ -144,29 +144,12 @@ class ModuleExecutor:
                 account=account,
                 task=self.task,
                 key_type=wallet_data.type,
-            )
-            execution_status = await module.try_send_txn(retries=retries)
-
-        elif self.module_type == enums.ModuleType.TRANSFER:
-            module = self.task.module(
-                account=account,
-                task=self.task,
                 wallet_data=wallet_data
             )
-
-            execution_status = await module.try_send_txn(retries=retries)
-
-        elif self.module_type == enums.ModuleType.BRIDGE:
-            module = self.task.module(
-                account=account,
-                task=self.task,
-                wallet_data=wallet_data
-            )
-
             execution_status = await module.try_send_txn(retries=retries)
 
         else:
-            module = self.task.module(account=account, task=self.task)
+            module = self.task.module(account=account, task=self.task, wallet_data=wallet_data)
             execution_status = await module.try_send_txn(retries=retries)
 
         if self.task.test_mode is False:

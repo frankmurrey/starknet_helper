@@ -9,12 +9,8 @@ from src.schemas.app_config import AppConfigSchema
 from src.schemas.tasks.base.base import TaskBase
 from src.schemas.wallet_data import WalletData
 from src.storage import Storage
-from src.tasks_executor.main import TaskExecutor
+from src.tasks_executor.base import TaskExecutorBase
 from src.logger import configure_logger
-
-from utils.repr import misc as repr_misc_utils
-from utils.repr import message as repr_message_utils
-from utils import task as task_utils
 
 import config
 
@@ -36,7 +32,7 @@ def clear_threads(
         time.sleep(0.1)
 
 
-class ThreadedTaskExecutor(TaskExecutor):
+class TaskExecutorMultiThread(TaskExecutorBase):
     def __init__(
             self
     ):
@@ -67,10 +63,7 @@ class ThreadedTaskExecutor(TaskExecutor):
                 target=self.process_wallet,
                 args=(
                     wallet,
-                    wallet_index,
                     tasks,
-
-                    is_last_wallet,
 
                     loop,
                 )
@@ -88,10 +81,7 @@ class ThreadedTaskExecutor(TaskExecutor):
     def process_wallet(
             self,
             wallet: "WalletData",
-            wallet_index: int,
             tasks: List["TaskBase"],
-
-            is_last_wallet: bool = False,
 
             loop: Optional[asyncio.AbstractEventLoop] = None,
     ):
@@ -99,49 +89,31 @@ class ThreadedTaskExecutor(TaskExecutor):
         Process a wallet
         Args:
             wallet: wallet to process
-            wallet_index: index of wallet
             tasks: list of tasks to process
-            is_last_wallet: is current wallet the last
             loop: asyncio loop
         """
 
         asyncio.set_event_loop(loop)
-
         self.wait_for_unlock()
 
         with self.lock:
             self.event_manager.set_wallet_started(wallet)
-            repr_misc_utils.print_wallet_execution(wallet, wallet_index)
 
-        for task_index, task in enumerate(tasks):
-
-            task_result = self.process_task(
-                task=task,
-                wallet_index=wallet_index,
-                wallet=wallet,
-            )
-
-            time_to_sleep = task_utils.get_time_to_sleep(task=task, task_result=task_result)
-            is_last_task = task_index == len(tasks) - 1
-
-            if not is_last_task:
-                logger.info(repr_message_utils.task_exec_sleep_message(time_to_sleep))
-                time.sleep(time_to_sleep)
-
+        self._process_wallet(wallet=wallet, tasks=tasks)
         self.event_manager.set_wallet_completed(wallet)
 
     def process_task(
             self,
             task: "TaskBase",
-            wallet_index: int,
             wallet: "WalletData",
     ):
+        self.event_manager.set_task_started(task, wallet)
         with self.lock:
-            task_result = super().process_task(
+            task_result = self._process_task(
                 task=task,
-                wallet_index=wallet_index,
                 wallet=wallet,
             )
+        self.event_manager.set_task_completed(task, wallet)
 
         return task_result
 
@@ -150,4 +122,4 @@ class ThreadedTaskExecutor(TaskExecutor):
             time.sleep(0.1)
 
 
-threaded_task_executor = ThreadedTaskExecutor()
+task_executor_multi_thread = TaskExecutorMultiThread()

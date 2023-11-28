@@ -14,14 +14,14 @@ from src.schemas import event_item
 from src.internal_queue import InternalQueue
 
 
-def state_setter(obj: "TasksExecEventManager", state: dict):
+def state_setter(obj: "TaskExecEventManager", state: dict):
     obj.running = state["running"]
 
     obj.started_events_queue = state["started_events_queue"]
     obj.completed_events_queue = state["completed_events_queue"]
 
 
-class TasksExecEventManager:
+class TaskExecEventManager:
 
     event_item_callback_map = {
         event_item.WalletStartedEventItem: "_on_wallet_started",
@@ -208,3 +208,6 @@ class TasksExecEventManager:
             None,
             state_setter,
         )
+
+
+task_exec_event_manager = TaskExecEventManager()

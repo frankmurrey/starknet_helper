@@ -6,18 +6,20 @@ from uuid import UUID
 import customtkinter
 from loguru import logger
 
-from src.schemas.tasks import TaskBase
-from src.schemas.wallet_data import WalletData
-# from src.tasks_executor import task_executor
-from src.tasks_executor.threaded import threaded_task_executor as task_executor
-from src.storage import ActionStorage
-from src.storage import Storage
-from utils.file_manager import FileManager
 from gui.main_window.interactions_top_level_window import InteractionTopLevelWindow
 from gui.main_window.wallet_action_frame import WalletActionFrame
 from gui.modules.frames import FloatSpinbox
 from gui.wallet_right_window.wallets_table import WalletsTable
+
+from src.schemas.tasks import TaskBase
+from src.schemas.wallet_data import WalletData
+from src.tasks_executor import task_executor
+from src.storage import ActionStorage
+from src.storage import Storage
 from src import enums
+
+from utils.file_manager import FileManager
+from utils.repr import misc as repr_misc_utils
 
 if TYPE_CHECKING:
     from gui.wallet_right_window.right_frame import RightFrame
@@ -38,8 +40,6 @@ class ActionsFrame(customtkinter.CTkFrame):
 
         self.master: 'RightFrame' = master
         self.wallets_table: WalletsTable = self.master.wallets_table
-
-        self.app_config = Storage().app_config
 
         self.grid_rowconfigure((0, 1, 3, 4), weight=1)
         self.grid_columnconfigure(1, weight=0)
@@ -289,6 +289,8 @@ class ActionsFrame(customtkinter.CTkFrame):
         self.redraw_current_actions_frame()
 
     def on_wallet_started(self, started_wallet: "WalletData"):
+        repr_misc_utils.print_wallet_execution(started_wallet)
+
         wallet_item = self.wallets_table.get_wallet_item_by_wallet_id(wallet_id=started_wallet.wallet_id)
         self.active_wallet = wallet_item
         self.master.update_active_wallet_label(wallet_name=started_wallet.name)
@@ -388,7 +390,7 @@ class ActionsFrame(customtkinter.CTkFrame):
             return
 
         if bool(self.run_settings_frame.test_mode_checkbox.get()):
-            amount = self.app_config.wallets_amount_to_execute_in_test_mode
+            amount = Storage().app_config.wallets_amount_to_execute_in_test_mode
             wallets = wallets[:amount]
 
         task_executor.process(
@@ -396,6 +398,8 @@ class ActionsFrame(customtkinter.CTkFrame):
             tasks=self.tasks,
             shuffle_wallets=bool(self.run_settings_frame.shuffle_wallets_checkbox.get()),
             shuffle_tasks=bool(self.run_settings_frame.shuffle_task_checkbox.get()),
+
+            run_mode=Storage().app_config.run_mode,
         )
 
     def on_stop_button_click(self):

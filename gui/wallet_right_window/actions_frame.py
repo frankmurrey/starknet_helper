@@ -6,18 +6,20 @@ from uuid import UUID
 import customtkinter
 from loguru import logger
 
-from src.schemas.tasks import TaskBase
-from src.schemas.wallet_data import WalletData
-# from src.tasks_executor import task_executor
-from src.tasks_executor.threaded import threaded_task_executor as task_executor
-from src.storage import ActionStorage
-from src.storage import Storage
-from utils.file_manager import FileManager
 from gui.main_window.interactions_top_level_window import InteractionTopLevelWindow
 from gui.main_window.wallet_action_frame import WalletActionFrame
 from gui.modules.frames import FloatSpinbox
 from gui.wallet_right_window.wallets_table import WalletsTable
+
+from src.schemas.tasks import TaskBase
+from src.schemas.wallet_data import WalletData
+from src.tasks_executor import task_executor
+from src.storage import ActionStorage
+from src.storage import Storage
 from src import enums
+
+from utils.file_manager import FileManager
+from utils.repr import misc as repr_misc_utils
 
 if TYPE_CHECKING:
     from gui.wallet_right_window.right_frame import RightFrame
@@ -289,6 +291,8 @@ class ActionsFrame(customtkinter.CTkFrame):
         self.redraw_current_actions_frame()
 
     def on_wallet_started(self, started_wallet: "WalletData"):
+        repr_misc_utils.print_wallet_execution(wallet, wallet_index)
+
         wallet_item = self.wallets_table.get_wallet_item_by_wallet_id(wallet_id=started_wallet.wallet_id)
         self.active_wallet = wallet_item
         self.master.update_active_wallet_label(wallet_name=started_wallet.name)

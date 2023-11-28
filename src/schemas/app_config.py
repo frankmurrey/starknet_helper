@@ -2,11 +2,13 @@ from typing import Union
 
 from pydantic import BaseModel
 from pydantic import validator
+from src import enums
 from src import exceptions
 from utils import validation
 
 
 class AppConfigSchema(BaseModel):
+    run_mode: enums.RunMode = enums.RunMode.SYNC
     preserve_logs: bool = True
     use_proxy: bool = True
     rpc_url: str = "https://starknet-mainnet.public.blastapi.io"

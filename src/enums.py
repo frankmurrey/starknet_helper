@@ -85,3 +85,8 @@ class MiscTypes(str, Enum):
 class BlockStatus(str, Enum):
     PENDING = "pending"
     LATEST = "latest"
+
+
+class RunMode(str, Enum):
+    SYNC = "sync"
+    ASYNC = "async"

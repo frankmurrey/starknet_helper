@@ -105,11 +105,11 @@ def print_logo():
     print(f"{Fore.LIGHTMAGENTA_EX}{AsciiPrints.pre_config_1}{Fore.RESET}\n")
 
 
-def print_wallet_execution(wallet: "WalletData", wallet_index: int):
+def print_wallet_execution(wallet: "WalletData"):
     print(
         f"\n"
         f"{Colors.BORDER}[{Fore.RESET}"
-        f"{wallet_index + 1}"
+        f"{wallet.index + 1}"
         f"{Colors.BORDER}]{Fore.RESET} "
         f"{Colors.CONFIG_KEY_COLOR}{wallet.name}{Fore.RESET}"
         f" - "

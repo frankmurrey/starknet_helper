@@ -2,6 +2,7 @@ import time
 import random
 import asyncio
 import multiprocessing as mp
+from abc import abstractmethod
 from typing import Optional, List
 
 from loguru import logger
@@ -17,7 +18,6 @@ from src.storage import Storage
 from src.logger import configure_logger
 from src import enums
 
-from utils.repr import misc as repr_misc_utils
 from utils.repr import message as repr_message_utils
 from utils import wallet as wallet_utils
 from utils import task as task_utils
@@ -38,14 +38,11 @@ class TaskExecutorBase:
             wallet: "WalletData",
     ) -> ModuleExecutionResult:
         """
-        Process a task
+        Base method for task processing.
         Args:
             task: task to process
             wallet: wallet for task
         """
-
-        self.event_manager.set_task_started(task, wallet)
-
         logger.debug(f"Processing task: {task.task_id} with wallet: {wallet.name}")
 
         task.task_status = enums.TaskStatus.PROCESSING
@@ -60,27 +57,23 @@ class TaskExecutorBase:
         task.task_status = task_status
         task.result_hash = task_result.hash
         task.result_info = task_result.execution_info
-        self.event_manager.set_task_completed(task, wallet)
 
         return task_result
-    
+
     def _process_wallet(
             self,
             wallet: "WalletData",
-            wallet_index: int,
             tasks: List["TaskBase"],
     ):
         """
         Base method for wallet processing.
         Args:
             wallet: wallet to process
-            wallet_index: index of wallet
             tasks: list of tasks to process
         """
         for task_index, task in enumerate(tasks):
             task_result = self.process_task(
                 task=task,
-                wallet_index=wallet_index,
                 wallet=wallet,
             )
 
@@ -91,37 +84,31 @@ class TaskExecutorBase:
                 logger.info(repr_message_utils.task_exec_sleep_message(time_to_sleep))
                 time.sleep(time_to_sleep)
 
+    @abstractmethod
+    def process_task(
+            self,
+            task: "TaskBase",
+            wallet: "WalletData",
+    ):
+        """
+        Process a task
+        Args:
+            task: task to process
+            wallet: wallet for task
+        """
+
+    @abstractmethod
     def process_wallet(
             self,
             wallet: "WalletData",
-            wallet_index: int,
             tasks: List["TaskBase"],
     ):
         """
         Process a wallet
         Args:
             wallet: wallet to process
-            wallet_index: index of wallet
             tasks: list of tasks to process
         """
-        self.event_manager.set_wallet_started(wallet)
-        repr_misc_utils.print_wallet_execution(wallet, wallet_index)
-
-        for task_index, task in enumerate(tasks):
-            task_result = self.process_task(
-                task=task,
-                wallet_index=wallet_index,
-                wallet=wallet,
-            )
-
-            time_to_sleep = task_utils.get_time_to_sleep(task=task, task_result=task_result)
-            is_last_task = task_index == len(tasks) - 1
-
-            if not is_last_task:
-                logger.info(repr_message_utils.task_exec_sleep_message(time_to_sleep))
-                time.sleep(time_to_sleep)
-
-        self.event_manager.set_wallet_completed(wallet)
 
     def _start_processing(
             self,
@@ -138,7 +125,6 @@ class TaskExecutorBase:
         for wallet_index, wallet in enumerate(wallets):
             self.process_wallet(
                 wallet=wallet,
-                wallet_index=wallet_index,
                 tasks=tasks,
             )
 
@@ -208,6 +194,3 @@ class TaskExecutorBase:
             self.processing_process.terminate()
 
         self.processing_process = None
-
-
-task_executor = TaskExecutor()

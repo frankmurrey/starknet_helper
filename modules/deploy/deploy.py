@@ -91,11 +91,7 @@ class Deploy(ModuleBase):
         """
         account_deployed = await self.account_deployed(account=self.account)
         if account_deployed is True:
-            err_msg = f"Account already deployed"
-            logger.warning(err_msg)
-
-            self.module_execution_result.execution_info = err_msg
-            self.module_execution_result.retry_needed = False
+            self.log_error(f"Account already deployed")
             return self.module_execution_result
 
         logger.warning(f"Action: Deploy {self.key_type.title()} account")
@@ -132,7 +128,7 @@ class Deploy(ModuleBase):
 
         if self.task.test_mode is True:
             err_msg = f"Test mode enabled. Skipping transaction"
-            self.module_execution_result.execution_info = err_msg
+            self.module_execution_result.execution_info += err_msg
             return self.module_execution_result
 
         try:
@@ -155,7 +151,7 @@ class Deploy(ModuleBase):
                                f"Txn Hash: {hex(txn_hash)})")
 
                 self.module_execution_result.execution_status = True
-                self.module_execution_result.execution_info = f"Txn success, status: {txn_status}"
+                self.module_execution_result.execution_info += f"Txn success, status: {txn_status}."
                 self.module_execution_result.hash = hex(txn_hash)
 
                 return self.module_execution_result
@@ -164,7 +160,7 @@ class Deploy(ModuleBase):
                 logger.success(f"Txn sent. Txn Hash: {hex(txn_hash)}")
 
                 self.module_execution_result.execution_status = True
-                self.module_execution_result.execution_info = f"Txn sent, receipt not requested"
+                self.module_execution_result.execution_info += f"Txn sent, receipt not requested."
                 self.module_execution_result.hash = hex(txn_hash)
                 return self.module_execution_result
 

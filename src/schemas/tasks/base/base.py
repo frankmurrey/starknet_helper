@@ -10,6 +10,27 @@ from src import enums
 
 
 class TaskBase(BaseModel):
+    """
+    Task Base Schema
+
+    Attributes:
+        module_type: type of the task's module
+        module_name: name of the task's module
+        module: task's module
+
+        task_id: id of the task
+        task_status: status of the task execution
+
+        probability: execution probability of the task
+
+        result_hash: result hash of the task's transaction
+        result_info: result info of the task
+
+        forced_gas_limit: forced gas limit of the task's transaction
+        max_fee: max fee of the task's transaction
+
+        # TODO: Fill docs
+    """
     class Config:
         extra = "allow"
 

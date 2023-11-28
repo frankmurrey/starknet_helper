@@ -8,7 +8,7 @@ from typing import Optional, List
 from loguru import logger
 
 from modules.module_executor import ModuleExecutor
-from src.tasks_executor.event_manager import TasksExecEventManager
+from src.tasks_executor.event_manager import TaskExecEventManager
 from src.schemas.action_models import ModuleExecutionResult
 from src.schemas.app_config import AppConfigSchema
 from src.schemas.tasks.base.base import TaskBase
@@ -28,7 +28,7 @@ import config
 class TaskExecutorBase:
     def __init__(self):
         self.processing_process: Optional[mp.Process] = None
-        self.event_manager: Optional[TasksExecEventManager] = TasksExecEventManager()
+        self.event_manager: Optional[TaskExecEventManager] = TaskExecEventManager()
 
         self._app_config_dict: Optional[dict] = None
 

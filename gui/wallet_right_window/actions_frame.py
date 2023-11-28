@@ -400,6 +400,8 @@ class ActionsFrame(customtkinter.CTkFrame):
             tasks=self.tasks,
             shuffle_wallets=bool(self.run_settings_frame.shuffle_wallets_checkbox.get()),
             shuffle_tasks=bool(self.run_settings_frame.shuffle_task_checkbox.get()),
+
+            multithread=self.app_config.run_mode == enums.RunMode.ASYNC,
         )
 
     def on_stop_button_click(self):

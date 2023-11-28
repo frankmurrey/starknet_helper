@@ -199,8 +199,6 @@ class ActionsFrame(customtkinter.CTkFrame):
             for action_index, action_data in enumerate(self.actions):
                 if action_data["task_config"].task_id == action["task_config"].task_id:
                     self.actions[action_index] = action
-                    self.action_items.pop(action_index)
-                    break
 
             self.redraw_current_actions_frame()
 

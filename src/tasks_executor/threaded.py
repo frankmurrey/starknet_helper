@@ -102,6 +102,7 @@ class ThreadedTaskExecutor(TaskExecutor):
             wallet_index: index of wallet
             tasks: list of tasks to process
             is_last_wallet: is current wallet the last
+            loop: asyncio loop
         """
 
         asyncio.set_event_loop(loop)

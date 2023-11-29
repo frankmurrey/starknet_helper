@@ -264,7 +264,7 @@ class ChoseModuleFrame(customtkinter.CTkFrame):
             row=0,
             column=0,
             padx=20,
-            pady=20,
+            pady=(20, 10),
             sticky="nsew"
 
         )

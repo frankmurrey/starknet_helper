@@ -13,6 +13,7 @@ class FloatSpinbox(customtkinter.CTkFrame):
             height: int = 32,
             step_size: Union[int, float] = 1,
             command: Callable = None,
+            fg_color: Union[str, tuple] = ("gray78", "gray21"),
             **kwargs
     ):
         super().__init__(*args, width=width, height=height, **kwargs)
@@ -21,7 +22,7 @@ class FloatSpinbox(customtkinter.CTkFrame):
         self.max_value = int(max_value)
         self.command = command
 
-        self.configure(fg_color=("gray78", "gray21"))
+        self.configure(fg_color=fg_color)
 
         self.grid_columnconfigure((0, 2), weight=0)
         self.grid_columnconfigure(1, weight=1)

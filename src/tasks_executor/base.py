@@ -47,6 +47,14 @@ class TaskExecutorBase:
 
         task.task_status = enums.TaskStatus.PROCESSING
 
+        if random.randint(0, 100) < task.probability:
+            task.task_status = enums.TaskStatus.SKIPPED
+
+            return ModuleExecutionResult(
+                execution_status=False,
+                execution_info=f"Task was skipped by probability ({task.probability}%)",
+            )
+
         module_executor = ModuleExecutor(task=task, wallet=wallet)
 
         loop = asyncio.get_event_loop()

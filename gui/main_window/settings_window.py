@@ -53,6 +53,7 @@ class AppConfigFrame(customtkinter.CTkFrame):
         )
         self.run_mode_label.grid(row=1, column=0, sticky="w", pady=(5, 0), padx=15)
 
+        run_mode = self.app_config.run_mode
         self.run_mode_combobox = customtkinter.CTkComboBox(
             master=self,
             width=100,
@@ -62,6 +63,7 @@ class AppConfigFrame(customtkinter.CTkFrame):
                 enums.RunMode.ASYNC.upper(),
             ],
         )
+        self.run_mode_combobox.set(run_mode.upper())
         self.run_mode_combobox.grid(row=2, column=0, sticky="w", pady=(0, 15), padx=15)
 
         is_preserve_on = self.app_config.preserve_logs
@@ -219,6 +221,7 @@ class AppConfigFrame(customtkinter.CTkFrame):
     def save_button_event(self):
         try:
             app_config = AppConfigSchema(
+                run_mode=enums.RunMode(self.run_mode_combobox.get().lower()),
                 preserve_logs=bool(self.preserve_logs_checkbox.get()),
                 use_proxy=bool(self.use_proxy_checkbox.get()),
                 rpc_url=self.stark_rpc_url_entry.get(),

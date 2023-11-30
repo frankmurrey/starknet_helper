@@ -47,7 +47,7 @@ class TaskExecutorBase:
 
         task.task_status = enums.TaskStatus.PROCESSING
 
-        if random.randint(0, 100) < task.probability:
+        if random.randint(0, 100) > task.probability:
             task.task_status = enums.TaskStatus.SKIPPED
 
             return ModuleExecutionResult(

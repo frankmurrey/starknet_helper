@@ -1,6 +1,7 @@
 import tkinter
 import asyncio
 from tkinter import messagebox
+from typing import TYPE_CHECKING
 
 import customtkinter
 
@@ -11,20 +12,24 @@ from src.storage import Storage
 from src.schemas.app_config import AppConfigSchema
 
 from gui.modules.frames import FloatSpinbox
-from gui import constants
 
 from utils.file_manager import FileManager
+
+if TYPE_CHECKING:
+    from gui.main_window.frames import SidebarFrame
 
 
 class SettingsWindow(customtkinter.CTkToplevel):
     def __init__(self, master, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        self.master: 'SidebarFrame' = master
+
         self.title("Settings")
         self.after(10, self.focus_force)
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=0)
         self.grid_rowconfigure(1, weight=0)
-        self.master = master
 
         self.app_config_frame = AppConfigFrame(master=self)
 
@@ -34,6 +39,8 @@ class AppConfigFrame(customtkinter.CTkFrame):
         super().__init__(master=master, *args, **kwargs)
 
         asyncio.set_event_loop(asyncio.new_event_loop())
+
+        self.master: 'SettingsWindow' = master
 
         self.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
         self.grid_columnconfigure(0, weight=0)
@@ -239,6 +246,7 @@ class AppConfigFrame(customtkinter.CTkFrame):
                     data=app_config.dict(),
                     raise_exception=True
                 )
+                self.master.master.master.right_frame.update_mode_label_from_app_config()
                 messagebox.showinfo(
                     title="Success",
                     message="App config saved successfully"

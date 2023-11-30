@@ -1,24 +1,28 @@
 import tkinter.messagebox
 import tkinter.filedialog
-from typing import List, Union
+from typing import List, Union, TYPE_CHECKING
 
 import customtkinter
 
 from gui.wallet_right_window.wallet_window import WalletWindow
 from gui.wallet_right_window.wallets_table import WalletsTable
 from gui.wallet_right_window.actions_frame import ActionsFrame
-from src.schemas.wallet_data import WalletData
-from src.wallet_manager import WalletManager
 from utils.file_manager import FileManager
 from src import paths
+from src import enums
+from src.schemas.wallet_data import WalletData
+from src.wallet_manager import WalletManager
 from src.storage import Storage
+
+if TYPE_CHECKING:
+    from gui.main_window.main import MainWindow
 
 
 class RightFrame(customtkinter.CTkFrame):
     def __init__(self, master: any, **kwargs):
         super().__init__(master, **kwargs)
 
-        self.master = master
+        self.master: 'MainWindow' = master
 
         self.actions_top_level_window = None
 
@@ -74,12 +78,19 @@ class RightFrame(customtkinter.CTkFrame):
         )
         self.remove_button.grid(row=0, column=3, padx=0, pady=10, sticky="wn")
 
+        self.mode_label = customtkinter.CTkLabel(
+            self.button_frame,
+            text=f"Mode: {Storage().app_config.run_mode.value.title()}",
+            font=customtkinter.CTkFont(size=12, weight="bold"),
+        )
+        self.mode_label.grid(row=0, column=4, padx=20, pady=10, sticky="wn")
+
         self.selected_wallets_label = customtkinter.CTkLabel(
             self.button_frame,
             text="Selected: 0",
             font=customtkinter.CTkFont(size=12, weight="bold"),
         )
-        self.selected_wallets_label.grid(row=0, column=4, padx=20, pady=10, sticky="wn")
+        self.selected_wallets_label.grid(row=0, column=5, padx=20, pady=10, sticky="wn")
 
         self.completed_wallets_stats_label = customtkinter.CTkLabel(
             self.button_frame,
@@ -87,7 +98,7 @@ class RightFrame(customtkinter.CTkFrame):
             font=customtkinter.CTkFont(size=12, weight="bold"),
         )
         self.completed_wallets_stats_label.grid(
-            row=0, column=5, padx=20, pady=10, sticky="wn"
+            row=0, column=6, padx=20, pady=10, sticky="wn"
         )
 
         self.failed_wallets_stats_label = customtkinter.CTkLabel(
@@ -96,7 +107,7 @@ class RightFrame(customtkinter.CTkFrame):
             font=customtkinter.CTkFont(size=12, weight="bold"),
         )
         self.failed_wallets_stats_label.grid(
-            row=0, column=6, padx=20, pady=10, sticky="wn"
+            row=0, column=7, padx=20, pady=10, sticky="wn"
         )
 
         self.active_wallet_label = customtkinter.CTkLabel(
@@ -104,7 +115,7 @@ class RightFrame(customtkinter.CTkFrame):
             text="Active wallet: None",
             font=customtkinter.CTkFont(size=12, weight="bold"),
         )
-        self.active_wallet_label.grid(row=0, column=7, padx=20, pady=10, sticky="wn")
+        self.active_wallet_label.grid(row=0, column=8, padx=20, pady=10, sticky="wn")
 
         self.actions_frame = ActionsFrame(self)
         self.actions_frame.grid(row=9, column=0, padx=20, pady=10, sticky="nsew")
@@ -117,6 +128,14 @@ class RightFrame(customtkinter.CTkFrame):
         return [
             wallet_item.wallet_data for wallet_item in self.wallets_table.wallets_items
         ]
+
+    def update_mode_label(self, mode: enums.RunMode):
+        self.mode_label.configure(
+            text=f"Mode: {mode.value.title()}"
+        )
+
+    def update_mode_label_from_app_config(self):
+        self.update_mode_label(Storage().app_config.run_mode)
 
     def update_active_wallet_label(self, wallet_name: str):
         self.active_wallet_label.configure(

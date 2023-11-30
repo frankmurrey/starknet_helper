@@ -20,6 +20,7 @@ from src import enums
 
 from utils.file_manager import FileManager
 from utils.repr import misc as repr_misc_utils
+from utils.repr.module import print_module_config
 
 if TYPE_CHECKING:
     from gui.wallet_right_window.right_frame import RightFrame
@@ -298,6 +299,8 @@ class ActionsFrame(customtkinter.CTkFrame):
         wallet_item.set_wallet_active()
 
     def on_task_started(self, started_task: "TaskBase", current_wallet: "WalletData"):
+        print_module_config(task=started_task)
+
         task_item = self.get_action_item_by_id(action_id=started_task.task_id)
         task_item.set_task_active()
         self.current_wallet_action_items.append(task_item)
@@ -450,7 +453,7 @@ class TableTopFrame(customtkinter.CTkFrame):
         self.action_type_label.grid(
             row=0,
             column=1,
-            padx=15,
+            padx=10,
             pady=0
         )
 
@@ -462,7 +465,7 @@ class TableTopFrame(customtkinter.CTkFrame):
         self.repeats_label.grid(
             row=0,
             column=2,
-            padx=15,
+            padx=5,
             pady=0
         )
 
@@ -474,7 +477,7 @@ class TableTopFrame(customtkinter.CTkFrame):
         self.action_info_label.grid(
             row=0,
             column=3,
-            padx=30,
+            padx=(0, 0),
             pady=0
         )
 
@@ -486,7 +489,7 @@ class TableTopFrame(customtkinter.CTkFrame):
         self.buttons_label.grid(
             row=0,
             column=4,
-            padx=30,
+            padx=(60, 40),
             pady=0
         )
 

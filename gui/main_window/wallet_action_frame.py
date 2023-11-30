@@ -35,7 +35,7 @@ class WalletActionFrame(customtkinter.CTkFrame):
 
         self.grid(**grid)
         self.grid_columnconfigure((0, 1, 2, 3), weight=1, uniform="uniform")
-        self.grid_columnconfigure(4, weight=0)
+        self.grid_columnconfigure(4, weight=0, uniform="uniform")
         self.grid_rowconfigure((0, 1), weight=1)
 
         self.module_label = customtkinter.CTkLabel(
@@ -62,7 +62,26 @@ class WalletActionFrame(customtkinter.CTkFrame):
         self.repeats_label = customtkinter.CTkLabel(
             self, text=str(repeats), font=customtkinter.CTkFont(size=12, weight="bold")
         )
-        self.repeats_label.grid(row=0, column=3, padx=(40, 0), pady=2, sticky="we")
+        self.repeats_label.grid(row=0, column=3, padx=(12, 0), pady=2, sticky="we")
+
+        if task.probability >= 90:
+            probability_color = constants.SUCCESS_HEX
+
+        elif task.probability >= 50:
+            probability_color = "#e6a44e"
+
+        else:
+            probability_color = constants.ERROR_HEX
+
+        emptyness = '  ' * (3 - len(str(task.probability)))
+
+        self.probability_label = customtkinter.CTkLabel(
+            self,
+            text=f"{emptyness}{task.probability}%",
+            font=customtkinter.CTkFont(size=12, weight="bold"),
+            text_color=probability_color,
+        )
+        self.probability_label.grid(row=0, column=4, padx=(0, 70), pady=2, sticky="e")
 
         self.edit_button = IconButton(
             self,

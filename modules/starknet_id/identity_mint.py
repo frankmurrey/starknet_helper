@@ -57,8 +57,9 @@ class IdentityMint(ModuleBase):
             if owner:
                 return True
 
+            return False
+
         except ClientError:
-            self.log_error(f"Failed to check if id {token_id} exists")
             return False
 
     def get_random_stark_id(self) -> int:

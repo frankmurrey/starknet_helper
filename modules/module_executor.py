@@ -18,7 +18,6 @@ from src.action_logger import ActionLogger
 from src.proxy_manager import ProxyManager
 
 from utils.key_manager.key_manager import get_key_pair_from_pk
-from utils.repr.module import print_module_config
 from utils.gas_price import GasPrice
 
 from src import enums
@@ -46,7 +45,6 @@ class ModuleExecutor:
         self.wallet_data = wallet
 
     async def start(self) -> ModuleExecutionResult:
-        print_module_config(task=self.task)
         time.sleep(cfg.DEFAULT_DELAY_SEC)
 
         if not self.app_config.rpc_url:

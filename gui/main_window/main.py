@@ -10,7 +10,7 @@ from src.paths import GUI_DIR
 from gui.main_window.frames import SidebarFrame
 from gui.wallet_right_window.right_frame import RightFrame
 
-from utils.repr.misc import print_logo
+from utils.repr import message
 from src.templates.templates import Templates
 
 
@@ -75,7 +75,7 @@ class MainWindow(customtkinter.CTk):
     def on_start(self):
         configure_logger()
         Templates().create_not_found_temp_files()
-        print_logo()
+        print(message.logo_message())
 
         self.init_tray_icon()
 

@@ -1,4 +1,3 @@
-import config
 import random
 
 from enum import Enum
@@ -8,10 +7,9 @@ from colorama import Fore, Style
 from src.schemas.tasks.base import TaskBase
 from src.schemas.tasks.jediswap import JediSwapTask
 from utils.repr.misc import donation_messages
-from utils.repr.misc import Symbol
-from utils.repr.misc import Color
-from utils.repr.misc import COLOR_LENGTH
-from utils.repr.misc import MODULE_NAME_MAX_LENGTH
+from utils.repr.symbol import Symbol
+from utils.repr.color import Color
+import config
 
 
 def get_border_top(width: int) -> str:
@@ -50,8 +48,8 @@ def get_border_middle(key_width: int, value_width: int) -> str:
 
 def get_module_name_header(module_name: str, width: int) -> str:
 
-    if len(module_name) > MODULE_NAME_MAX_LENGTH:
-        strip_size = int(MODULE_NAME_MAX_LENGTH / 2)
+    if len(module_name) > config.MODULE_NAME_MAX_LENGTH:
+        strip_size = int(config.MODULE_NAME_MAX_LENGTH / 2)
         module_name = f"{module_name[:strip_size - 1]}...{module_name[-strip_size+3:]}"
 
     module_name = f"{Color.MODULE_NAME}{module_name.capitalize()}"
@@ -60,7 +58,7 @@ def get_module_name_header(module_name: str, width: int) -> str:
     header_text += f"{Color.MODULE_HEADER_TEXT}'s module config"
     header_text += f"{Fore.RESET}"
 
-    space_width = width - 4 + 3 * COLOR_LENGTH
+    space_width = width - 4 + 3 * config.COLOR_LENGTH
 
     repr_string = Color.BORDER
     repr_string += Symbol.left
@@ -82,7 +80,7 @@ def get_max_width(max_key_width: int, max_value_width: int) -> int:
 def format_key(key: str, max_key_width: int) -> str:
     key = key.title().replace("_", " ")
     key = f"{Color.CONFIG_KEY_COLOR}{key}{Fore.RESET}"
-    key_width = max_key_width + 2 * COLOR_LENGTH
+    key_width = max_key_width + 2 * config.COLOR_LENGTH
 
     return f" {key:>{key_width + 1}} "
 
@@ -94,11 +92,11 @@ def format_value(value, max_value_width: int) -> str:
         value = str(value.value).upper()
 
     if isinstance(value, bool):
-        value_width = value_width + 2 * COLOR_LENGTH
+        value_width = value_width + 2 * config.COLOR_LENGTH
         value = (f"{Fore.GREEN}+" if value else f"{Fore.RED}-") + Fore.RESET
 
     else:
-        value_width += 2 * COLOR_LENGTH
+        value_width += 2 * config.COLOR_LENGTH
         value = f"{Color.CONFIG_VALUE_COLOR}{value}{Fore.RESET}"
 
     return f" {value:<{value_width + 1}} "

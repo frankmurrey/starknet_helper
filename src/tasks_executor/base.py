@@ -127,6 +127,10 @@ class TaskExecutorBase:
         Start processing async
         """
 
+        if tasks[0].test_mode is False:
+            ActionStorage().reset_all_actions()
+            ActionStorage().create_and_set_new_logs_dir()
+
         Storage().update_app_config(config=AppConfigSchema(**self._app_config_dict))
         configure_logger()
 
@@ -169,10 +173,6 @@ class TaskExecutorBase:
         Process
         """
         logger.debug("Starting tasks executor")
-
-        if tasks[0].test_mode is False:
-            ActionStorage().reset_all_actions()
-            ActionStorage().create_and_set_new_logs_dir()
 
         if shuffle_wallets:
             random.shuffle(wallets)

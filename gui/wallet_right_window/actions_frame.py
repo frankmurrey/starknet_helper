@@ -290,7 +290,6 @@ class ActionsFrame(customtkinter.CTkFrame):
         self.redraw_current_actions_frame()
 
     def on_wallet_started(self, started_wallet: "WalletData"):
-        repr_misc_utils.print_wallet_execution(started_wallet)
 
         wallet_item = self.wallets_table.get_wallet_item_by_wallet_id(wallet_id=started_wallet.wallet_id)
         self.active_wallet = wallet_item
@@ -299,6 +298,7 @@ class ActionsFrame(customtkinter.CTkFrame):
         wallet_item.set_wallet_active()
 
     def on_task_started(self, started_task: "TaskBase", current_wallet: "WalletData"):
+        repr_misc_utils.print_wallet_execution(current_wallet)
         print_module_config(task=started_task)
 
         task_item = self.get_action_item_by_id(action_id=started_task.task_id)

@@ -7,6 +7,6 @@ def task_exec_sleep_message(
 ) -> str:
     continue_datetime = datetime.now() + timedelta(seconds=time_to_sleep)
     return (
-        f"Time to sleep for {time_to_sleep} seconds..."
+        f"Time to sleep for {int(time_to_sleep)} seconds..."
         f" Continue at {continue_datetime.strftime('%H:%M:%S')}"
     )

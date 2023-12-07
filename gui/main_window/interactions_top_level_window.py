@@ -95,8 +95,6 @@ class InteractionTopLevelWindow(customtkinter.CTkToplevel):
         self.grid_rowconfigure(0, weight=0)
         self.grid_rowconfigure(1, weight=0)
 
-        self.parent = parent
-
         self.current_tab_name = None
         self.current_tab = None
 

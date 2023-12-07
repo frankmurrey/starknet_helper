@@ -102,7 +102,7 @@ def format_value(value, max_value_width: int) -> str:
     return f" {value:<{value_width + 1}} "
 
 
-def print_module_config(task: TaskBase):
+def module_config_table(task: TaskBase):
 
     repr_strings = []
 
@@ -186,6 +186,8 @@ def print_module_config(task: TaskBase):
     repr_strings.insert(0, Style.BRIGHT)
     repr_strings.append(Style.BRIGHT)
 
+    return "\n".join(repr_strings)
+
     print(*repr_strings, sep="\n")
     print(f"{Fore.LIGHTMAGENTA_EX}Made by Frank Murrey - https://github.com/frankmurrey{Fore.RESET}")
 
@@ -200,7 +202,7 @@ def print_module_config(task: TaskBase):
 
 
 if __name__ == '__main__':
-    task = JediSwapTask(
+    _task = JediSwapTask(
         coin_x='usdt',
         coin_y='eth',
         min_amount_out=0.1,
@@ -213,4 +215,4 @@ if __name__ == '__main__':
         reverse_action=True,
 
     )
-    print_module_config(task)
+    print(module_config_table(_task))

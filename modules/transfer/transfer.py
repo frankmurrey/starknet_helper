@@ -1,7 +1,6 @@
 import random
 from typing import TYPE_CHECKING, Union
 
-from loguru import logger
 from starknet_py.net.client_errors import ClientError
 
 import config
@@ -25,6 +24,7 @@ class Transfer(ModuleBase):
         super().__init__(
             account=account,
             task=task,
+            wallet_data=wallet_data
         )
 
         self.account = account

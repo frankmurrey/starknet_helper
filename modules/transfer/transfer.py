@@ -92,7 +92,7 @@ class Transfer(ModuleBase):
             )
 
             cairo_version = await self.get_cairo_version_for_txn_execution(account=self.account)
-            signed_invoke_transaction = self.sign_invoke_transaction(
+            signed_invoke_transaction = await self.sign_invoke_transaction(
                 calls=[transfer_call],
                 account=self.account,
                 cairo_version=cairo_version

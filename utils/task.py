@@ -51,7 +51,6 @@ def create_virtual_task(
         base_task: task to create virtual task from
     Returns: virtual task
     """
-
     for task_class in base_task.__class__.__subclasses__():
         if is_task_virtual(task_class):
             virtual_task = task_class(**base_task.dict(
@@ -77,7 +76,10 @@ def fill_with_virtual_tasks(
 
     for task_index, task in enumerate(tasks_to_fill):
         if task.reverse_action:
-            virtual_task = create_virtual_task(task)
+            virtual_task = task.__class__(**task.dict(
+                exclude={"reverse_action", "reverse_action_task"},
+            ))
+            virtual_task.is_virtual = True
 
             tasks_to_fill[task_index].min_delay_sec = task.reverse_action_min_delay_sec
             tasks_to_fill[task_index].max_delay_sec = task.reverse_action_max_delay_sec

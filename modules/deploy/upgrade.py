@@ -12,6 +12,7 @@ from utils.misc import decode_wallet_version
 
 if TYPE_CHECKING:
     from src.schemas.tasks.deploy import UpgradeTask
+    from src.schemas.wallet_data import WalletData
 
 
 class Upgrade(ModuleBase):
@@ -22,10 +23,12 @@ class Upgrade(ModuleBase):
             self,
             account,
             task: 'UpgradeTask',
+            wallet_data: 'WalletData',
     ):
         super().__init__(
             account=account,
-            task=task
+            task=task,
+            wallet_data=wallet_data,
         )
 
         self.task = task
@@ -50,7 +53,7 @@ class Upgrade(ModuleBase):
             return True
 
         except ClientError:
-            logger.error(f'Error while getting account contract or wallet not deployed')
+            self.log_error(f'Error while getting account contract or wallet not deployed')
             return False
 
     async def build_txn_payload_calls(self):
@@ -71,7 +74,7 @@ class Upgrade(ModuleBase):
     async def send_txn(self) -> ModuleExecutionResult:
         txn_payload_calls = await self.build_txn_payload_calls()
         if txn_payload_calls is None:
-            self.module_execution_result.execution_info = f"Failed to build txn payload calls"
+            self.log_error(f"Failed to build txn payload calls for account upgrade")
             return self.module_execution_result
 
         txn_info_message = f"Wallet version upgrade"

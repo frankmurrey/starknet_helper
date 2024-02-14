@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from src.schemas.tasks.jediswap import JediSwapTask
     from src.schemas.tasks.jediswap import JediSwapAddLiquidityTask
     from src.schemas.tasks.jediswap import JediSwapRemoveLiquidityTask
+    from src.schemas.wallet_data import WalletData
 
 
 class JediSwapBase(ModuleBase):
@@ -22,11 +23,13 @@ class JediSwapBase(ModuleBase):
                 'JediSwapAddLiquidityTask',
                 'JediSwapRemoveLiquidityTask'
             ],
+            wallet_data: 'WalletData',
     ):
 
         super().__init__(
             account=account,
             task=task,
+            wallet_data=wallet_data,
         )
         self.jedi_contracts = JediSwapContracts()
 
@@ -67,5 +70,5 @@ class JediSwapBase(ModuleBase):
             return amounts_out.amounts[1]
 
         except Exception as e:
-            logger.error(f'Error while getting amount in: {e}')
+            self.log_error(f'Error while getting amount in: {e}')
             return None

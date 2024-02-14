@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from src.schemas.tasks.starkex import StarkExSwapTask
     from src.schemas.tasks.starkex import AddLiquidityTaskBase
     from src.schemas.tasks.starkex import RemoveLiquidityTaskBase
+    from src.schemas.wallet_data import WalletData
 
 
 class StarkExBase(ModuleBase):
@@ -23,11 +24,13 @@ class StarkExBase(ModuleBase):
                 'StarkExSwapTask',
                 'AddLiquidityTaskBase',
                 'RemoveLiquidityTaskBase'
-            ]
+            ],
+            wallet_data: 'WalletData',
     ):
         super().__init__(
             account=account,
             task=task,
+            wallet_data=wallet_data,
         )
 
         self.task = task
@@ -69,5 +72,5 @@ class StarkExBase(ModuleBase):
             return amounts_out.amounts[1]
 
         except Exception as e:
-            logger.error(f'Error while getting amount in: {e}')
+            self.log_error(f'Error while getting amount in: {e}')
             return None

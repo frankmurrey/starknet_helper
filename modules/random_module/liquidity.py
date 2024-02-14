@@ -3,13 +3,15 @@ from modules.base import LiquidityModuleBase
 from src.schemas.action_models import ModuleExecutionResult
 from src.schemas.tasks import AddLiquidityTaskBase
 from src.schemas import tasks
+from src.schemas.wallet_data import WalletData
 from contracts.tokens.main import Tokens
 
 
 LIQUIDITY_TASKS = [
     tasks.SithSwapAddLiquidityTask,
     tasks.JediSwapAddLiquidityTask,
-    tasks.MySwapAddLiquidityTask
+    tasks.MySwapAddLiquidityTask,
+    tasks.K10SwapAddLiquidityTask,
 ]
 
 
@@ -18,16 +20,20 @@ class RandomAddLiquidity(LiquidityModuleBase):
             self,
             account,
             task: AddLiquidityTaskBase,
+            wallet_data: WalletData,
+
     ):
         super().__init__(
             account=account,
             task=task,
+            wallet_data=wallet_data,
         )
         random_task_class = random.choice(LIQUIDITY_TASKS)
         task_dict = self.task.dict(exclude={"module_name",
                                             "module_type",
                                             "module"})
         random_task: AddLiquidityTaskBase = random_task_class(**task_dict)
+        self.task = random_task
         if random_task.random_y_coin:
             protocol_coins_obj = Tokens().get_tokens_by_protocol(random_task.module_name)
             protocol_coins = [coin.symbol for coin in protocol_coins_obj]
@@ -58,6 +64,7 @@ class RandomAddLiquidity(LiquidityModuleBase):
 
         module = self.task.module(
             account=self.account,
-            task=self.task
+            task=self.task,
+            wallet_data=self.wallet_data,
         )
         return await module.try_send_txn(retries=retries)

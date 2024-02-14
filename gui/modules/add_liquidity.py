@@ -208,11 +208,53 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
             offvalue=False,
             checkbox_width=18,
             checkbox_height=18,
+            command=self.reverse_action_checkbox_event
         )
         if getattr(self.task, "reverse_action", False):
             self.reverse_action_checkbox.select()
         self.reverse_action_checkbox.grid(
             row=5, column=0, padx=20, pady=(5, 0), sticky="w"
+        )
+
+        # REVERSE ACTION MIN DELAY
+        self.reverse_action_min_delay_label = customtkinter.CTkLabel(
+            self, text="Reverse min delay (s):"
+        )
+        self.reverse_action_min_delay_label.grid(
+            row=6, column=0, padx=20, pady=(10, 0), sticky="w"
+        )
+
+        is_reverse_action = getattr(self.task, "reverse_action", False)
+        reverse_action_min_delay = getattr(self.task, "reverse_action_min_delay_sec", 1)
+        self.reverse_action_min_delay_entry = customtkinter.CTkEntry(
+            self,
+            width=120,
+            textvariable=Variable(value=reverse_action_min_delay) if is_reverse_action else Variable(value=""),
+            fg_color="#343638" if is_reverse_action else "#3f3f3f",
+            state="disabled" if not is_reverse_action else "normal",
+        )
+        self.reverse_action_min_delay_entry.grid(
+            row=7, column=0, padx=20, pady=0, sticky="w"
+        )
+
+        # REVERSE ACTION MAX DELAY
+        self.reverse_action_max_delay_label = customtkinter.CTkLabel(
+            self, text="Reverse max delay (s):"
+        )
+        self.reverse_action_max_delay_label.grid(
+            row=6, column=1, padx=20, pady=(10, 0), sticky="w"
+        )
+
+        reverse_action_max_delay = getattr(self.task, "reverse_action_max_delay_sec", 5)
+        self.reverse_action_max_delay_entry = customtkinter.CTkEntry(
+            self,
+            width=120,
+            textvariable=Variable(value=reverse_action_max_delay) if is_reverse_action else Variable(value=""),
+            fg_color="#343638" if is_reverse_action else "#3f3f3f",
+            state="disabled" if not is_reverse_action else "normal",
+        )
+        self.reverse_action_max_delay_entry.grid(
+            row=7, column=1, padx=20, pady=0, sticky="w"
         )
 
         # AMOUNT OUT X
@@ -221,7 +263,7 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
             text="Min Amount Out X:"
         )
         self.min_amount_out_x_label.grid(
-            row=6,
+            row=8,
             column=0,
             padx=20,
             pady=(10, 0),
@@ -235,7 +277,7 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
             textvariable=Variable(value=min_amount_out_x)
         )
         self.min_amount_out_x_entry.grid(
-            row=7,
+            row=9,
             column=0,
             padx=20,
             pady=(0, 20),
@@ -248,7 +290,7 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
             text="Max Amount Out X:"
         )
         self.max_amount_out_x_label.grid(
-            row=6,
+            row=8,
             column=1,
             padx=20,
             pady=(10, 0),
@@ -262,7 +304,7 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
             textvariable=Variable(value=max_amount_out_x)
         )
         self.max_amount_out_x_entry.grid(
-            row=7,
+            row=9,
             column=1,
             padx=20,
             pady=(0, 20),
@@ -279,7 +321,7 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
             command=self.use_all_balance_checkbox_event
         )
         self.use_all_balance_x_checkbox.grid(
-            row=8,
+            row=10,
             column=0,
             padx=20,
             pady=(0, 0),
@@ -298,7 +340,7 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
             self.send_percent_balance_x_checkbox.select()
 
         self.send_percent_balance_x_checkbox.grid(
-            row=9,
+            row=11,
             column=0,
             padx=20,
             pady=(5, 10),
@@ -328,7 +370,7 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
             text="Slippage (%):",
         )
         self.slippage_label.grid(
-            row=10,
+            row=12,
             column=0,
             padx=20,
             pady=(5, 0),
@@ -342,7 +384,7 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
             textvariable=Variable(value=slippage)
         )
         self.slippage_entry.grid(
-            row=11,
+            row=13,
             column=0,
             padx=20,
             pady=(0, 20),
@@ -386,6 +428,22 @@ class AddLiquidityFrame(customtkinter.CTkFrame):
             ]
 
         return coin_symbols
+
+    def reverse_action_checkbox_event(self):
+        if self.reverse_action_checkbox.get():
+            self.reverse_action_min_delay_entry.configure(
+                state="normal", fg_color="#343638", textvariable=Variable(value=1)
+            )
+            self.reverse_action_max_delay_entry.configure(
+                state="normal", fg_color="#343638", textvariable=Variable(value=5)
+            )
+        else:
+            self.reverse_action_min_delay_entry.configure(
+                state="disabled", fg_color="#3f3f3f", textvariable=Variable(value="")
+            )
+            self.reverse_action_max_delay_entry.configure(
+                state="disabled", fg_color="#3f3f3f", textvariable=Variable(value="")
+            )
 
     def update_coin_options(self, event=None):
         coin_to_x_options = self.coin_x_options

@@ -2,6 +2,7 @@ import customtkinter
 import webbrowser
 import asyncio
 from threading import Thread
+from typing import TYPE_CHECKING
 
 from src import paths
 from src.gecko_pricer import GeckoPricer
@@ -11,6 +12,9 @@ from utils.gas_price import GasPrice, get_eth_mainnet_gas_price
 
 from PIL import Image
 
+if TYPE_CHECKING:
+    from gui.main_window.main import MainWindow
+
 
 class SidebarFrame(customtkinter.CTkFrame):
     def __init__(
@@ -19,7 +23,7 @@ class SidebarFrame(customtkinter.CTkFrame):
             **kwargs
     ):
         super().__init__(master, **kwargs)
-        self.master = master
+        self.master: 'MainWindow' = master
 
         self.tools_window = None
         self.settings_window = None
@@ -154,7 +158,7 @@ class SidebarFrame(customtkinter.CTkFrame):
         )
         self.github_button = customtkinter.CTkButton(
             self,
-            text="v1.1.0 Github origin",
+            text="v1.1.1 Github origin",
             font=link_font,
             width=140,
             anchor="c",

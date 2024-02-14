@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Union, TYPE_CHECKING
 from uuid import UUID
 
 import customtkinter
@@ -7,11 +7,17 @@ from gui.wallet_right_window.wallet_item import WalletItem
 from gui.wallet_right_window.frames import WalletsTableTop
 from src.schemas.wallet_data import WalletData
 
+if TYPE_CHECKING:
+    from gui.wallet_right_window.right_frame import RightFrame
+
 
 class WalletsTable(customtkinter.CTkScrollableFrame):
     def __init__(self, master, **kwargs):
+
         super().__init__(master, **kwargs)
-        self.master = master
+
+        self.master: 'RightFrame' = master
+
         self.grid(row=1, column=0, padx=20, pady=0, sticky="nsew", rowspan=7)
 
         self.no_wallets_label = customtkinter.CTkLabel(

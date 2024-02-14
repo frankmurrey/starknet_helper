@@ -8,6 +8,7 @@ from src.schemas.tasks.base.swap import TaskBase
 from src.paths import GUI_DIR
 from src import enums
 from gui import constants
+from gui.objects.icon_button import IconButton
 
 if TYPE_CHECKING:
     from gui.wallet_right_window.actions_frame import CurrentActionsFrame
@@ -34,7 +35,7 @@ class WalletActionFrame(customtkinter.CTkFrame):
 
         self.grid(**grid)
         self.grid_columnconfigure((0, 1, 2, 3), weight=1, uniform="uniform")
-        self.grid_columnconfigure(4, weight=0)
+        self.grid_columnconfigure(4, weight=0, uniform="uniform")
         self.grid_rowconfigure((0, 1), weight=1)
 
         self.module_label = customtkinter.CTkLabel(
@@ -61,43 +62,42 @@ class WalletActionFrame(customtkinter.CTkFrame):
         self.repeats_label = customtkinter.CTkLabel(
             self, text=str(repeats), font=customtkinter.CTkFont(size=12, weight="bold")
         )
-        self.repeats_label.grid(row=0, column=3, padx=(40, 0), pady=2, sticky="we")
+        self.repeats_label.grid(row=0, column=3, padx=(12, 0), pady=2, sticky="we")
 
-        edit_image = customtkinter.CTkImage(
-            light_image=Image.open(f"{GUI_DIR}/images/edit_button.png"),
-            dark_image=Image.open(f"{GUI_DIR}/images/edit_button.png"),
-            size=(20, 20)
-        )
+        if task.probability >= 90:
+            probability_color = constants.SUCCESS_HEX
 
-        self.edit_button = customtkinter.CTkButton(
+        elif task.probability >= 50:
+            probability_color = "#e6a44e"
+
+        else:
+            probability_color = constants.ERROR_HEX
+
+        emptyness = '  ' * (3 - len(str(task.probability)))
+
+        self.probability_label = customtkinter.CTkLabel(
             self,
-            text="",
+            text=f"{emptyness}{task.probability}%",
+            font=customtkinter.CTkFont(size=12, weight="bold"),
+            text_color=probability_color,
+        )
+        self.probability_label.grid(row=0, column=4, padx=(0, 70), pady=2, sticky="e")
+
+        self.edit_button = IconButton(
+            self,
+            icon=Image.open(f"{GUI_DIR}/images/edit_button.png"),
             width=5,
-            bg_color='transparent',
-            fg_color='transparent',
-            text_color='blue',
-            image=edit_image,
-            hover=False,
-            command=self.edit_button_event
+            command=self.edit_button_event,
+            size=(18, 18)
         )
         self.edit_button.grid(row=0, column=4, padx=(0, 35), pady=2, sticky="e")
 
-        delete_image = customtkinter.CTkImage(
-            light_image=Image.open(f"{GUI_DIR}/images/minus_button.png"),
-            dark_image=Image.open(f"{GUI_DIR}/images/minus_button.png"),
-            size=(12, 12)
-        )
-
-        self.delete_button = customtkinter.CTkButton(
+        self.delete_button = IconButton(
             self,
-            text="",
             width=5,
-            bg_color='transparent',
-            fg_color='transparent',
-            text_color='red',
-            image=delete_image,
-            hover=False,
-            command=self.delete_button_event
+            icon=Image.open(f"{GUI_DIR}/images/minus_button.png"),
+            command=self.delete_button_event,
+            size=(17, 17)
         )
         self.delete_button.grid(row=0, column=4, padx=(0, 10), pady=2, sticky="e")
 
@@ -122,10 +122,16 @@ class WalletActionFrame(customtkinter.CTkFrame):
         except IndexError:
             pass
 
+    def set_task_test_mode(self):
+        try:
+            self.configure(border_width=1, border_color=constants.TEST_MODE_GREY_HEX)
+        except IndexError:
+            pass
+
     def set_task_empty(self):
         try:
             self.configure(border_width=0)
-        except IndexError:
+        except Exception as ex:
             pass
 
     def delete_button_event(self):

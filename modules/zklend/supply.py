@@ -11,6 +11,7 @@ from src.schemas.action_models import ModuleExecutionResult
 
 if TYPE_CHECKING:
     from src.schemas.tasks.zklend import ZkLendSupplyTask
+    from src.schemas.wallet_data import WalletData
 
 
 class ZkLendSupply(ModuleBase):
@@ -19,10 +20,13 @@ class ZkLendSupply(ModuleBase):
     def __init__(
             self,
             account,
-            task: 'ZkLendSupplyTask'):
+            task: 'ZkLendSupplyTask',
+            wallet_data: 'WalletData',
+    ):
         super().__init__(
             account=account,
             task=task,
+            wallet_data=wallet_data,
         )
 
         self.task = task
@@ -51,7 +55,7 @@ class ZkLendSupply(ModuleBase):
         )
 
         if wallet_token_balance_wei == 0:
-            logger.error(f"Wallet {self.coin_x.symbol.upper()} balance = 0")
+            self.log_error(f"Wallet {self.coin_x.symbol.upper()} balance = 0")
             return None
 
         token_x_decimals = await self.get_token_decimals(
@@ -60,6 +64,7 @@ class ZkLendSupply(ModuleBase):
             provider=self.account
         )
         if token_x_decimals is None:
+            self.log_error(f"Failed to get {self.coin_x.symbol.upper()} decimals")
             return None
 
         wallet_token_balance_decimals = wallet_token_balance_wei / 10 ** token_x_decimals
@@ -131,6 +136,7 @@ class ZkLendSupply(ModuleBase):
         """
         amount_out_wei = await self.get_amount_out_from_balance()
         if amount_out_wei is None:
+            self.log_error(f"Error while calculating amount out for {self.coin_x.symbol.upper()}")
             return None
 
         approve_call = self.build_token_approve_call(
@@ -156,7 +162,7 @@ class ZkLendSupply(ModuleBase):
         """
         txn_payload_calls = await self.build_txn_payload_calls()
         if txn_payload_calls is None:
-            self.module_execution_result.execution_info = f"Failed to build transaction payload calls"
+            self.log_error(f"Failed to build transaction payload calls")
             return self.module_execution_result
 
         txn_info_message = (

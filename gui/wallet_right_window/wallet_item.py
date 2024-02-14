@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, TYPE_CHECKING
 
 import customtkinter
 from PIL import Image
@@ -7,7 +7,12 @@ from src.paths import GUI_DIR
 from src.schemas.proxy_data import ProxyData
 from src.schemas.wallet_data import WalletData
 from gui.wallet_right_window.wallet_window import WalletWindow
+from gui.wallet_right_window.wallet_info_window import WalletInfoWindow
 from gui import constants
+from gui.objects.icon_button import IconButton
+
+if TYPE_CHECKING:
+    from gui.wallet_right_window.wallets_table import WalletsTable
 
 
 class WalletItem(customtkinter.CTkFrame):
@@ -21,6 +26,8 @@ class WalletItem(customtkinter.CTkFrame):
     ):
 
         super().__init__(master)
+
+        self.master: 'WalletsTable' = master
 
         self.wallet_data = wallet_data
         # self.on_wallet_save = on_wallet_save
@@ -121,19 +128,23 @@ class WalletItem(customtkinter.CTkFrame):
             sticky="e"
         )
 
-        edit_image = customtkinter.CTkImage(
-            light_image=Image.open(f"{GUI_DIR}/images/edit_button.png"),
-            dark_image=Image.open(f"{GUI_DIR}/images/edit_button.png"),
-            size=(20, 20)
-        )
-        self.edit_button = customtkinter.CTkButton(
+        self.info_button = IconButton(
             self.frame,
-            text="",
-            bg_color='transparent',
-            fg_color='transparent',
             width=5,
-            image=edit_image,
-            hover=False,
+            icon=Image.open(f"{GUI_DIR}/images/info_button.png"),
+            command=self.info_wallet_button_clicked
+        )
+        self.info_button.grid(
+            row=0,
+            column=5,
+            padx=(0, 50),
+            pady=pad_y,
+            sticky="e"
+        )
+        self.edit_button = IconButton(
+            self.frame,
+            width=5,
+            icon=Image.open(f"{GUI_DIR}/images/edit_button.png"),
             command=self.edit_wallet_button_clicked
         )
         self.edit_button.grid(
@@ -146,6 +157,9 @@ class WalletItem(customtkinter.CTkFrame):
 
         # EDIT WALLET
         self.edit_window = None
+
+        # INFO WALLET
+        self.info_window = None
 
     def select_checkbox_event(self):
         self.master.update_selected_wallets_labels()
@@ -221,6 +235,19 @@ class WalletItem(customtkinter.CTkFrame):
             "WM_DELETE_WINDOW", self.close_edit_wallet_window
         )
 
+    def info_wallet_button_clicked(self):
+        if self.info_window is not None:
+            return
+
+        self.info_window = WalletInfoWindow(
+            master=self.master,
+            wallet_data=self.wallet_data,
+        )
+
+        self.info_window.protocol(
+            "WM_DELETE_WINDOW", self.close_info_wallet_window
+        )
+
     def edit_wallet_callback(self, wallet_data: WalletData):
         if wallet_data is None:
             return
@@ -232,13 +259,24 @@ class WalletItem(customtkinter.CTkFrame):
         self.edit_window.close()
         self.edit_window = None
 
+    def close_info_wallet_window(self):
+        self.info_window.close()
+        self.info_window = None
+
     def set_wallet_active(self):
         self.frame.configure(border_width=1, border_color=constants.ACTIVE_ACTION_HEX)
 
     def set_wallet_completed(self):
         self.frame.configure(border_width=1, border_color=constants.SUCCESS_HEX)
 
+    def set_wallet_failed(self):
+        self.frame.configure(border_width=1, border_color=constants.ERROR_HEX)
+        info_image_failed = customtkinter.CTkImage(
+            light_image=Image.open(f"{GUI_DIR}/images/info_button_red.png"),
+            dark_image=Image.open(f"{GUI_DIR}/images/info_button_red.png"),
+            size=(20, 20)
+        )
+        self.info_button.configure(image=info_image_failed)
+
     def set_wallet_inactive(self):
         self.frame.configure(border_width=0)
-
-

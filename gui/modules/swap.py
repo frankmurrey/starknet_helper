@@ -41,7 +41,7 @@ class SwapTab:
             "row": 0,
             "column": 0,
             "padx": 20,
-            "pady": 20,
+            "pady": (10, 0),
             "sticky": "nsew",
         }
 
@@ -94,6 +94,8 @@ class SwapTab:
                 compare_with_cg_price=self.swap_frame.compare_with_cg_price_checkbox.get(),
                 max_fee=self.txn_settings_frame.max_fee_entry.get(),
                 forced_gas_limit=self.txn_settings_frame.forced_gas_limit_check_box.get(),
+                reverse_action_min_delay_sec=self.swap_frame.reverse_action_min_delay_entry.get(),
+                reverse_action_max_delay_sec=self.swap_frame.reverse_action_max_delay_entry.get(),
             )
 
             return config_data
@@ -174,6 +176,7 @@ class SwapFrame(customtkinter.CTkFrame):
             offvalue=False,
             checkbox_width=18,
             checkbox_height=18,
+            command=self.reverse_action_checkbox_event
         )
         if getattr(self.task, "reverse_action", False):
             self.reverse_action_checkbox.select()
@@ -182,21 +185,62 @@ class SwapFrame(customtkinter.CTkFrame):
             row=5, column=0, padx=20, pady=(10, 0), sticky="w"
         )
 
+        # REVERSE ACTION MIN DELAY
+        self.reverse_action_min_delay_label = customtkinter.CTkLabel(
+            self.frame, text="Reverse min delay (s):"
+        )
+        self.reverse_action_min_delay_label.grid(
+            row=6, column=0, padx=20, pady=(10, 0), sticky="w"
+        )
+
+        is_reverse_action = getattr(self.task, "reverse_action", False)
+        reverse_action_min_delay = getattr(self.task, "reverse_action_min_delay_sec", 1)
+        self.reverse_action_min_delay_entry = customtkinter.CTkEntry(
+            self.frame,
+            width=120,
+            textvariable=Variable(value=reverse_action_min_delay) if is_reverse_action else Variable(value=""),
+            fg_color="#343638" if is_reverse_action else "#3f3f3f",
+            state="disabled" if not is_reverse_action else "normal",
+        )
+        self.reverse_action_min_delay_entry.grid(
+            row=7, column=0, padx=20, pady=0, sticky="w"
+        )
+
+        # REVERSE ACTION MAX DELAY
+        self.reverse_action_max_delay_label = customtkinter.CTkLabel(
+            self.frame, text="Reverse max delay (s):"
+        )
+        self.reverse_action_max_delay_label.grid(
+            row=6, column=1, padx=20, pady=(10, 0), sticky="w"
+        )
+
+        reverse_action_max_delay = getattr(self.task, "reverse_action_max_delay_sec", 5)
+        self.reverse_action_max_delay_entry = customtkinter.CTkEntry(
+            self.frame,
+            width=120,
+            textvariable=Variable(value=reverse_action_max_delay) if is_reverse_action else Variable(value=""),
+            fg_color="#343638" if is_reverse_action else "#3f3f3f",
+            state="disabled" if not is_reverse_action else "normal",
+        )
+        self.reverse_action_max_delay_entry.grid(
+            row=7, column=1, padx=20, pady=0, sticky="w"
+        )
+
         # MIN AMOUNT
         self.min_amount_label = customtkinter.CTkLabel(self.frame, text="Min amount:")
-        self.min_amount_label.grid(row=6, column=0, padx=20, pady=(10, 0), sticky="w")
+        self.min_amount_label.grid(row=8, column=0, padx=20, pady=(10, 0), sticky="w")
 
         min_amount = getattr(self.task, "min_amount_out", "")
         self.min_amount_entry = customtkinter.CTkEntry(self.frame, width=120, textvariable=Variable(value=min_amount))
-        self.min_amount_entry.grid(row=7, column=0, padx=20, pady=0, sticky="w")
+        self.min_amount_entry.grid(row=9, column=0, padx=20, pady=0, sticky="w")
 
         # MAX AMOUNT
         self.max_amount_label = customtkinter.CTkLabel(self.frame, text="Max amount:")
-        self.max_amount_label.grid(row=6, column=1, padx=20, pady=(10, 0), sticky="w")
+        self.max_amount_label.grid(row=8, column=1, padx=20, pady=(10, 0), sticky="w")
 
         max_amount = getattr(self.task, "max_amount_out", "")
         self.max_amount_entry = customtkinter.CTkEntry(self.frame, width=120, textvariable=Variable(value=max_amount))
-        self.max_amount_entry.grid(row=7, column=1, padx=20, pady=0, sticky="w")
+        self.max_amount_entry.grid(row=9, column=1, padx=20, pady=0, sticky="w")
 
         self.use_all_balance_checkbox = customtkinter.CTkCheckBox(
             self.frame,
@@ -209,7 +253,7 @@ class SwapFrame(customtkinter.CTkFrame):
         )
 
         self.use_all_balance_checkbox.grid(
-            row=8, column=0, padx=20, pady=(10, 0), sticky="w"
+            row=10, column=0, padx=20, pady=(10, 0), sticky="w"
         )
 
         self.send_percent_balance_checkbox = customtkinter.CTkCheckBox(
@@ -221,7 +265,7 @@ class SwapFrame(customtkinter.CTkFrame):
             checkbox_height=18,
         )
         self.send_percent_balance_checkbox.grid(
-            row=9, column=0, padx=20, pady=(5, 0), sticky="w"
+            row=11, column=0, padx=20, pady=(5, 0), sticky="w"
         )
         if getattr(self.task, "send_percent_balance", False):
             self.send_percent_balance_checkbox.select()
@@ -244,19 +288,19 @@ class SwapFrame(customtkinter.CTkFrame):
             )
 
         self.slippage_label = customtkinter.CTkLabel(self.frame, text="Slippage (%):")
-        self.slippage_label.grid(row=10, column=1, padx=20, pady=(10, 0), sticky="w")
+        self.slippage_label.grid(row=12, column=1, padx=20, pady=(10, 0), sticky="w")
 
         slippage = getattr(self.task, "slippage", 2)
         self.slippage_entry = customtkinter.CTkEntry(
             self.frame, width=70, textvariable=Variable(value=slippage)
         )
-        self.slippage_entry.grid(row=11, column=1, padx=20, pady=0, sticky="w")
+        self.slippage_entry.grid(row=13, column=1, padx=20, pady=0, sticky="w")
 
         self.max_price_difference_percent_label = customtkinter.CTkLabel(
             self.frame, text="Max price difference (%):"
         )
         self.max_price_difference_percent_label.grid(
-            row=10, column=0, padx=20, pady=(10, 0), sticky="w"
+            row=12, column=0, padx=20, pady=(10, 0), sticky="w"
         )
 
         max_price_difference_percent = getattr(self.task, "max_price_difference_percent", 2)
@@ -264,7 +308,7 @@ class SwapFrame(customtkinter.CTkFrame):
             self.frame, width=120, textvariable=Variable(value=max_price_difference_percent)
         )
         self.max_price_difference_percent_entry.grid(
-            row=11, column=0, padx=20, pady=0, sticky="w"
+            row=13, column=0, padx=20, pady=0, sticky="w"
         )
 
         self.compare_with_cg_price_checkbox = customtkinter.CTkCheckBox(
@@ -288,7 +332,7 @@ class SwapFrame(customtkinter.CTkFrame):
             )
 
         self.compare_with_cg_price_checkbox.grid(
-            row=12, column=0, padx=20, pady=10, sticky="w"
+            row=14, column=0, padx=20, pady=10, sticky="w"
         )
         self.compare_with_cg_price_checkbox.select()
 
@@ -332,6 +376,22 @@ class SwapFrame(customtkinter.CTkFrame):
             ]
 
         return coin_symbols
+
+    def reverse_action_checkbox_event(self):
+        if self.reverse_action_checkbox.get():
+            self.reverse_action_min_delay_entry.configure(
+                state="normal", fg_color="#343638", textvariable=Variable(value=1)
+            )
+            self.reverse_action_max_delay_entry.configure(
+                state="normal", fg_color="#343638", textvariable=Variable(value=5)
+            )
+        else:
+            self.reverse_action_min_delay_entry.configure(
+                state="disabled", fg_color="#3f3f3f", textvariable=Variable(value="")
+            )
+            self.reverse_action_max_delay_entry.configure(
+                state="disabled", fg_color="#3f3f3f", textvariable=Variable(value="")
+            )
 
     def update_coin_options(self, event=None):
         coin_to_swap_options = self.coin_to_swap_options

@@ -6,9 +6,9 @@ from starknet_py.net.client_models import Call
 
 class ModuleExecutionResult(BaseModel):
     execution_status: bool = False
+    execution_info: Optional[str] = ""
     retry_needed: bool = True
-    execution_info: Optional[str] = None
-    hash: Optional[str] = None
+    hash: Optional[str] = ""
 
 
 class TransactionPayloadData(BaseModel):

@@ -13,6 +13,7 @@ from utils.key_manager.key_manager import get_key_pair_from_pk, get_key_data
 
 if TYPE_CHECKING:
     from src.schemas.tasks.deploy import DeployTask
+    from src.schemas.wallet_data import WalletData
 
 
 class Deploy(ModuleBase):
@@ -25,10 +26,12 @@ class Deploy(ModuleBase):
             key_type: enums.PrivateKeyType,
             account,
             task: 'DeployTask',
+            wallet_data: 'WalletData',
     ):
         super().__init__(
             account=account,
-            task=task
+            task=task,
+            wallet_data=wallet_data,
         )
 
         self.task = task
@@ -74,13 +77,11 @@ class Deploy(ModuleBase):
 
         except ClientError as e:
             if "unavailable for deployment" in str(e):
-                err_msg = f"Account unavailable for deployment or already deployed."
-                logger.error(err_msg)
+                self.log_error(f"Account unavailable for deployment or already deployed.")
                 return None
 
             else:
-                err_msg = f"Error while estimating transaction fee"
-                logger.error(err_msg)
+                self.log_error(f"Error while estimating transaction fee")
                 return None
 
     async def send_txn(self) -> ModuleExecutionResult:
@@ -90,19 +91,15 @@ class Deploy(ModuleBase):
         """
         account_deployed = await self.account_deployed(account=self.account)
         if account_deployed is True:
-            err_msg = f"Account already deployed."
-            logger.warning(err_msg)
-            self.module_execution_result.execution_info = err_msg
-            self.module_execution_result.retry_needed = False
+            self.log_error(f"Account already deployed")
             return self.module_execution_result
 
         logger.warning(f"Action: Deploy {self.key_type.title()} account")
 
         signed_deploy_txn = await self.build_deploy_txn()
         if signed_deploy_txn is None:
-            err_msg = f"Error while estimating transaction fee"
-            logger.error(err_msg)
-            self.module_execution_result.execution_info = err_msg
+            self.log_error(f"Error while estimating transaction fee for deploy transaction")
+            return self.module_execution_result
 
         wallet_eth_balance_wei = await self.get_eth_balance(account=self.account)
         wallet_eth_balance_decimals = wallet_eth_balance_wei / 10 ** 18
@@ -112,26 +109,18 @@ class Deploy(ModuleBase):
             overall_fee = estimated_fee.overall_fee
 
         except ClientError:
-            err_msg = f"Error while estimating transaction fee"
-            logger.error(err_msg)
-
-            self.module_execution_result.execution_info = err_msg
+            self.log_error(f"Error while estimating transaction fee for deploy transaction")
             return self.module_execution_result
 
         overall_fee = int(overall_fee * 2)
         if overall_fee is None:
-            err_msg = f"Error while estimating transaction fee."
-            logger.error(err_msg)
-
-            self.module_execution_result.execution_info = err_msg
+            self.log_error(f"Error while estimating transaction fee for deploy transaction")
             return self.module_execution_result
 
         if overall_fee > wallet_eth_balance_wei:
-            err_msg = (f"Not enough native for fee, wallet ETH balance = {wallet_eth_balance_decimals} "
-                       f"(need {overall_fee / 10 ** 18}) ")
-            logger.error(err_msg)
-
-            self.module_execution_result.execution_info = err_msg
+            err_msg = f"Not enough native for fee, wallet ETH balance = {wallet_eth_balance_decimals} "\
+                       f"(need {overall_fee / 10 ** 18}) "
+            self.log_error(err_msg)
             return self.module_execution_result
 
         logger.success(f"Transaction estimation success, overall fee: "
@@ -139,8 +128,7 @@ class Deploy(ModuleBase):
 
         if self.task.test_mode is True:
             err_msg = f"Test mode enabled. Skipping transaction"
-
-            self.module_execution_result.execution_info = err_msg
+            self.module_execution_result.execution_info += err_msg
             return self.module_execution_result
 
         try:
@@ -154,10 +142,7 @@ class Deploy(ModuleBase):
                 txn_receipt = await self.wait_for_tx_receipt(tx_hash=txn_hash,
                                                              time_out_sec=int(self.task.txn_wait_timeout_sec))
                 if txn_receipt is None:
-                    err_msg = f"Txn timeout ({self.task.txn_wait_timeout_sec}s)."
-                    logger.error(err_msg)
-
-                    self.module_execution_result.execution_info = err_msg
+                    self.log_error(f"Txn timeout ({self.task.txn_wait_timeout_sec}s).")
                     return self.module_execution_result
 
                 txn_status = txn_receipt.execution_status.value if txn_receipt.execution_status is not None else None
@@ -166,7 +151,7 @@ class Deploy(ModuleBase):
                                f"Txn Hash: {hex(txn_hash)})")
 
                 self.module_execution_result.execution_status = True
-                self.module_execution_result.execution_info = f"Txn success, status: {txn_status}"
+                self.module_execution_result.execution_info += f"Txn success, status: {txn_status}."
                 self.module_execution_result.hash = hex(txn_hash)
 
                 return self.module_execution_result
@@ -175,13 +160,10 @@ class Deploy(ModuleBase):
                 logger.success(f"Txn sent. Txn Hash: {hex(txn_hash)}")
 
                 self.module_execution_result.execution_status = True
-                self.module_execution_result.execution_info = f"Txn sent"
+                self.module_execution_result.execution_info += f"Txn sent, receipt not requested."
                 self.module_execution_result.hash = hex(txn_hash)
                 return self.module_execution_result
 
         except Exception as e:
-            err_msg = f"Error while sending deploy txn: {e}"
-            logger.error(err_msg)
-
-            self.module_execution_result.execution_info = err_msg
+            self.log_error(f"Error while sending deploy txn: {e}")
             return self.module_execution_result

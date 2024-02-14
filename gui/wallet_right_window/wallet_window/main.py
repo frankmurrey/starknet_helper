@@ -271,7 +271,6 @@ class WalletFrame(customtkinter.CTkFrame):
         def _(loop):
             asyncio.set_event_loop(loop)
 
-            self.proxy_check_button.configure(text="Checking proxy...", text_color="gray70")
             proxy_string = self.proxy_entry.text
             proxy_data = parse_proxy_data(proxy_string)
             pm = ProxyManager(proxy_data)
@@ -281,6 +280,7 @@ class WalletFrame(customtkinter.CTkFrame):
                 return
 
             try:
+                self.proxy_check_button.configure(text="Checking proxy...", text_color="gray70")
                 ip = loop.run_until_complete(pm.get_ip())
                 if ip is None:
                     self.proxy_check_button.configure(text="Invalid proxy", text_color=constants.ERROR_HEX)

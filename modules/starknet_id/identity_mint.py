@@ -14,6 +14,7 @@ from src.schemas.action_models import ModuleExecutionResult
 
 if TYPE_CHECKING:
     from src.schemas.tasks.identity import IdentityMintTask
+    from src.schemas.wallet_data import WalletData
 
 
 class IdentityMint(ModuleBase):
@@ -23,12 +24,14 @@ class IdentityMint(ModuleBase):
     def __init__(
             self,
             account,
-            task: 'IdentityMintTask'
+            task: 'IdentityMintTask',
+            wallet_data: 'WalletData'
     ):
 
         super().__init__(
             account=account,
             task=task,
+            wallet_data=wallet_data,
         )
 
         self.account = account
@@ -54,6 +57,8 @@ class IdentityMint(ModuleBase):
             if owner:
                 return True
 
+            return False
+
         except ClientError:
             return False
 
@@ -75,6 +80,7 @@ class IdentityMint(ModuleBase):
         """
 
         if max_retries == 0:
+            self.log_error('No available token id found in 10 tries')
             return None
 
         random_id = self.get_random_stark_id()
@@ -91,7 +97,7 @@ class IdentityMint(ModuleBase):
         """
         random_id = await self.get_available_id_for_mint(max_retries=10)
         if random_id is None:
-            logger.error('No available token id found in 10 tries')
+            self.log_error('No available token id found in 10 tries')
             return None
 
         self.token_id = random_id
@@ -111,7 +117,7 @@ class IdentityMint(ModuleBase):
         """
         txn_payload_calls = await self.build_txn_payload_calls()
         if txn_payload_calls is None:
-            self.module_execution_result.execution_info = f"Failed to build transaction payload calls"
+            self.log_error(f"Failed to build transaction payload data")
             return self.module_execution_result
 
         txn_info_message = f"StarkNet Identity Mint (token id: {self.token_id})"

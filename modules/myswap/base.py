@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Tuple
 from typing import TYPE_CHECKING
 
 from contracts.base import TokenBase
@@ -8,6 +8,7 @@ from contracts.myswap.main import MySwapContracts
 
 if TYPE_CHECKING:
     from src.schemas.tasks.myswap import MySwapTask
+    from src.schemas.wallet_data import WalletData
 
 
 class MySwapBase(ModuleBase):
@@ -27,11 +28,14 @@ class MySwapBase(ModuleBase):
     def __init__(
             self,
             account,
-            task):
+            task,
+            wallet_data: 'WalletData',
+    ):
 
         super().__init__(
             account=account,
             task=task,
+            wallet_data=wallet_data,
         )
 
         self.my_swap_contracts = MySwapContracts()
@@ -68,6 +72,7 @@ class MySwapBase(ModuleBase):
         :return:
         """
         if pool_id not in self.pools.keys():
+            self.log_error(f"Pool id {pool_id} not found in pools")
             return None
 
         coin_x_symbol = self.pools[pool_id][0]
@@ -77,6 +82,7 @@ class MySwapBase(ModuleBase):
         coin_y_obj = self.tokens.get_by_name(coin_y_symbol)
 
         if coin_x_obj is None or coin_y_obj is None:
+            self.log_error(f"Failed to get token objects for {coin_x_symbol} and {coin_y_symbol}")
             return None
 
         return [coin_x_obj.contract_address,
@@ -100,10 +106,12 @@ class MySwapBase(ModuleBase):
             coin_y_symbol=coin_y_symbol
         )
         if pool_id is None:
+            self.log_error(f"Failed to get pool id for {coin_x_symbol} and {coin_y_symbol}")
             return None
 
         reserves_data = await router_contract.functions['get_pool'].call(pool_id)
         if reserves_data is None:
+            self.log_error(f"Failed to get reserves data for pool id {pool_id}")
             return None
 
         token_a_address = reserves_data.pool['token_a_address']
@@ -141,6 +149,7 @@ class MySwapBase(ModuleBase):
         token_y_reserve = reserves_data.get(self.i16(coin_y_address))
 
         if token_x_reserve is None or token_y_reserve is None:
+            self.log_error(f"Failed to get reserves for {coin_x_address} and {coin_y_address}")
             return None
 
         return {
@@ -150,14 +159,13 @@ class MySwapBase(ModuleBase):
             "pool_id": reserves_data['pool_id']
         }
 
-    async def get_amount_in(
+    async def get_amount_in_and_dao_fee(
             self,
             reserves_data: dict,
             amount_out_wei,
             coin_x_obj: TokenBase,
-            coin_y_obj: TokenBase,
-            slippage: int
-    ) -> Union[int, None]:
+            coin_y_obj: TokenBase
+    ) -> Union[Tuple[int, float], None]:
         """
         Get amount in wei from reserves data
         :param reserves_data:
@@ -174,6 +182,9 @@ class MySwapBase(ModuleBase):
             reserves_data=reserves_data
         )
         if sorted_reserves is None:
+            self.log_error(
+                f"Failed to get sorted reserves for {coin_x_obj.symbol.upper()} and {coin_y_obj.symbol.upper()}"
+            )
             return None
 
         amount_in_wei = get_amount_in_from_reserves(
@@ -183,7 +194,4 @@ class MySwapBase(ModuleBase):
         )
         fee = sorted_reserves['fee']
 
-        amount_in_after_slippage = amount_in_wei * (1 - (slippage / 100))
-        amount_in_after_dao_fee = amount_in_after_slippage * (1 - (fee / 100000))
-
-        return int(amount_in_after_dao_fee)
+        return amount_in_wei, float(fee)

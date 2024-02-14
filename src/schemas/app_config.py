@@ -2,14 +2,17 @@ from typing import Union
 
 from pydantic import BaseModel
 from pydantic import validator
+from src import enums
 from src import exceptions
 from utils import validation
 
 
 class AppConfigSchema(BaseModel):
+    run_mode: enums.RunMode = enums.RunMode.SYNC
     preserve_logs: bool = True
     use_proxy: bool = True
     rpc_url: str = "https://starknet-mainnet.public.blastapi.io"
+    skip_gas_price_check: bool = True
     target_gas_price: Union[int, float] = 20
     is_gas_price_wait_timeout_needed: bool = False
     time_to_wait_target_gas_price_sec: Union[int, float] = 360

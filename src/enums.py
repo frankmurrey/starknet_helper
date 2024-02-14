@@ -69,6 +69,8 @@ class TaskStatus(str, Enum):
     PROCESSING = "processing"
     SUCCESS = "success"
     FAILED = "failed"
+    SKIPPED = "skipped"
+    TEST_MODE = "test_mode"
 
 
 class WalletStatus(str, Enum):
@@ -84,3 +86,8 @@ class MiscTypes(str, Enum):
 class BlockStatus(str, Enum):
     PENDING = "pending"
     LATEST = "latest"
+
+
+class RunMode(str, Enum):
+    SYNC = "sync"
+    ASYNC = "async"

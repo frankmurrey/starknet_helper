@@ -13,6 +13,7 @@ from src.schemas.action_models import ModuleExecutionResult, TransactionPayloadD
 
 if TYPE_CHECKING:
     from src.schemas.tasks.k10swap import K10SwapTask
+    from src.schemas.wallet_data import WalletData
 
 
 class K10Swap(K10SwapBase, SwapModuleBase):
@@ -22,12 +23,14 @@ class K10Swap(K10SwapBase, SwapModuleBase):
     def __init__(
             self,
             account,
-            task: 'K10SwapTask'
+            task: 'K10SwapTask',
+            wallet_data: 'WalletData',
     ):
 
         super().__init__(
             account=account,
             task=task,
+            wallet_data=wallet_data
         )
 
         self.task = task
@@ -40,6 +43,7 @@ class K10Swap(K10SwapBase, SwapModuleBase):
         """
         amount_x_wei = await self.calculate_amount_out_from_balance(coin_x=self.coin_x)
         if amount_x_wei is None:
+            self.log_error(f"Failed to calculate amount out for {self.coin_x.symbol.upper()}")
             return None
 
         amounts_in_wei = await self.get_amounts_in(
@@ -48,6 +52,7 @@ class K10Swap(K10SwapBase, SwapModuleBase):
             amount_in_wei=amount_x_wei
         )
         if amounts_in_wei is None:
+            self.log_error(f"Failed to calculate amount in for {self.coin_x.symbol.upper()}")
             return None
 
         amount_y_wei = amounts_in_wei.amounts[1]
@@ -90,15 +95,15 @@ class K10Swap(K10SwapBase, SwapModuleBase):
             account=self.account
         )
         if wallet_y_balance_wei == 0:
-            logger.error(f"Wallet {self.coin_y.symbol.upper()} balance = 0")
+            self.log_error(f"Wallet {self.coin_y.symbol.upper()} balance = 0")
 
         if self.initial_balance_y_wei is None:
-            logger.error(f"Error while getting initial balance of {self.coin_y.symbol.upper()}")
+            self.log_error(f"Error while getting initial balance of {self.coin_y.symbol.upper()}")
             return None
 
         amount_out_y_wei = wallet_y_balance_wei - self.initial_balance_y_wei
         if amount_out_y_wei <= 0:
-            logger.error(f"Wallet {self.coin_y.symbol.upper()} balance less than initial balance")
+            self.log_error(f"Wallet {self.coin_y.symbol.upper()} balance less than initial balance")
             return None
 
         amounts_in_wei = await self.get_amounts_in(
@@ -107,6 +112,7 @@ class K10Swap(K10SwapBase, SwapModuleBase):
             amount_in_wei=amount_out_y_wei
         )
         if amounts_in_wei is None:
+            self.log_error(f"Failed to calculate amount in for {self.coin_y.symbol.upper()}")
             return None
 
         amount_in_x_wei = amounts_in_wei.amounts[0]
@@ -140,47 +146,3 @@ class K10Swap(K10SwapBase, SwapModuleBase):
             amount_x_decimals=amount_out_y_wei / 10 ** self.token_x_decimals,
             amount_y_decimals=amount_in_x_wei / 10 ** self.token_y_decimals
         )
-
-    async def send_txn(self) -> ModuleExecutionResult:
-        """
-        Send swap type transaction
-        :return:
-        """
-        await self.set_fetched_tokens_data()
-
-        if self.check_local_tokens_data() is False:
-            self.module_execution_result.execution_info = f"Failed to fetch local tokens data"
-            return self.module_execution_result
-
-        txn_payload_data = await self.build_txn_payload_data()
-        if txn_payload_data is None:
-            self.module_execution_result.execution_info = f"Failed to build transaction payload data"
-            return self.module_execution_result
-
-        txn_status = await self.send_swap_type_txn(
-            account=self.account,
-            txn_payload_data=txn_payload_data
-        )
-
-        if txn_status is False:
-            self.module_execution_result.execution_info = f"Failed to send swap type txn"
-            return self.module_execution_result
-
-        if self.task.reverse_action is True:
-            delay = get_delay(self.task.min_delay_sec, self.task.max_delay_sec)
-            logger.info(f"Waiting {delay} seconds before reverse action")
-            time.sleep(delay)
-
-            reverse_txn_payload_data = await self.build_reverse_txn_payload_data()
-            if reverse_txn_payload_data is None:
-                self.module_execution_result.execution_info = f"Failed to build reverse transaction payload data"
-                return self.module_execution_result
-
-            reverse_txn_status = await self.send_swap_type_txn(
-                account=self.account,
-                txn_payload_data=reverse_txn_payload_data
-            )
-
-            return reverse_txn_status
-
-        return txn_status

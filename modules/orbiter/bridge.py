@@ -1,4 +1,3 @@
-import time
 import random
 from typing import Union
 from typing import TYPE_CHECKING
@@ -32,6 +31,7 @@ class OrbiterBridge(ModuleBase):
         super().__init__(
             account=account,
             task=task,
+            wallet_data=wallet_data,
         )
 
         self.task = task
@@ -70,20 +70,20 @@ class OrbiterBridge(ModuleBase):
             return response
 
         except ClientError:
-            logger.error(f"Failed to get tokens data")
+            self.log_error(f"Failed to get tokens data")
             return None
 
     async def get_token_data(self, token_symbol: str) -> Union[dict, None]:
         tokens_data = await self.get_tokens_data()
         if not tokens_data:
-            logger.error(f"Failed to get tokens data")
+            self.log_error(f"Failed to get tokens data")
             return None
 
         for token_data in tokens_data:
             if token_data["symbol"] == token_symbol.upper():
                 return token_data
 
-        logger.error(f"Failed to get token data for {token_symbol.upper()}")
+        self.log_error(f"Failed to get token data for {token_symbol.upper()}")
         return None
 
     async def calculate_amount_out_from_balance(
@@ -105,7 +105,7 @@ class OrbiterBridge(ModuleBase):
             provider=self.account
         )
         if balance_x_wei == 0:
-            logger.error(f"Wallet {coin_x.symbol.upper()} balance = 0")
+            self.log_error(f"Wallet {coin_x.symbol.upper()} balance = 0")
             return None
 
         wallet_token_x_balance_decimals = balance_x_wei / 10 ** token_x_decimals
@@ -120,7 +120,7 @@ class OrbiterBridge(ModuleBase):
             amount_out_wei = int(balance_x_wei * percent)
 
         elif wallet_token_x_balance_decimals < self.task.min_amount_out:
-            logger.error(
+            self.log_error(
                 f"Wallet {coin_x.symbol.upper()} balance less than min amount out, "
                 f"balance: {wallet_token_x_balance_decimals}, min amount out: {self.task.min_amount_out}"
             )
@@ -151,15 +151,16 @@ class OrbiterBridge(ModuleBase):
         :return:
         """
         if self.wallet_data.pair_address is None:
-            logger.error(f"Pair EVM address not set")
+            self.log_error(f"Pair EVM address not set")
             return None
 
         if len(self.wallet_data.pair_address) != config.EVM_ADDRESS_LENGTH:
-            logger.error(f"Pair EVM address is not valid, should be {config.EVM_ADDRESS_LENGTH} chars length")
+            self.log_error(f"Pair EVM address is not valid, should be {config.EVM_ADDRESS_LENGTH} chars length")
             return None
 
         amount_out_wei = await self.calculate_amount_out_from_balance(self.coin_x)
         if not amount_out_wei:
+            self.log_error(f"Failed to calculate amount out")
             return None
 
         amount_out_wei_fee_removed = amount_out_wei - self.chain_data.tradingFee * 10 ** self.token_x_decimals
@@ -168,7 +169,7 @@ class OrbiterBridge(ModuleBase):
         max_price_wei = self.chain_data.maxPrice * 10 ** self.token_x_decimals
 
         if amount_out_wei_fee_removed < min_price_wei:
-            logger.error(
+            self.log_error(
                 f"Amount out less than min amount out: "
                 f"Min: {self.chain_data.minPrice} {self.coin_x.symbol.upper()}, "
                 f"Amount out after fee: {amount_out_wei_fee_removed / 10 ** self.token_x_decimals} "
@@ -177,7 +178,7 @@ class OrbiterBridge(ModuleBase):
             return None
 
         if amount_out_wei_fee_removed > max_price_wei:
-            logger.error(
+            self.log_error(
                 f"Amount out more than max amount out: "
                 f"Max: {self.chain_data.maxPrice} {self.coin_x.symbol.upper()}, "
                 f"Amount out after fee: {amount_out_wei_fee_removed / 10 ** self.token_x_decimals} "
@@ -185,7 +186,9 @@ class OrbiterBridge(ModuleBase):
             )
             return None
 
-        amount_out_wei = amount_out_wei + self.dst_chain.orbiter_id
+        subtrahend = 20000
+        value_after_subtrahend = amount_out_wei - subtrahend
+        amount_out_wei = (value_after_subtrahend // 10000 * 10000) + self.dst_chain.orbiter_id
 
         approve_call = self.build_token_approve_call(
             token_addr=self.coin_x.contract_address,
@@ -220,7 +223,7 @@ class OrbiterBridge(ModuleBase):
         """
         txn_payload_data = await self.build_txn_payload_data()
         if txn_payload_data is None:
-            self.module_execution_result.execution_info = f"Failed to build txn payload data"
+            self.log_error(f"Failed to build txn payload data")
             return self.module_execution_result
 
         txn_info_message = (

@@ -13,7 +13,6 @@ from src.paths import GUI_DIR
 from gui.main_window.frames import SidebarFrame
 from gui.wallet_right_window.right_frame import RightFrame
 
-from utils.repr import message
 from src.templates.templates import Templates
 
 

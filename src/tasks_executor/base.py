@@ -43,9 +43,10 @@ class TaskExecutorBase:
             task: task to process
             wallet: wallet for task
         """
-        logger.debug(f"Processing task: {task.task_id} with wallet: {wallet.name}")
-
         task.task_status = enums.TaskStatus.PROCESSING
+
+        logger.debug(f"Processing task: {task.task_id} with wallet: {wallet.name}")
+        logger.bind(task=task).info(f"Task started")
 
         if random.randint(0, 100) > task.probability:
             task.task_status = enums.TaskStatus.SKIPPED
@@ -65,6 +66,8 @@ class TaskExecutorBase:
         task.task_status = task_status
         task.result_hash = task_result.hash
         task.result_info = task_result.execution_info
+
+        logger.bind(task=task).info(f"Task finished")
 
         return task_result
 

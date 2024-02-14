@@ -1,5 +1,8 @@
 import customtkinter
+from typing import Optional
 
+from src.repr.event_manager import repr_event_manager
+from src.repr.repr_manager import repr_manager
 from src.tasks_executor import task_executor
 from src.logger import configure_logger
 from PIL import Image
@@ -10,7 +13,6 @@ from src.paths import GUI_DIR
 from gui.main_window.frames import SidebarFrame
 from gui.wallet_right_window.right_frame import RightFrame
 
-from utils.repr.misc import print_logo
 from src.templates.templates import Templates
 
 
@@ -45,6 +47,8 @@ class MainWindow(customtkinter.CTk):
 
         self.protocol("WM_DELETE_WINDOW", self.hide_window)
 
+        self.tray_icon: Optional["pystray.Icon"] = None
+
     def create_image(self, width, height, color1, color2):
         image = Image.open(f"{GUI_DIR}/images/tray_icon.png")
         image = image.resize((width, height), Image.Resampling.LANCZOS)
@@ -74,9 +78,9 @@ class MainWindow(customtkinter.CTk):
 
     def on_start(self):
         configure_logger()
+        repr_manager.print_logo_message()
         Templates().create_not_found_temp_files()
-        print_logo()
-
+        repr_event_manager.start()
         self.init_tray_icon()
 
     def on_closing(self):

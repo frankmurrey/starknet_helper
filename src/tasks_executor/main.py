@@ -3,6 +3,7 @@ from typing import List, Optional
 from src import enums
 from src.tasks_executor.base import TaskExecutorBase
 from src.tasks_executor.multithread import task_executor_multi_thread
+from src.tasks_executor.batch_multithread import task_executor_batch_multi_thread
 from src.tasks_executor.singlethread import task_executor_single_thread
 from src.tasks_executor.event_manager import TaskExecEventManager
 from src.schemas.wallet_data import WalletData

@@ -14,13 +14,12 @@ from gui.wallet_right_window.wallets_table import WalletsTable
 from src.schemas.tasks import TaskBase
 from src.schemas.wallet_data import WalletData
 from src.tasks_executor import task_executor
+from src.repr.repr_manager import repr_manager
 from src.storage import ActionStorage
 from src.storage import Storage
 from src import enums
 
 from utils.file_manager import FileManager
-from utils.repr import misc as repr_misc_utils
-from utils.repr.module import print_module_config
 
 if TYPE_CHECKING:
     from gui.wallet_right_window.right_frame import RightFrame
@@ -32,12 +31,6 @@ class ActionsFrame(customtkinter.CTkFrame):
             master: any,
             **kwargs):
         super().__init__(master, **kwargs)
-
-        task_executor.event_manager.on_wallet_started(self.on_wallet_started)
-        task_executor.event_manager.on_task_started(self.on_task_started)
-
-        task_executor.event_manager.on_task_completed(self.on_task_completed)
-        task_executor.event_manager.on_wallet_completed(self.on_wallet_completed)
 
         self.master: 'RightFrame' = master
         self.wallets_table: WalletsTable = self.master.wallets_table
@@ -122,6 +115,12 @@ class ActionsFrame(customtkinter.CTkFrame):
             pady=5,
             sticky="w"
         )
+
+    def set_task_exec_event_manager_callbacks(self):
+        task_executor.event_manager.on_task_started(self.on_task_started)
+        task_executor.event_manager.on_task_completed(self.on_task_completed)
+        task_executor.event_manager.on_wallet_started(self.on_wallet_started)
+        task_executor.event_manager.on_wallet_completed(self.on_wallet_completed)
 
     def get_wallet_actions(
             self,
@@ -290,7 +289,6 @@ class ActionsFrame(customtkinter.CTkFrame):
         self.redraw_current_actions_frame()
 
     def on_wallet_started(self, started_wallet: "WalletData"):
-
         wallet_item = self.wallets_table.get_wallet_item_by_wallet_id(wallet_id=started_wallet.wallet_id)
         self.active_wallet = wallet_item
         self.master.update_active_wallet_label(wallet_name=started_wallet.name)
@@ -298,9 +296,6 @@ class ActionsFrame(customtkinter.CTkFrame):
         wallet_item.set_wallet_active()
 
     def on_task_started(self, started_task: "TaskBase", current_wallet: "WalletData"):
-        repr_misc_utils.print_wallet_execution(current_wallet)
-        print_module_config(task=started_task)
-
         task_item = self.get_action_item_by_id(action_id=started_task.task_id)
         task_item.set_task_active()
         self.current_wallet_action_items.append(task_item)
@@ -395,6 +390,16 @@ class ActionsFrame(customtkinter.CTkFrame):
         if bool(self.run_settings_frame.test_mode_checkbox.get()):
             amount = Storage().app_config.wallets_amount_to_execute_in_test_mode
             wallets = wallets[:amount]
+
+        task_executor.event_manager.clear_callbacks()
+        self.set_task_exec_event_manager_callbacks()
+
+        task_exec_run_mode = Storage().app_config.run_mode
+
+        if task_exec_run_mode == enums.RunMode.SYNC:
+            repr_manager.set_task_exec_callbacks(
+                task_exec_event_manager=task_executor.event_manager
+            )
 
         task_executor.process(
             wallets=wallets,

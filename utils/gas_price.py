@@ -65,13 +65,16 @@ class GasPrice:
 
     async def get_stark_block_gas_price(self) -> Union[int, None]:
         try:
-            client = GatewayClient(
-                net="mainnet",
-                session=self.session
-            )
+            url = "https://alpha-mainnet.starknet.io/feeder_gateway/get_block"
+            async with aiohttp.ClientSession() as session:
+                payload = {
+                    "blockNumber": self.block_number
+                }
+                async with session.get(url=url, params=payload) as response:
+                    data = await response.json()
+                    gas_price = int(data["strk_l1_gas_price"], 16)
 
-            block = await client.get_block(self.block_number)
-            return block.gas_price
+                    return int(gas_price) * config.GAS_PRICE_MUL
 
         except Exception as e:
             logger.error(f"Error while getting {self.block_number} block gas price: {e}")

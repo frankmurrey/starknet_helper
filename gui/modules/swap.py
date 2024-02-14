@@ -94,6 +94,8 @@ class SwapTab:
                 compare_with_cg_price=self.swap_frame.compare_with_cg_price_checkbox.get(),
                 max_fee=self.txn_settings_frame.max_fee_entry.get(),
                 forced_gas_limit=self.txn_settings_frame.forced_gas_limit_check_box.get(),
+                reverse_action_min_delay_sec=self.swap_frame.reverse_action_min_delay_entry.get(),
+                reverse_action_max_delay_sec=self.swap_frame.reverse_action_max_delay_entry.get(),
             )
 
             return config_data

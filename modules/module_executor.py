@@ -102,7 +102,7 @@ class ModuleExecutor:
 
         client = FullNodeClient(node_url=base_url, session=custom_session)
 
-        if self.task.test_mode is False:
+        if self.task.test_mode is False and self.app_config.skip_gas_price_check is False:
             gas_price = GasPrice(
                 block_number=enums.BlockStatus.PENDING.value,
                 session=custom_session
